@@ -100,7 +100,11 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
 
   Widget _buildMainLayout(List<Book> books, List<ReadingSession> sessions, bool isDark) {
     final completedBooks = books.where((b) => b.status == 2).length;
-    final totalPagesRead = books.fold<int>(0, (sum, b) => sum + b.readPages);
+    // Las sesiones guardan el historial (no se pierde al "Releer"), pero los datos
+    // anteriores a que existieran pueden estar solo en el libro: tomamos el mayor.
+    final pagesFromBooks = books.fold<int>(0, (sum, b) => sum + b.readPages);
+    final pagesFromSessions = sessions.fold<int>(0, (sum, s) => sum + s.pagesRead);
+    final totalPagesRead = math.max(pagesFromBooks, pagesFromSessions);
     final totalSeconds = sessions.fold<int>(0, (sum, s) => sum + s.seconds);
     final streak = _calculateStreak(sessions);
 

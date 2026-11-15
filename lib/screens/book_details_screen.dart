@@ -19,6 +19,7 @@ import '../widgets/timer_widget.dart';
 import '../widgets/add_note_sheet.dart';
 import '../widgets/empty_state_widget.dart';
 import '../providers/tutorial_provider.dart';
+import '../providers/daily_goal_provider.dart';
 import '../services/voice_service.dart';
 
 enum NoteFilter { recent, page, length }
@@ -37,8 +38,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
   final ScreenshotController _screenshotController = ScreenshotController();
   late ConfettiController _confettiController;
   final VoiceService _voiceService = VoiceService();
-  final String appName = "Book Tracker"; 
-  int _dailyGoalMinutes = 30;
+  final String appName = "Book Tracker";
 
   NoteFilter _selectedFilter = NoteFilter.recent;
 
@@ -602,9 +602,10 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
 
   Widget _buildDailyGoalSection(ColorScheme scheme, ThemeData theme) {
     final timeAsync = ref.watch(totalTimeTodayProvider);
+    final goalMinutes = ref.watch(dailyGoalProvider);
     return timeAsync.when(
       data: (sec) {
-        final progress = (sec / 60 / _dailyGoalMinutes).clamp(0.0, 1.0);
+        final progress = (sec / 60 / goalMinutes).clamp(0.0, 1.0);
         return Container(
           key: _goalKey,
           padding: const EdgeInsets.all(20),
@@ -617,7 +618,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                 const Text("Meta Diaria", style: TextStyle(fontWeight: FontWeight.bold)),
                 IconButton(icon: const Icon(Icons.tune, size: 18), onPressed: () => _showSetGoalDialog(scheme)),
               ]),
-              Text("${(sec/60).toInt()} de $_dailyGoalMinutes min hoy"),
+              Text("${(sec/60).toInt()} de $goalMinutes min hoy"),
             ])),
           ]),
         );
@@ -650,19 +651,42 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
 
   void _showUpdateDialog(BuildContext context, WidgetRef ref, Book book) {
     final controller = TextEditingController(text: book.readPages.toString());
-    showDialog(context: context, builder: (context) => AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      title: const Text('Actualizar Progreso'),
-      content: TextField(controller: controller, keyboardType: TextInputType.number, decoration: InputDecoration(suffixText: '/ ${book.totalPages}')),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
-        ElevatedButton(onPressed: () async {
-          final val = int.tryParse(controller.text) ?? book.readPages;
-          await ref.read(databaseProvider).logProgress(book.id, val, book.readPages);
-          if (val >= book.totalPages) _confettiController.play();
-          if (context.mounted) Navigator.pop(context);
-        }, child: const Text('GUARDAR')),
-      ],
+    showDialog(context: context, builder: (dialogContext) => StatefulBuilder(
+      builder: (dialogContext, setDialogState) {
+        final int? val = int.tryParse(controller.text);
+        final String? error = val == null
+            ? 'Escribe un número de página'
+            : (val > book.totalPages ? 'No puede superar ${book.totalPages}' : null);
+
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          title: const Text('Actualizar Progreso'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            onChanged: (_) => setDialogState(() {}),
+            decoration: InputDecoration(
+              labelText: '¿En qué página vas?',
+              suffixText: '/ ${book.totalPages}',
+              errorText: error,
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('CANCELAR')),
+            ElevatedButton(
+              onPressed: error != null ? null : () async {
+                final navigator = Navigator.of(dialogContext);
+                await ref.read(databaseProvider).logProgress(book.id, val!);
+                if (val >= book.totalPages && val > book.readPages) _confettiController.play();
+                navigator.pop();
+              },
+              child: const Text('GUARDAR'),
+            ),
+          ],
+        );
+      },
     ));
   }
 
@@ -685,7 +709,14 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     showDialog(context: context, builder: (context) => AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       title: const Text("Meta Diaria"),
-      content: Wrap(spacing: 10, children: [15, 30, 45, 60].map((m) => ChoiceChip(label: Text("$m min"), selected: _dailyGoalMinutes == m, onSelected: (v) { if(v) setState(() => _dailyGoalMinutes = m); Navigator.pop(context); })).toList()),
+      content: Wrap(spacing: 10, children: DailyGoalNotifier.options.map((m) => ChoiceChip(
+        label: Text("$m min"),
+        selected: ref.read(dailyGoalProvider) == m,
+        onSelected: (v) {
+          if (v) ref.read(dailyGoalProvider.notifier).setGoal(m);
+          Navigator.pop(context);
+        },
+      )).toList()),
     ));
   }
 

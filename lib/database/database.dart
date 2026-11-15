@@ -41,6 +41,9 @@ class ReadingSessions extends Table {
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  /// Para tests: permite usar una base en memoria (`NativeDatabase.memory()`).
+  AppDatabase.forTesting(super.executor);
+
   @override
   int get schemaVersion => 7; // Incrementado de 6 a 7
 
@@ -89,35 +92,48 @@ class AppDatabase extends _$AppDatabase {
   // --- MÉTODOS DE SESIONES Y MOTOR DE PROGRESO ---
   Future<int> insertSession(ReadingSessionsCompanion session) => into(readingSessions).insert(session);
 
-  Future<void> logProgress(int bookId, int newTotalPages, int currentPages, {int additionalSeconds = 0}) async {
+  /// Registra el progreso de un libro: actualiza páginas, tiempo y estado, y
+  /// acumula la sesión del día (usada por la racha, el mapa de calor y gráficas).
+  ///
+  /// [newReadPages] es la página en la que quedó el usuario. Puede ser menor que
+  /// la actual (corrección): el libro se actualiza pero no se restan páginas de
+  /// las sesiones, que son historial.
+  Future<void> logProgress(int bookId, int newReadPages, {int additionalSeconds = 0}) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final diff = newTotalPages - currentPages;
-
-    if (diff <= 0 && additionalSeconds <= 0) return; 
+    final seconds = additionalSeconds > 0 ? additionalSeconds : 0;
 
     await transaction(() async {
       final book = await (select(books)..where((t) => t.id.equals(bookId))).getSingle();
-      
-      int newStatus = book.status;
 
-      if (newTotalPages >= book.totalPages) {
+      final pages = newReadPages.clamp(0, book.totalPages);
+      final diff = pages - book.readPages;
+
+      if (diff == 0 && seconds == 0) return;
+
+      int newStatus;
+      if (book.totalPages > 0 && pages >= book.totalPages) {
         newStatus = 2; // Terminado
-      } else if (book.status != 3) { 
-        if (newTotalPages > 0) {
-          newStatus = 1; // En progreso
-        }
+      } else if (book.status == 3) {
+        newStatus = 3; // Abandonado (DNF): se respeta hasta terminarlo
+      } else if (pages > 0) {
+        newStatus = 1; // En progreso
+      } else {
+        // Volvió a 0 páginas: un libro "terminado" pasa a pendiente
+        newStatus = book.status == 2 ? 0 : book.status;
       }
 
       await (update(books)..where((t) => t.id.equals(bookId))).write(
         BooksCompanion(
-          readPages: Value(newTotalPages),
-          totalReadTime: Value(book.totalReadTime + additionalSeconds),
+          readPages: Value(pages),
+          totalReadTime: Value(book.totalReadTime + seconds),
           status: Value(newStatus),
-          // Mantenemos el rating actual si ya existía
-          rating: Value(book.rating),
         ),
       );
+
+      // Una corrección hacia atrás sin tiempo no es lectura: no crea sesión
+      // (si no, inflaría la racha con días sin actividad real).
+      if (diff <= 0 && seconds == 0) return;
 
       final query = select(readingSessions)
         ..where((t) => t.bookId.equals(bookId))
@@ -129,7 +145,7 @@ class AppDatabase extends _$AppDatabase {
         await (update(readingSessions)..where((t) => t.id.equals(existingSession.id))).write(
           ReadingSessionsCompanion(
             pagesRead: Value(existingSession.pagesRead + (diff > 0 ? diff : 0)),
-            seconds: Value(existingSession.seconds + additionalSeconds),
+            seconds: Value(existingSession.seconds + seconds),
           ),
         );
       } else {
@@ -137,7 +153,7 @@ class AppDatabase extends _$AppDatabase {
           ReadingSessionsCompanion.insert(
             bookId: bookId,
             pagesRead: Value(diff > 0 ? diff : 0),
-            seconds: additionalSeconds,
+            seconds: seconds,
             date: Value(today),
           ),
         );

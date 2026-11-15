@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:drift/drift.dart' show Value;
 import '../database/database.dart';
 import '../providers/database_provider.dart';
 import '../services/timer_persistence.dart';
@@ -372,10 +371,9 @@ class _TimerWidgetState extends ConsumerState<TimerWidget> with SingleTickerProv
                   // 1. Actualizar el libro (páginas y tiempo total acumulado)
                   // 2. Crear o actualizar la ReadingSession diaria para el Heatmap y Gráficas
                   await db.logProgress(
-                    widget.book.id, 
-                    newPages, 
-                    widget.book.readPages,
-                    additionalSeconds: seconds, 
+                    widget.book.id,
+                    newPages,
+                    additionalSeconds: seconds,
                   );
 
                   await TimerPersistence.clearSession();

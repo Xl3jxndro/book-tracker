@@ -27,6 +27,27 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
   
   late int _selectedStatus;
   File? _imagePreview;
+  bool _isSaving = false;
+
+  // Límites definidos en la tabla Books (database.dart)
+  static const _maxTextLength = 100;
+  static const _maxPages = 100000;
+
+  String? _validateText(String? value, String fieldName) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return '$fieldName es obligatorio';
+    if (text.length > _maxTextLength) return 'Máximo $_maxTextLength caracteres';
+    return null;
+  }
+
+  String? _validatePages(String? value) {
+    final pages = int.tryParse(value?.trim() ?? '');
+    if (pages == null || pages <= 0) return 'Indica las páginas';
+    if (pages > _maxPages) return 'Número no válido';
+    final readPages = widget.bookToEdit?.readPages ?? 0;
+    if (pages < readPages) return 'Ya leíste $readPages';
+    return null;
+  }
 
   @override
   void initState() {
@@ -119,36 +140,60 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
   }
 
   void _save() async {
-    if (_formKey.currentState!.validate()) {
-      HapticFeedback.mediumImpact();
-      try {
-        final db = ref.read(databaseProvider);
-        final int totalPages = int.tryParse(_pagesController.text) ?? 0;
-        String? finalImagePath;
-        if (_imagePreview != null) finalImagePath = await _saveImagePermanently(_imagePreview!);
+    if (_isSaving) return;
+    if (!_formKey.currentState!.validate()) {
+      HapticFeedback.heavyImpact();
+      return;
+    }
 
-        if (widget.bookToEdit == null) {
-          await db.insertBook(BooksCompanion(
-            title: drift.Value(_titleController.text),
-            author: drift.Value(_authorController.text),
-            totalPages: drift.Value(totalPages),
-            category: drift.Value(_categoryController.text.trim()),
-            status: drift.Value(_selectedStatus),
-            coverUrl: drift.Value(finalImagePath),
-          ));
-        } else {
-          await db.updateBook(widget.bookToEdit!.copyWith(
-            title: _titleController.text,
-            author: _authorController.text,
-            totalPages: totalPages,
-            category: drift.Value(_categoryController.text.trim()),
-            status: _selectedStatus,
-            coverUrl: drift.Value(finalImagePath),
-          ));
-        }
-        if (mounted) Navigator.pop(context);
-      } catch (e) {
-        debugPrint("Error: $e");
+    HapticFeedback.mediumImpact();
+    setState(() => _isSaving = true);
+    try {
+      final db = ref.read(databaseProvider);
+      final title = _titleController.text.trim();
+      final author = _authorController.text.trim();
+      final int totalPages = int.parse(_pagesController.text.trim());
+      final categoryText = _categoryController.text.trim();
+      final category = categoryText.isEmpty ? 'General' : categoryText;
+
+      String? finalImagePath;
+      if (_imagePreview != null) finalImagePath = await _saveImagePermanently(_imagePreview!);
+
+      final bookToEdit = widget.bookToEdit;
+      if (bookToEdit == null) {
+        await db.insertBook(BooksCompanion(
+          title: drift.Value(title),
+          author: drift.Value(author),
+          totalPages: drift.Value(totalPages),
+          category: drift.Value(category),
+          status: drift.Value(_selectedStatus),
+          coverUrl: drift.Value(finalImagePath),
+        ));
+      } else {
+        // Coherencia estado/progreso: marcar "Leído" completa las páginas.
+        final readPages = _selectedStatus == 2 ? totalPages : bookToEdit.readPages;
+        await db.updateBook(bookToEdit.copyWith(
+          title: title,
+          author: author,
+          totalPages: totalPages,
+          readPages: readPages,
+          category: drift.Value(category),
+          status: _selectedStatus,
+          coverUrl: drift.Value(finalImagePath),
+        ));
+      }
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      debugPrint("Error guardando libro: $e");
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('No se pudo guardar el libro. Inténtalo de nuevo.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -217,9 +262,9 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                     Expanded(
                       child: Column(
                         children: [
-                          _buildModernField(controller: _titleController, label: 'Título del libro', icon: Icons.book_rounded, isBold: true),
+                          _buildModernField(controller: _titleController, label: 'Título del libro', icon: Icons.book_rounded, isBold: true, validator: (v) => _validateText(v, 'El título')),
                           const SizedBox(height: 16),
-                          _buildModernField(controller: _authorController, label: 'Autor', icon: Icons.person_rounded),
+                          _buildModernField(controller: _authorController, label: 'Autor', icon: Icons.person_rounded, validator: (v) => _validateText(v, 'El autor')),
                         ],
                       ),
                     ),
@@ -239,9 +284,9 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: _buildModernField(controller: _categoryController, label: 'Categoría', icon: Icons.local_offer_rounded)),
+                    Expanded(child: _buildModernField(controller: _categoryController, label: 'Categoría', icon: Icons.local_offer_rounded, validator: (v) => (v?.trim().length ?? 0) > _maxTextLength ? 'Máximo $_maxTextLength caracteres' : null)),
                     const SizedBox(width: 16),
-                    Expanded(child: _buildModernField(controller: _pagesController, label: 'Páginas', icon: Icons.auto_stories_rounded, isNumber: true)),
+                    Expanded(child: _buildModernField(controller: _pagesController, label: 'Páginas', icon: Icons.auto_stories_rounded, isNumber: true, validator: _validatePages)),
                   ],
                 ),
                 
@@ -263,7 +308,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                 const SizedBox(height: 40),
                 
                 InkWell(
-                  onTap: _save,
+                  onTap: _isSaving ? null : _save,
                   borderRadius: BorderRadius.circular(24),
                   child: Container(
                     width: double.infinity, height: 65,
@@ -303,6 +348,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
     required IconData icon, 
     bool isNumber = false,
     bool isBold = false,
+    String? Function(String?)? validator,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
@@ -310,7 +356,11 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
       children: [
         TextFormField(
           controller: controller,
+          validator: validator,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          inputFormatters: isNumber ? [FilteringTextInputFormatter.digitsOnly] : null,
+          textCapitalization: isNumber ? TextCapitalization.none : TextCapitalization.sentences,
           style: TextStyle(
             fontSize: 16, 
             fontWeight: isBold ? FontWeight.w800 : FontWeight.w500,
