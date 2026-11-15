@@ -9,7 +9,8 @@ final dailyGoalProvider = StateNotifierProvider<DailyGoalNotifier, int>((ref) {
 });
 
 class DailyGoalNotifier extends StateNotifier<int> {
-  static const _key = 'daily_goal_minutes';
+  static const prefsKey = 'daily_goal_minutes';
+  static const _key = prefsKey;
   static const defaultMinutes = 30;
   static const options = [15, 30, 45, 60];
 

@@ -98,7 +98,11 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
   }
 
   void _toggleListening() {
-    if (_isListening) _stopVoice(); else _startVoice();
+    if (_isListening) {
+      _stopVoice();
+    } else {
+      _startVoice();
+    }
   }
 
   void _saveNote() async {
@@ -134,7 +138,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
           Container(
             width: 32, height: 4, 
             decoration: BoxDecoration(
-              color: scheme.onSurfaceVariant.withOpacity(0.15), 
+              color: scheme.onSurfaceVariant.withValues(alpha: 0.15), 
               borderRadius: BorderRadius.circular(10)
             )
           ),
@@ -190,7 +194,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
                               height: 44 + (80 * progress),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: scheme.primary.withOpacity(0.3 * (1 - progress)),
+                                color: scheme.primary.withValues(alpha: 0.3 * (1 - progress)),
                               ),
                             );
                           },
@@ -209,7 +213,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
                           shape: BoxShape.circle,
                           boxShadow: _isListening ? [
                             BoxShadow(
-                              color: scheme.primary.withOpacity(0.3), 
+                              color: scheme.primary.withValues(alpha: 0.3), 
                               blurRadius: 15, 
                               spreadRadius: 2
                             )
@@ -237,9 +241,9 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
             style: const TextStyle(fontSize: 17, height: 1.4),
             decoration: InputDecoration(
               hintText: 'Comienza a hablar o escribir...',
-              hintStyle: TextStyle(color: scheme.onSurfaceVariant.withOpacity(0.4)),
+              hintStyle: TextStyle(color: scheme.onSurfaceVariant.withValues(alpha: 0.4)),
               filled: true,
-              fillColor: isDark ? Colors.white.withOpacity(0.05) : scheme.surfaceContainerHighest.withOpacity(0.3),
+              fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : scheme.surfaceContainerHighest.withValues(alpha: 0.3),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(24),
                 borderSide: BorderSide.none,
@@ -285,7 +289,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
               color: _isEmpty ? scheme.surfaceContainerHighest : null,
               boxShadow: _isEmpty ? [] : [
                 BoxShadow(
-                  color: scheme.primary.withOpacity(0.3),
+                  color: scheme.primary.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 6)
                 )

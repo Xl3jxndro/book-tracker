@@ -15,7 +15,6 @@ import '../widgets/add_book_sheet.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/skeleton_loader.dart';
 import '../services/ad_helper.dart';
-import '../services/widget_update_service.dart';
 import 'book_details_screen.dart';
 import '../database/database.dart';
 
@@ -229,7 +228,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       pinned: true,
       elevation: 0,
       stretch: true,
-      backgroundColor: theme.scaffoldBackgroundColor.withOpacity(0.8),
+      backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.8),
       flexibleSpace: ClipRRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
@@ -318,7 +317,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.1)),
+        border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.1)),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
@@ -395,7 +394,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2))),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
             Text("Ordenar libros", style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
@@ -414,7 +413,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final theme = Theme.of(context);
     final isSelected = current == option;
     return ListTile(
-      leading: Icon(icon, color: isSelected ? theme.colorScheme.primary : theme.iconTheme.color?.withOpacity(0.6)),
+      leading: Icon(icon, color: isSelected ? theme.colorScheme.primary : theme.iconTheme.color?.withValues(alpha: 0.6)),
       title: Text(title, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
       trailing: isSelected ? Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary) : null,
       onTap: () {
@@ -440,7 +439,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(22, 18, 22, 10),
-          child: Text(title, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5, color: theme.colorScheme.primary.withOpacity(0.5))),
+          child: Text(title, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5, color: theme.colorScheme.primary.withValues(alpha: 0.5))),
         ),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -463,14 +462,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     duration: const Duration(milliseconds: 250),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isSelected ? activeColor : activeColor.withOpacity(0.08),
+                      color: isSelected ? activeColor : activeColor.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(
                       children: [
                         Text(labels[i], style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : activeColor)),
                         const SizedBox(width: 6),
-                        Text('$count', style: TextStyle(fontSize: 10, color: isSelected ? Colors.white70 : activeColor.withOpacity(0.6))),
+                        Text('$count', style: TextStyle(fontSize: 10, color: isSelected ? Colors.white70 : activeColor.withValues(alpha: 0.6))),
                       ],
                     ),
                   ),
@@ -494,7 +493,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         background: Container(
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 20),
-          decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.8), borderRadius: BorderRadius.circular(20)),
+          decoration: BoxDecoration(color: Colors.redAccent.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(20)),
           child: const Icon(Icons.delete_sweep_rounded, color: Colors.white, size: 30),
         ),
         confirmDismiss: (direction) async {
@@ -518,7 +517,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
         onDismissed: (_) => ref.read(databaseProvider).deleteBookComplete(book),
         child: Container(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: statusColor.withOpacity(0.15))),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: statusColor.withValues(alpha: 0.15))),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: Stack(
@@ -527,9 +526,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 BookCard(book: book, searchQuery: query, onTap: () {
                   HapticFeedback.mediumImpact();
                   
-                  // Establecer como libro actual y actualizar widget
+                  // Establecer como libro actual (el widget se actualiza solo)
                   ref.read(currentBookProvider.notifier).setCurrentBook(book.id);
-                  WidgetUpdateService().updateWithBook(book);
                   
                   Navigator.push(
                     context,
@@ -598,11 +596,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 gradient: LinearGradient(
-                  colors: [theme.colorScheme.primary, theme.colorScheme.primary.withOpacity(0.8)],
+                  colors: [theme.colorScheme.primary, theme.colorScheme.primary.withValues(alpha: 0.8)],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
                     blurRadius: 15,
                     offset: const Offset(0, 8),
                   )
@@ -693,7 +691,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       decoration: BoxDecoration(
         color: theme.cardColor, 
         borderRadius: BorderRadius.circular(24), 
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 20)]
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 20)]
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min, 

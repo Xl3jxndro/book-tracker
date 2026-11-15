@@ -31,7 +31,6 @@ dependencies:
   shared_preferences: ^2.5.4  # Para persistencia del Timer
   intl: ^0.20.2               # Para fechas e idiomas
   http: ^1.3.0                # Para descargar portadas si es necesario
-  fl_chart: ^0.70.0           # Para los gráficos de estadísticas
   confetti: ^0.8.0            # Para animaciones de celebración 
   palette_generator: ^0.3.3+7 # Para extraer colores de las portadas
   google_fonts: ^6.2.1        # Para usar fuentes modernas y personalizadas
@@ -63,9 +62,6 @@ dependencies:
 
   # Widget de Pantalla de Inicio
   home_widget: ^0.7.0                   # Para el widget de Android en la pantalla principal
-  
-  # Deep Linking
-  app_links: ^6.3.2                     # Para manejar deep links
 
   # Zona horaria del dispositivo (para programar notificaciones a la hora local)
   flutter_timezone: ^5.1.1

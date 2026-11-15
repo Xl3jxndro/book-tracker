@@ -32,14 +32,6 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            
-            <!-- Deep Linking -->
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="booktracker" />
-            </intent-filter>
         </activity>
         
         <meta-data
@@ -70,25 +62,18 @@
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/book_tracker_widget_config" />
         </receiver>
 
-        <!-- Receiver for Interactive Home Widget Clicks -->
+        <!-- Botón PAUSAR/REANUDAR del widget: ejecuta Dart en segundo plano
+             (receiver + servicio de home_widget, ambos obligatorios) -->
         <receiver android:name="es.antonborri.home_widget.HomeWidgetBackgroundReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="es.antonborri.home_widget.action.BACKGROUND" />
             </intent-filter>
         </receiver>
+        <service
+            android:name="es.antonborri.home_widget.HomeWidgetBackgroundService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="true" />
 
-        <!-- Widget Action Receiver -->
-        <receiver android:name=".BookTrackerWidgetReceiver" android:exported="true">
-            <intent-filter>
-                <action android:name="booktracker://pause_session" />
-                <action android:name="booktracker://finish_session" />
-                <action android:name="booktracker://update_widget" />
-            </intent-filter>
-        </receiver>
-
-        <!-- Widget Background Service -->
-        <service android:name=".BookTrackerWidgetService" android:exported="false" />
-            
     </application>
 
     <queries>

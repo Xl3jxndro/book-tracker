@@ -161,7 +161,7 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  Stream<int> watchTotalTimeToday() {
+  Selectable<int> _totalTimeTodayQuery() {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
     final sumSeconds = readingSessions.seconds.sum();
@@ -169,19 +169,15 @@ class AppDatabase extends _$AppDatabase {
       ..addColumns([sumSeconds])
       ..where(readingSessions.date.isBiggerOrEqualValue(todayStart));
 
-    return query.map((row) => row.read(sumSeconds) ?? 0).watchSingle();
+    return query.map((row) => row.read(sumSeconds) ?? 0);
   }
+
+  Stream<int> watchTotalTimeToday() => _totalTimeTodayQuery().watchSingle();
+
+  /// Segundos leídos hoy en todos los libros (consulta puntual).
+  Future<int> getTotalSecondsToday() => _totalTimeTodayQuery().getSingle();
 
   Stream<List<ReadingSession>> watchAllSessions() => select(readingSessions).watch();
-
-  Stream<List<ReadingSession>> watchWeeklySessions() {
-    final now = DateTime.now();
-    final sevenDaysAgo = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 7));
-    return (select(readingSessions)
-      ..where((t) => t.date.isBiggerThanValue(sevenDaysAgo))
-      ..orderBy([(t) => OrderingTerm(expression: t.date)]))
-      .watch();
-  }
 }
 
 LazyDatabase _openConnection() {

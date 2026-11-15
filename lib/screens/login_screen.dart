@@ -241,7 +241,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
               prefixIcon: const Icon(Icons.vpn_key_rounded),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
               filled: true,
-              fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             ),
             onSubmitted: (_) => _submitPassphrase(),
           ),
@@ -345,7 +345,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
+          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         ),
         child: isBackspace 
             ? const Icon(Icons.backspace_outlined, size: 22) 

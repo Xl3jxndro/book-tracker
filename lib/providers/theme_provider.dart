@@ -13,7 +13,7 @@ TextTheme _buildEditorialTextTheme(Brightness brightness) {
     headlineMedium: GoogleFonts.lora(fontWeight: FontWeight.w700, color: color),
     titleLarge: GoogleFonts.lora(fontWeight: FontWeight.w600, fontSize: 20, letterSpacing: -0.5),
     bodyLarge: GoogleFonts.inter(fontSize: 16, letterSpacing: 0.2),
-    bodyMedium: GoogleFonts.inter(fontSize: 14, color: color.withOpacity(0.8)),
+    bodyMedium: GoogleFonts.inter(fontSize: 14, color: color.withValues(alpha: 0.8)),
     labelLarge: GoogleFonts.inter(fontWeight: FontWeight.bold, letterSpacing: 1.1, fontSize: 12),
   );
 }

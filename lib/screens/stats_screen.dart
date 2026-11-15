@@ -147,9 +147,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
       ),
       child: Row(
         children: [
@@ -174,7 +174,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
       child: Container(
         height: 50,
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(25),
         ),
         child: TabBar(
@@ -260,7 +260,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
     return Container(
       padding: const EdgeInsets.fromLTRB(15, 20, 20, 15),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
         borderRadius: BorderRadius.circular(30),
       ),
       child: Column(
@@ -283,7 +283,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                   children: [
                     RotatedBox(
                       quarterTurns: 3,
-                      child: Text("MINUTOS", style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.grey.withOpacity(0.6), letterSpacing: 1.5)),
+                      child: Text("MINUTOS", style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.grey.withValues(alpha: 0.6), letterSpacing: 1.5)),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -307,7 +307,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                     children: [
                       Column(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(3, (i) => Container(height: 0.5, color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05))),
+                        children: List.generate(3, (i) => Container(height: 0.5, color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05))),
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -343,7 +343,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                                     decoration: BoxDecoration(
                                       color: isSelected
                                           ? Colors.orangeAccent
-                                          : (isToday ? Colors.indigoAccent : (sec > 0 ? (isDark ? Colors.white70 : Colors.black87) : Colors.grey.withOpacity(0.15))),
+                                          : (isToday ? Colors.indigoAccent : (sec > 0 ? (isDark ? Colors.white70 : Colors.black87) : Colors.grey.withValues(alpha: 0.15))),
                                       borderRadius: BorderRadius.circular(2),
                                     ),
                                   ),
@@ -415,7 +415,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
     return Container(
       padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
         borderRadius: BorderRadius.circular(30),
       ),
       child: Column(
@@ -433,7 +433,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
             children: sortedGenres.take(4).map((e) => Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+                    color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text("${e.key} ${total > 0 ? ((e.value / total) * 100).toInt() : 0}%", style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
@@ -500,11 +500,11 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: unlocked 
-              ? activeColor.withOpacity(isDark ? 0.08 : 0.03) 
-              : (isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.01)),
+              ? activeColor.withValues(alpha: isDark ? 0.08 : 0.03) 
+              : (isDark ? Colors.white.withValues(alpha: 0.02) : Colors.black.withValues(alpha: 0.01)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: unlocked ? activeColor.withOpacity(0.2) : (isDark ? Colors.white10 : Colors.black.withOpacity(0.05)), 
+            color: unlocked ? activeColor.withValues(alpha: 0.2) : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)), 
             width: 1
           ),
         ),
@@ -516,12 +516,12 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: unlocked ? activeColor.withOpacity(0.15) : (isDark ? Colors.white10 : Colors.black.withOpacity(0.03)),
+                    color: unlocked ? activeColor.withValues(alpha: 0.15) : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.03)),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     unlocked ? icon : Icons.lock_outline_rounded, 
-                    color: unlocked ? activeColor : Colors.grey.withOpacity(0.5), 
+                    color: unlocked ? activeColor : Colors.grey.withValues(alpha: 0.5), 
                     size: 22
                   ),
                 ),
@@ -562,9 +562,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 6,
-                backgroundColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+                backgroundColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  unlocked ? activeColor : activeColor.withOpacity(0.4)
+                  unlocked ? activeColor : activeColor.withValues(alpha: 0.4)
                 ),
               ),
             ),
@@ -613,7 +613,7 @@ class ReadingHeatMap extends StatelessWidget {
                       return Container(
                         width: 12, height: 12, margin: const EdgeInsets.all(1),
                         decoration: BoxDecoration(
-                          color: isFuture ? Colors.transparent : (!isActive ? (isDark ? Colors.white10 : Colors.black.withOpacity(0.05)) : Colors.indigoAccent.withOpacity((p/30).clamp(0.2, 1.0))),
+                          color: isFuture ? Colors.transparent : (!isActive ? (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)) : Colors.indigoAccent.withValues(alpha: (p/30).clamp(0.2, 1.0))),
                           borderRadius: BorderRadius.circular(2.5),
                         ),
                       );
@@ -627,9 +627,9 @@ class ReadingHeatMap extends StatelessWidget {
                 children: [
                   const Text("Menos", style: TextStyle(fontSize: 10, color: Colors.grey)),
                   const SizedBox(width: 8),
-                  _buildLegendSquare(isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
-                  _buildLegendSquare(Colors.indigoAccent.withOpacity(0.3)),
-                  _buildLegendSquare(Colors.indigoAccent.withOpacity(0.6)),
+                  _buildLegendSquare(isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+                  _buildLegendSquare(Colors.indigoAccent.withValues(alpha: 0.3)),
+                  _buildLegendSquare(Colors.indigoAccent.withValues(alpha: 0.6)),
                   _buildLegendSquare(Colors.indigoAccent),
                   const SizedBox(width: 8),
                   const Text("Más", style: TextStyle(fontSize: 10, color: Colors.grey)),
@@ -662,7 +662,7 @@ class PieChartPainter extends CustomPainter {
     final rect = Rect.fromCircle(center: Offset(size.width / 2, size.height / 2), radius: size.width / 2);
     double startAngle = -math.pi / 2;
     if (total == 0) {
-      paint.color = Colors.grey.withOpacity(0.2);
+      paint.color = Colors.grey.withValues(alpha: 0.2);
       canvas.drawArc(rect, 0, 2 * math.pi, false, paint);
       return;
     }
