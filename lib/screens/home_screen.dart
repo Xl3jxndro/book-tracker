@@ -15,7 +15,6 @@ import '../widgets/add_book_sheet.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/skeleton_loader.dart';
 import '../services/ad_helper.dart';
-import '../services/widget_update_service.dart';
 import 'book_details_screen.dart';
 import '../database/database.dart';
 
@@ -527,9 +526,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 BookCard(book: book, searchQuery: query, onTap: () {
                   HapticFeedback.mediumImpact();
                   
-                  // Establecer como libro actual y actualizar widget
+                  // Establecer como libro actual (el widget se actualiza solo)
                   ref.read(currentBookProvider.notifier).setCurrentBook(book.id);
-                  WidgetUpdateService().updateWithBook(book);
                   
                   Navigator.push(
                     context,

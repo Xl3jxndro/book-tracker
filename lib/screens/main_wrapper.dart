@@ -3,24 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../providers/ui_provider.dart'; 
+import '../providers/ui_provider.dart';
 import '../providers/tutorial_provider.dart';
 import '../providers/database_provider.dart';
 import '../providers/current_book_provider.dart';
-import '../services/widget_service.dart';
-import '../database/database.dart';
+import '../providers/widget_action_provider.dart';
 import 'home_screen.dart';
 import 'stats_screen.dart';
 import 'settings_screen.dart';
-import 'session_summary_screen.dart';
+import 'book_details_screen.dart';
 import 'package:flutter/services.dart';
 
 class MainWrapper extends ConsumerStatefulWidget {
-  final String? pendingRoute;
-
-  const MainWrapper({super.key, this.pendingRoute});
+  const MainWrapper({super.key});
 
   @override
   ConsumerState<MainWrapper> createState() => _MainWrapperState();
@@ -42,14 +38,17 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
   @override
   void initState() {
     super.initState();
-    
-    // Manejar deep link de finish_session
-    if (widget.pendingRoute?.contains('finish_session') ?? false) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _handleFinishSessionDeepLink();
-      });
-    }
-    
+
+    // Acciones del widget de pantalla de inicio (incluida la que llegó antes del login)
+    ref.listenManual<WidgetAction?>(
+      pendingWidgetActionProvider,
+      (_, action) {
+        if (action == null) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _handleWidgetAction(action));
+      },
+      fireImmediately: true,
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         final tutorialState = ref.read(tutorialProvider);
@@ -58,25 +57,27 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
     });
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    
-    // Escuchar cambios en el libro actual y actualizar el widget
-    ref.listen<AsyncValue<({Book book, ReadingSession? session})?>>(
-      currentBookWithSessionProvider,
-      (previous, next) {
-        next.whenData((data) {
-          if (data != null) {
-            debugPrint('📱 Actualizando widget con libro: ${data.book.title}');
-            WidgetService.updateWidget(
-              currentBook: data.book,
-              todaySession: data.session,
-              isSessionActive: false,
-            );
-          }
-        });
-      },
+  /// Abre el libro pedido desde el widget; con `finishSession` muestra además
+  /// el diálogo para terminar la sesión y guardar las páginas.
+  Future<void> _handleWidgetAction(WidgetAction action) async {
+    if (!mounted) return;
+    ref.read(pendingWidgetActionProvider.notifier).state = null;
+
+    final db = ref.read(databaseProvider);
+    final book = await (db.select(db.books)..where((t) => t.id.equals(action.bookId))).getSingleOrNull();
+    if (book == null || !mounted) return;
+
+    ref.read(currentBookProvider.notifier).setCurrentBook(book.id);
+    setState(() => _currentIndex = 0);
+
+    // Cerramos lo que hubiera abierto (otro libro, diálogos) para no tener
+    // dos cronómetros del mismo libro a la vez.
+    final navigator = Navigator.of(context);
+    navigator.popUntil((route) => route.isFirst);
+    navigator.push(
+      MaterialPageRoute(
+        builder: (_) => BookDetailsScreen(book: book, autoFinishSession: action.finishSession),
+      ),
     );
   }
 
@@ -253,50 +254,6 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
         ),
       ),
     );
-  }
-
-  Future<void> _handleFinishSessionDeepLink() async {
-    try {
-      debugPrint('📱 Manejando deep link: finish_session');
-      
-      // Obtener el book_id de SharedPreferences si fue guardado desde el widget
-      final prefs = await SharedPreferences.getInstance();
-      final bookId = prefs.getInt('session_summary_book_id');
-      
-      if (bookId != null) {
-        // Verificar que el libro existe
-        final db = ref.read(databaseProvider);
-        final book = await (db.select(db.books)
-          ..where((t) => t.id.equals(bookId)))
-          .getSingleOrNull();
-        
-        if (book != null && mounted) {
-          // Navegar a la pantalla de resumen de sesión
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => SessionSummaryScreen(
-                bookId: bookId,
-                fromWidget: true,
-              ),
-            ),
-          );
-          
-          // Limpiar el flag
-          await prefs.remove('show_session_summary');
-          await prefs.remove('session_summary_book_id');
-        }
-      }
-    } catch (e) {
-      debugPrint('Error manejando deep link: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al cargar sesión: $e'),
-            backgroundColor: Colors.red.shade600,
-          ),
-        );
-      }
-    }
   }
 
   void _showNavTutorial() {

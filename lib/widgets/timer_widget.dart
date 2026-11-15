@@ -6,17 +6,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../database/database.dart';
 import '../providers/database_provider.dart';
 import '../services/timer_persistence.dart';
+import '../services/home_widget_sync.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 class TimerWidget extends ConsumerStatefulWidget {
   final Book book;
-  const TimerWidget({super.key, required this.book});
+
+  /// Si hay una sesión de este libro, abre directamente el diálogo de fin de
+  /// sesión (botón FINALIZAR del widget de pantalla de inicio).
+  final bool autoFinish;
+
+  const TimerWidget({super.key, required this.book, this.autoFinish = false});
 
   @override
   ConsumerState<TimerWidget> createState() => _TimerWidgetState();
 }
 
-class _TimerWidgetState extends ConsumerState<TimerWidget> with SingleTickerProviderStateMixin {
+class _TimerWidgetState extends ConsumerState<TimerWidget>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   Timer? _timer;
   int _seconds = 0;
   bool _isRunning = false;
@@ -45,62 +52,81 @@ class _TimerWidgetState extends ConsumerState<TimerWidget> with SingleTickerProv
       }
     });
 
-    _checkPersistedSession();
+    WidgetsBinding.instance.addObserver(this);
+    _syncFromPersistence(autoFinish: widget.autoFinish);
   }
 
-  void _checkPersistedSession() async {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // El widget de pantalla de inicio pudo pausar/reanudar mientras no estábamos
+    if (state == AppLifecycleState.resumed) _syncFromPersistence();
+  }
+
+  /// Alinea la pantalla con la sesión guardada en disco (fuente de verdad).
+  Future<void> _syncFromPersistence({bool autoFinish = false}) async {
     final session = await TimerPersistence.getActiveSession();
-    
-    if (session != null && session['bookId'] == widget.book.id) {
-      if (mounted) {
+    if (!mounted) return;
+
+    if (session == null || session.bookId != widget.book.id) {
+      // No hay sesión de este libro: si mostrábamos una, la limpiamos
+      if (_isRunning || _isPaused) {
+        _timer?.cancel();
+        _resetAnimation();
+        WakelockPlus.disable();
         setState(() {
-          _seconds = session['elapsedSeconds'];
-          _accumulatedSeconds = _seconds; // Cargamos lo que ya estaba guardado
-          _isPaused = session['isPaused'];
+          _startTime = null;
+          _accumulatedSeconds = 0;
+          _seconds = 0;
+          _isRunning = false;
+          _isPaused = false;
         });
-        
-        if (_isPaused) {
-          _fadeController?.forward();
-        } else {
-          _startTimer(isResuming: true);
-        }
       }
+      return;
     }
+
+    if (session.isPaused) {
+      _timer?.cancel();
+      WakelockPlus.disable();
+      setState(() {
+        _startTime = null;
+        _accumulatedSeconds = session.accumulatedSeconds;
+        _seconds = session.accumulatedSeconds;
+        _isRunning = false;
+        _isPaused = true;
+      });
+      _fadeController?.forward();
+    } else {
+      _accumulatedSeconds = session.accumulatedSeconds;
+      _startTicking(since: session.runningSince ?? DateTime.now());
+    }
+
+    if (autoFinish) _stopTimer();
   }
 
   void _resetAnimation() {
-    _isPaused = false; 
+    _isPaused = false;
     _fadeController?.stop();
-    _fadeController?.value = 0.0; 
+    _fadeController?.value = 0.0;
   }
 
-  void _startTimer({bool isResuming = false}) {
-    HapticFeedback.lightImpact();
-
-    // Guardamos el momento exacto en que inicia/reanuda
-    _startTime = DateTime.now();
-
-    TimerPersistence.saveSession(
-      bookId: widget.book.id,
-      isPaused: false,
-      accumulatedSeconds: _seconds,
-    );
-
+  /// Solo la parte visual/local: cuenta desde [since] sobre [_accumulatedSeconds].
+  void _startTicking({required DateTime since}) {
+    _startTime = since;
     _resetAnimation();
-    WakelockPlus.enable(); 
+    WakelockPlus.enable();
 
     setState(() {
       _isRunning = true;
       _isPaused = false;
+      _seconds = _accumulatedSeconds + DateTime.now().difference(since).inSeconds;
     });
 
     _timer?.cancel();
     // Usamos un intervalo menor (500ms) para que el UI se sienta más fluido,
     // pero el cálculo es por DateTime, así que no afecta la precisión.
     _timer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-      if (_startTime != null) {
-        final now = DateTime.now();
-        final difference = now.difference(_startTime!).inSeconds;
+      if (_startTime != null && mounted) {
+        final difference = DateTime.now().difference(_startTime!).inSeconds;
         setState(() {
           _seconds = _accumulatedSeconds + difference;
         });
@@ -108,11 +134,25 @@ class _TimerWidgetState extends ConsumerState<TimerWidget> with SingleTickerProv
     });
   }
 
+  void _startTimer() async {
+    HapticFeedback.lightImpact();
+
+    _accumulatedSeconds = _seconds;
+    _startTicking(since: DateTime.now());
+
+    await TimerPersistence.saveSession(
+      bookId: widget.book.id,
+      isPaused: false,
+      accumulatedSeconds: _accumulatedSeconds,
+    );
+    HomeWidgetSync.refresh();
+  }
+
   void _pauseTimer() async {
     HapticFeedback.selectionClick();
 
     _timer?.cancel();
-    WakelockPlus.disable(); 
+    WakelockPlus.disable();
 
     // Al pausar, guardamos el progreso total en la acumulada y limpiamos el inicio
     _accumulatedSeconds = _seconds;
@@ -122,14 +162,15 @@ class _TimerWidgetState extends ConsumerState<TimerWidget> with SingleTickerProv
       _isRunning = false;
       _isPaused = true;
     });
-    
-    _fadeController?.forward(); 
-    
+
+    _fadeController?.forward();
+
     await TimerPersistence.saveSession(
       bookId: widget.book.id,
       isPaused: true,
       accumulatedSeconds: _seconds,
     );
+    HomeWidgetSync.refresh();
   }
 
   void _stopTimer() async {
@@ -137,27 +178,30 @@ class _TimerWidgetState extends ConsumerState<TimerWidget> with SingleTickerProv
 
     _timer?.cancel();
     _resetAnimation();
-    
+
     final int sessionSeconds = _seconds;
-    
+
     // Reset de variables de precisión
     _startTime = null;
     _accumulatedSeconds = 0;
 
     await TimerPersistence.clearSession();
+    HomeWidgetSync.refresh();
     WakelockPlus.disable();
-    
+    if (!mounted) return;
+
     setState(() {
       _isRunning = false;
       _isPaused = false;
       _seconds = 0;
     });
-    
+
     _showUpdateProgressDialog(sessionSeconds);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _fadeController?.dispose();
     WakelockPlus.disable();

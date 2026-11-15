@@ -35,6 +35,7 @@
 
     <!-- Content Section -->
     <LinearLayout
+        android:id="@+id/widget_content_section"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
@@ -160,19 +161,20 @@
                 android:orientation="horizontal">
 
                 <TextView
+                    android:id="@+id/widget_session_label"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="LEYENDO..."
+                    android:text="LEYENDO…"
                     android:textColor="#6366F1"
                     android:textSize="11sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/widget_elapsed_time"
+                <!-- Avanza solo (sin actualizaciones periódicas desde la app) -->
+                <Chronometer
+                    android:id="@+id/widget_chronometer"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0m"
                     android:textColor="#FFFFFF"
                     android:textSize="14sp"
                     android:textStyle="bold" />

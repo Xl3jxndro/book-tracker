@@ -26,7 +26,11 @@ enum NoteFilter { recent, page, length }
 
 class BookDetailsScreen extends ConsumerStatefulWidget {
   final Book book;
-  const BookDetailsScreen({super.key, required this.book});
+
+  /// Abierto desde el botón FINALIZAR del widget: muestra el diálogo de fin de sesión.
+  final bool autoFinishSession;
+
+  const BookDetailsScreen({super.key, required this.book, this.autoFinishSession = false});
 
   @override
   ConsumerState<BookDetailsScreen> createState() => _BookDetailsScreenState();
@@ -481,7 +485,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
             const SizedBox(height: 32),
             _buildSectionTitle('Sesión de lectura', theme),
             const SizedBox(height: 16),
-            TimerWidget(key: _timerKey, book: currentBook),
+            TimerWidget(key: _timerKey, book: currentBook, autoFinish: widget.autoFinishSession),
           ],
           const SizedBox(height: 40),
           _buildNotesHeader(currentBook, theme, scheme),
@@ -736,8 +740,10 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
 
   void _showDetailsTutorial() async {
     final tutorialState = ref.read(tutorialProvider);
-    
-    if (tutorialState.stage != TutorialStage.bookDetails || 
+
+    // Si viene del widget para terminar la sesión, no se interrumpe con el tutorial
+    if (widget.autoFinishSession ||
+        tutorialState.stage != TutorialStage.bookDetails ||
         tutorialState.hasSeenDetails || 
         _isTutorialShowing) return;
 

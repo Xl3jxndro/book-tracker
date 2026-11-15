@@ -63,9 +63,6 @@ dependencies:
 
   # Widget de Pantalla de Inicio
   home_widget: ^0.7.0                   # Para el widget de Android en la pantalla principal
-  
-  # Deep Linking
-  app_links: ^6.3.2                     # Para manejar deep links
 
   # Zona horaria del dispositivo (para programar notificaciones a la hora local)
   flutter_timezone: ^5.1.1
