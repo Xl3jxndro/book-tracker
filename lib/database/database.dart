@@ -178,15 +178,6 @@ class AppDatabase extends _$AppDatabase {
   Future<int> getTotalSecondsToday() => _totalTimeTodayQuery().getSingle();
 
   Stream<List<ReadingSession>> watchAllSessions() => select(readingSessions).watch();
-
-  Stream<List<ReadingSession>> watchWeeklySessions() {
-    final now = DateTime.now();
-    final sevenDaysAgo = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 7));
-    return (select(readingSessions)
-      ..where((t) => t.date.isBiggerThanValue(sevenDaysAgo))
-      ..orderBy([(t) => OrderingTerm(expression: t.date)]))
-      .watch();
-  }
 }
 
 LazyDatabase _openConnection() {

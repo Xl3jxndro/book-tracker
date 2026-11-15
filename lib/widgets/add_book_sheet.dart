@@ -113,7 +113,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : Colors.indigo.withOpacity(0.05),
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.indigo.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(24),
             ),
             child: Icon(icon, color: Colors.indigoAccent, size: 32),
@@ -216,9 +216,9 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
           top: 16, left: 28, right: 28
         ),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF0F0F0F).withOpacity(0.9) : Colors.white.withOpacity(0.95),
+          color: isDark ? const Color(0xFF0F0F0F).withValues(alpha: 0.9) : Colors.white.withValues(alpha: 0.95),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(50)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 40)],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 40)],
         ),
         child: Form(
           key: _formKey,
@@ -241,12 +241,12 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                           duration: const Duration(milliseconds: 300),
                           height: 150, width: 105,
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: isDNF ? Colors.redAccent.withOpacity(0.3) : Colors.transparent),
+                            border: Border.all(color: isDNF ? Colors.redAccent.withValues(alpha: 0.3) : Colors.transparent),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
+                                color: Colors.black.withValues(alpha: 0.15),
                                 blurRadius: 20, offset: const Offset(0, 10)
                               )
                             ],
@@ -317,11 +317,11 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                       gradient: LinearGradient(
                         colors: isDNF 
                           ? [Colors.redAccent.shade200, Colors.redAccent.shade700] 
-                          : [theme.colorScheme.primary, theme.colorScheme.secondary.withOpacity(0.8)],
+                          : [theme.colorScheme.primary, theme.colorScheme.secondary.withValues(alpha: 0.8)],
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: (isDNF ? Colors.redAccent : theme.colorScheme.primary).withOpacity(0.3),
+                          color: (isDNF ? Colors.redAccent : theme.colorScheme.primary).withValues(alpha: 0.3),
                           blurRadius: 20, offset: const Offset(0, 10)
                         )
                       ],
@@ -369,14 +369,14 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
           decoration: InputDecoration(
             labelText: label,
             labelStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 14, fontWeight: FontWeight.w400),
-            prefixIcon: Icon(icon, size: 20, color: Colors.indigoAccent.withOpacity(0.5)),
+            prefixIcon: Icon(icon, size: 20, color: Colors.indigoAccent.withValues(alpha: 0.5)),
             filled: true,
-            fillColor: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.03),
+            fillColor: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.03),
             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20), 
-              borderSide: BorderSide(color: Colors.indigoAccent.withOpacity(0.3), width: 1)
+              borderSide: BorderSide(color: Colors.indigoAccent.withValues(alpha: 0.3), width: 1)
             ),
           ),
         ),
@@ -388,7 +388,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.03),
+        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(

@@ -50,9 +50,11 @@ class VoiceService {
       },
       listenFor: const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 15),
-      cancelOnError: true,
-      partialResults: true,
-      listenMode: ListenMode.dictation, // Optimizado para dictado de notas
+      listenOptions: SpeechListenOptions(
+        cancelOnError: true,
+        partialResults: true,
+        listenMode: ListenMode.dictation, // Optimizado para dictado de notas
+      ),
     );
   }
 

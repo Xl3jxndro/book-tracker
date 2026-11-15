@@ -36,19 +36,19 @@ class BookCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: isDNF 
-            ? (isDark ? Colors.red.withOpacity(0.05) : Colors.grey.shade50) 
+            ? (isDark ? Colors.red.withValues(alpha: 0.05) : Colors.grey.shade50) 
             : theme.cardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDNF 
-              ? Colors.redAccent.withOpacity(0.2) 
-              : (isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade200),
+              ? Colors.redAccent.withValues(alpha: 0.2) 
+              : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade200),
           width: 1,
         ),
         boxShadow: [
           if (!isDNF)
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -84,7 +84,7 @@ class BookCard extends StatelessWidget {
                               constraints: const BoxConstraints(),
                               icon: Icon(Icons.edit_note_rounded, 
                                 size: 20, 
-                                color: isDNF ? Colors.grey : theme.colorScheme.primary.withOpacity(0.7)),
+                                color: isDNF ? Colors.grey : theme.colorScheme.primary.withValues(alpha: 0.7)),
                               onPressed: () {
                                 HapticFeedback.mediumImpact();
                                 _showEditSheet(context);
@@ -109,9 +109,9 @@ class BookCard extends StatelessWidget {
                         book.author, 
                         searchQuery, 
                         theme.textTheme.bodySmall?.copyWith(
-                          color: isDNF ? Colors.grey.withOpacity(0.6) : Colors.grey.shade600,
+                          color: isDNF ? Colors.grey.withValues(alpha: 0.6) : Colors.grey.shade600,
                         ) ?? const TextStyle(),
-                        theme.colorScheme.primary.withOpacity(0.8),
+                        theme.colorScheme.primary.withValues(alpha: 0.8),
                       ),
                       const SizedBox(height: 12),
                       _buildProgressInfo(progress, percentage, isDNF, accentColor, isDark),
@@ -148,7 +148,7 @@ class BookCard extends StatelessWidget {
         style: TextStyle(
           color: highlightColor, 
           fontWeight: FontWeight.w900, // <--- Cambiado de .black a .w900
-          backgroundColor: highlightColor.withOpacity(0.15)
+          backgroundColor: highlightColor.withValues(alpha: 0.15)
         ),
       ));
       start = indexOfMatch + query.length;
@@ -177,7 +177,7 @@ class BookCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w900,
-                color: accentColor.withOpacity(0.8),
+                color: accentColor.withValues(alpha: 0.8),
                 letterSpacing: 0.5,
               ),
             ),
@@ -193,8 +193,8 @@ class BookCard extends StatelessWidget {
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 6,
-            backgroundColor: accentColor.withOpacity(0.1),
-            color: accentColor.withOpacity(isDNF ? 0.4 : 1.0),
+            backgroundColor: accentColor.withValues(alpha: 0.1),
+            color: accentColor.withValues(alpha: isDNF ? 0.4 : 1.0),
           ),
         ),
       ],
@@ -219,7 +219,7 @@ class BookCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 8,
             offset: const Offset(2, 4),
           ),
@@ -276,7 +276,7 @@ class BookCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(

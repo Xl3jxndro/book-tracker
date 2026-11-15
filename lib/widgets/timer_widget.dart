@@ -216,11 +216,11 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isDark ? scheme.surfaceContainerHighest.withOpacity(0.1) : scheme.surfaceContainerLow,
+        color: isDark ? scheme.surfaceContainerHighest.withValues(alpha: 0.1) : scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(30),
         border: Border.all(
           color: (_isRunning || _isPaused) 
-            ? scheme.primary.withOpacity(0.4) 
+            ? scheme.primary.withValues(alpha: 0.4) 
             : (isDark ? Colors.white10 : Colors.grey.shade200)
         ),
       ),
@@ -265,7 +265,7 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _isRunning ? Colors.orangeAccent.withOpacity(0.2) : scheme.primary,
+                    backgroundColor: _isRunning ? Colors.orangeAccent.withValues(alpha: 0.2) : scheme.primary,
                     foregroundColor: _isRunning ? Colors.orangeAccent : scheme.onPrimary,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -280,7 +280,7 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
                   child: ElevatedButton(
                     onPressed: _stopTimer,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: scheme.errorContainer.withOpacity(0.4),
+                      backgroundColor: scheme.errorContainer.withValues(alpha: 0.4),
                       foregroundColor: scheme.error,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -325,7 +325,7 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: scheme.primaryContainer.withOpacity(0.4),
+                    color: scheme.primaryContainer.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(

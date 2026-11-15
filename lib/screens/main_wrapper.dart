@@ -167,7 +167,7 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.4 : 0.12),
+            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -180,8 +180,8 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
           child: Container(
             decoration: BoxDecoration(
               color: isDark 
-                  ? const Color(0xFF121212).withOpacity(0.85) 
-                  : Colors.white.withOpacity(0.9),
+                  ? const Color(0xFF121212).withValues(alpha: 0.85) 
+                  : Colors.white.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
                 color: isDark ? Colors.black45 : Colors.black12,
@@ -223,7 +223,7 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? selectedColor.withOpacity(0.12) : Colors.transparent,
+          color: isSelected ? selectedColor.withValues(alpha: 0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(18),
         ),
         child: Column(

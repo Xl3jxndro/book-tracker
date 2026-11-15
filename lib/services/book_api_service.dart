@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class BookModel {
@@ -27,7 +28,7 @@ class BookApiService {
     );
     
     try {
-      print('🔍 Intentando petición: $url');
+      debugPrint('🔍 Intentando petición: $url');
       final response = await http.get(url).timeout(const Duration(seconds: 5));
       
       if (response.statusCode == 200) {
@@ -50,11 +51,11 @@ class BookApiService {
           );
         }).toList();
       } else if (response.statusCode == 429) {
-        print('❌ Límite de Google alcanzado (429).');
+        debugPrint('❌ Límite de Google alcanzado (429).');
         throw Exception('rate-limit');
       }
     } catch (e) {
-      print('⚠️ Error en servicio: $e');
+      debugPrint('⚠️ Error en servicio: $e');
       rethrow;
     }
     return [];

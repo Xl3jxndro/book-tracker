@@ -23,22 +23,8 @@ final sessionsStreamProvider = StreamProvider<List<ReadingSession>>((ref) {
   return db.watchAllSessions();
 });
 
-// Provider para el estado de la búsqueda
-final searchQueryProvider = StateProvider<String>((ref) => '');
-
-// NUEVO: Provider que combina los libros con la búsqueda (Optimización para la UI)
-final filteredBooksProvider = Provider<AsyncValue<List<Book>>>((ref) {
-  final booksAsync = ref.watch(booksStreamProvider);
-  final query = ref.watch(searchQueryProvider).toLowerCase();
-
-  return booksAsync.whenData((books) {
-    if (query.isEmpty) return books;
-    return books.where((book) {
-      return book.title.toLowerCase().contains(query) || 
-             book.author.toLowerCase().contains(query);
-    }).toList();
-  });
-});
+// La búsqueda, los filtros y el orden de la biblioteca viven en home_screen.dart
+// (searchQueryProvider, selectedFilterProvider, sortOptionProvider, filteredBooksProvider).
 
 // Provider que expone el tiempo total leído HOY
 final totalTimeTodayProvider = StreamProvider<int>((ref) {

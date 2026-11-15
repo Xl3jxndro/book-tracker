@@ -33,7 +33,7 @@ class SettingsScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.orangeAccent.withOpacity(0.1),
+                color: Colors.orangeAccent.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.auto_stories_rounded, size: 40, color: Colors.orangeAccent),
@@ -159,7 +159,7 @@ class SettingsScreen extends ConsumerWidget {
                   : null,
               trailing: Switch.adaptive(
                 value: notifSettings.enabled,
-                activeColor: Colors.orangeAccent,
+                activeThumbColor: Colors.orangeAccent,
                 onChanged: (value) async {
                   if (value) {
                     final confirmed = await _showPrePermissionDialog(context, isDark);
@@ -219,7 +219,7 @@ class SettingsScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.indigoAccent.withOpacity(0.1),
+                color: Colors.indigoAccent.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.auto_stories_rounded, size: 60, color: Colors.indigoAccent),
@@ -276,9 +276,9 @@ class SettingsScreen extends ConsumerWidget {
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(children: children),
     );
@@ -298,7 +298,7 @@ class SettingsScreen extends ConsumerWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.1),
+          color: iconColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(leadingIcon, color: iconColor, size: 22),

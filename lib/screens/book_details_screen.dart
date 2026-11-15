@@ -109,7 +109,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                 child: Image.file(
                   File(book.coverUrl!),
                   fit: BoxFit.cover,
-                  color: Colors.black.withOpacity(0.4),
+                  color: Colors.black.withValues(alpha: 0.4),
                   colorBlendMode: BlendMode.darken,
                 ),
               ),
@@ -120,7 +120,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.black12, Colors.black.withOpacity(0.7)],
+                  colors: [Colors.black12, Colors.black.withValues(alpha: 0.7)],
                 ),
               ),
             ),
@@ -181,7 +181,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: scheme.primary.withOpacity(0.2),
+                        color: scheme.primary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -321,7 +321,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
             Text(
               'Sintonizando tu lectura...',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.primary.withOpacity(0.7),
+                color: theme.colorScheme.primary.withValues(alpha: 0.7),
                 letterSpacing: 1.1,
                 fontStyle: FontStyle.italic
               ),
@@ -384,9 +384,9 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: scheme.surfaceContainerHighest.withOpacity(0.3), 
+                        color: scheme.surfaceContainerHighest.withValues(alpha: 0.3), 
                         borderRadius: BorderRadius.circular(24), 
-                        border: Border.all(color: scheme.outlineVariant.withOpacity(0.2))
+                        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.2))
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -437,7 +437,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
   Widget _buildCircleIconButton({required IconData icon, required VoidCallback onPressed}) {
     return Container(
       margin: const EdgeInsets.all(4),
-      decoration: BoxDecoration(color: Colors.black.withOpacity(0.24), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.24), borderRadius: BorderRadius.circular(12)),
       child: IconButton(icon: Icon(icon, color: Colors.white, size: 18), onPressed: onPressed),
     );
   }
@@ -447,7 +447,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       onTap: () { HapticFeedback.lightImpact(); onTap(); }, 
       child: Container(
         padding: const EdgeInsets.all(8), 
-        decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle), 
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle), 
         child: Icon(icon, size: 16, color: color)
       )
     );
@@ -469,7 +469,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(44)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 30)]
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 30)]
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -554,7 +554,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
   Widget _buildTag(String label, {Color? color, bool isDark = true}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(color: (color ?? Colors.white).withOpacity(isDark ? 0.2 : 0.1), borderRadius: BorderRadius.circular(30)),
+      decoration: BoxDecoration(color: (color ?? Colors.white).withValues(alpha: isDark ? 0.2 : 0.1), borderRadius: BorderRadius.circular(30)),
       child: Text(label.toUpperCase(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.2, color: Colors.white)),
     );
   }
@@ -595,7 +595,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     final int left = book.totalPages - book.readPages;
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: scheme.primary.withOpacity(0.08), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: scheme.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(20)),
       child: Row(children: [
         Icon(Icons.auto_graph, color: scheme.primary),
         const SizedBox(width: 14),
@@ -613,7 +613,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
         return Container(
           key: _goalKey,
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: scheme.primary.withOpacity(0.05), borderRadius: BorderRadius.circular(24), border: Border.all(color: scheme.primary.withOpacity(0.1))),
+          decoration: BoxDecoration(color: scheme.primary.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(24), border: Border.all(color: scheme.primary.withValues(alpha: 0.1))),
           child: Row(children: [
             CircularProgressIndicator(value: progress, strokeWidth: 6, color: progress >= 1 ? Colors.greenAccent : scheme.primary),
             const SizedBox(width: 20),
@@ -635,7 +635,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
   Widget _buildFinishedBadge(Book book, ColorScheme scheme, ThemeData theme) {
     return Container(
       width: double.infinity, padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(color: scheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(32), border: Border.all(color: scheme.primary.withOpacity(0.2))),
+      decoration: BoxDecoration(color: scheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(32), border: Border.all(color: scheme.primary.withValues(alpha: 0.2))),
       child: Column(children: [
         const Icon(Icons.auto_awesome, color: Colors.amber, size: 48),
         const SizedBox(height: 16),
@@ -744,8 +744,10 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     // Si viene del widget para terminar la sesión, no se interrumpe con el tutorial
     if (widget.autoFinishSession ||
         tutorialState.stage != TutorialStage.bookDetails ||
-        tutorialState.hasSeenDetails || 
-        _isTutorialShowing) return;
+        tutorialState.hasSeenDetails ||
+        _isTutorialShowing) {
+      return;
+    }
 
     setState(() => _isTutorialShowing = true);
 
@@ -804,6 +806,9 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       // Pausa técnica para que Flutter asiente las coordenadas
       await Future.delayed(const Duration(milliseconds: 150));
     }
+
+    // Si el usuario salió de la pantalla durante el scroll, no hay nada que mostrar
+    if (!mounted) return;
 
     // 2. TUTORIAL: Mostramos el foco solo para ESTE widget
     final completer = Completer<void>();
