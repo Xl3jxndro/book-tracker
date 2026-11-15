@@ -43,6 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+# Firma: nunca versionar el keystore ni sus credenciales.
+# build.gradle.kts SÍ se versiona: lee las credenciales de key.properties.
 /android/key.properties
-/android/app/build.gradle.kts
 /android/app/upload-keystore.jks
