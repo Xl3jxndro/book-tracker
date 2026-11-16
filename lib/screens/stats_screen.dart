@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/database_provider.dart';
+import '../providers/today_provider.dart';
 import '../database/database.dart';
 
 class StatsScreen extends ConsumerStatefulWidget {
@@ -71,6 +72,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
   Widget build(BuildContext context) {
     final booksAsync = ref.watch(booksStreamProvider);
     final sessionsAsync = ref.watch(sessionsStreamProvider);
+    // Redibuja al cambiar el día (racha, mapa de calor y gráfico usan "hoy")
+    ref.watch(todayProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(

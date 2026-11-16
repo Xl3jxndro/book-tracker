@@ -66,6 +66,9 @@ dependencies:
   # Zona horaria del dispositivo (para programar notificaciones a la hora local)
   flutter_timezone: ^5.1.1
 
+  # Versión instalada (se muestra en Ajustes)
+  package_info_plus: ^9.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

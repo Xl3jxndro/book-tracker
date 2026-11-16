@@ -228,6 +228,10 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
           status: _selectedStatus,
           coverUrl: drift.Value(finalImagePath),
         ));
+        // Si cambió la portada, la anterior ya no ocupa espacio (si nadie más la usa)
+        if (bookToEdit.coverUrl != finalImagePath) {
+          await db.deleteCoverIfUnused(bookToEdit.coverUrl);
+        }
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {

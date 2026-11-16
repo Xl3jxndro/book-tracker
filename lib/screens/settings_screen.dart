@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/theme_provider.dart';
 import '../providers/notifications_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/app_info_provider.dart';
 import '../providers/database_provider.dart';
 import '../services/library_export_service.dart';
 import '../widgets/secret_dialogs.dart';
@@ -92,6 +93,7 @@ class SettingsScreen extends ConsumerWidget {
     final currentMode = ref.watch(themeProvider);
     final notifSettings = ref.watch(notificationsProvider);
     final auth = ref.watch(authProvider);
+    final appVersion = ref.watch(appVersionProvider).valueOrNull ?? '…';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -244,10 +246,10 @@ class SettingsScreen extends ConsumerWidget {
             _settingsTile(
               context,
               title: 'Acerca de la App',
-              subtitle: 'Versión 1.0.0',
+              subtitle: 'Versión $appVersion',
               leadingIcon: Icons.info_outline_rounded,
               iconColor: Colors.blueGrey,
-              onTap: () => _showAboutApp(context, isDark),
+              onTap: () => _showAboutApp(context, isDark, appVersion),
             ),
           ], isDark),
         ],
@@ -372,7 +374,7 @@ class SettingsScreen extends ConsumerWidget {
 
   // --- COMPONENTES UI ---
 
-  void _showAboutApp(BuildContext context, bool isDark) {
+  void _showAboutApp(BuildContext context, bool isDark, String appVersion) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -403,7 +405,7 @@ class SettingsScreen extends ConsumerWidget {
             const Text('Tu refugio de lectura digital', style: TextStyle(color: Colors.grey, fontSize: 14)),
             const Spacer(),
             const Divider(color: Colors.white10),
-            _aboutRow('Versión', '1.0.0'),
+            _aboutRow('Versión', appVersion),
             _aboutRow('Desarrollador', 'José Aleandro Buitrago Cárdenas'),
             _aboutRow('Licencia', 'MIT'),
             const Spacer(),

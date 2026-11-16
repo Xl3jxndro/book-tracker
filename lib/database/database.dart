@@ -71,15 +71,33 @@ class AppDatabase extends _$AppDatabase {
   Future updateBook(Book book) => update(books).replace(book);
 
   Future<void> deleteBookComplete(Book book) async {
-    if (book.coverUrl != null && book.coverUrl!.isNotEmpty) {
-      try {
-        final file = File(book.coverUrl!);
-        if (await file.exists()) await file.delete();
-      } catch (e) {
-        debugPrint("❌ Error al borrar archivo físico: $e");
-      }
-    }
     await delete(books).delete(book);
+    // Después de borrar el libro: así no cuenta como "uso" de su portada
+    await deleteCoverIfUnused(book.coverUrl);
+  }
+
+  /// Borra el archivo de portada [path] si ningún libro lo usa.
+  ///
+  /// Solo borra archivos dentro de [coversDir] (por defecto, la carpeta de
+  /// documentos de la app, donde se copian las portadas): nunca toca fotos de
+  /// la galería u otras carpetas. Devuelve `true` si borró el archivo.
+  Future<bool> deleteCoverIfUnused(String? path, {String? coversDir}) async {
+    if (path == null || path.isEmpty) return false;
+    try {
+      final stillUsed = await (select(books)..where((t) => t.coverUrl.equals(path))).get();
+      if (stillUsed.isNotEmpty) return false;
+
+      final allowedDir = coversDir ?? (await getApplicationDocumentsDirectory()).path;
+      if (!p.isWithin(allowedDir, path)) return false;
+
+      final file = File(path);
+      if (!await file.exists()) return false;
+      await file.delete();
+      return true;
+    } catch (e) {
+      debugPrint("❌ Error al borrar portada: $e");
+      return false;
+    }
   }
 
   // --- MÉTODOS DE NOTAS ---
@@ -161,21 +179,25 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  Selectable<int> _totalTimeTodayQuery() {
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
+  /// Segundos leídos en todos los libros durante el día de [day].
+  Selectable<int> _totalTimeOnQuery(DateTime day) {
+    final dayStart = DateTime(day.year, day.month, day.day);
+    final nextDay = DateTime(day.year, day.month, day.day + 1);
     final sumSeconds = readingSessions.seconds.sum();
     final query = selectOnly(readingSessions)
       ..addColumns([sumSeconds])
-      ..where(readingSessions.date.isBiggerOrEqualValue(todayStart));
+      ..where(readingSessions.date.isBiggerOrEqualValue(dayStart) &
+          readingSessions.date.isSmallerThanValue(nextDay));
 
     return query.map((row) => row.read(sumSeconds) ?? 0);
   }
 
-  Stream<int> watchTotalTimeToday() => _totalTimeTodayQuery().watchSingle();
+  /// Observa el tiempo leído en [day]. Quien lo use debe pasar el día actual
+  /// y volver a suscribirse cuando cambie (ver `todayProvider`).
+  Stream<int> watchTotalTimeOn(DateTime day) => _totalTimeOnQuery(day).watchSingle();
 
   /// Segundos leídos hoy en todos los libros (consulta puntual).
-  Future<int> getTotalSecondsToday() => _totalTimeTodayQuery().getSingle();
+  Future<int> getTotalSecondsToday() => _totalTimeOnQuery(DateTime.now()).getSingle();
 
   Stream<List<ReadingSession>> watchAllSessions() => select(readingSessions).watch();
 }

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../database/database.dart';
+import 'today_provider.dart';
 
 // Este provider mantiene una única instancia de la base de datos en toda la app
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -26,8 +27,10 @@ final sessionsStreamProvider = StreamProvider<List<ReadingSession>>((ref) {
 // La búsqueda, los filtros y el orden de la biblioteca viven en home_screen.dart
 // (searchQueryProvider, selectedFilterProvider, sortOptionProvider, filteredBooksProvider).
 
-// Provider que expone el tiempo total leído HOY
+// Provider que expone el tiempo total leído HOY. Al cambiar el día
+// (todayProvider) se vuelve a suscribir con la fecha nueva.
 final totalTimeTodayProvider = StreamProvider<int>((ref) {
   final db = ref.watch(databaseProvider);
-  return db.watchTotalTimeToday();
+  final today = ref.watch(todayProvider);
+  return db.watchTotalTimeOn(today);
 });
