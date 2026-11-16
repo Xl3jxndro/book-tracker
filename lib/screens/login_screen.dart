@@ -1,33 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:local_auth/local_auth.dart';
+
 import '../providers/auth_provider.dart';
+import '../services/device_auth_service.dart';
+import '../widgets/secret_dialogs.dart';
 
+/// Pantalla de bloqueo. Al identificarse, `authProvider` marca el acceso y
+/// `main.dart` muestra la app.
 class LoginScreen extends ConsumerStatefulWidget {
-  final VoidCallback onLoginSuccess;
-
-  const LoginScreen({super.key, required this.onLoginSuccess});
+  const LoginScreen({super.key});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProviderStateMixin {
-  final LocalAuthentication _localAuth = LocalAuthentication();
   final TextEditingController _passphraseController = TextEditingController();
-  
+
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
-  
+
   String _currentPin = "";
   bool _isAuthenticating = false;
-  bool _showPinField = false; 
+  bool _showPinField = false;
+  bool _canUseBiometrics = false;
 
   @override
   void initState() {
     super.initState();
-    
+
     _shakeController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
@@ -39,6 +41,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
       TweenSequenceItem(tween: Tween(begin: -10.0, end: 10.0), weight: 1),
       TweenSequenceItem(tween: Tween(begin: 10.0, end: 0.0), weight: 1),
     ]).animate(_shakeController);
+
+    final auth = ref.read(authProvider);
+    // Instalaciones antiguas con PIN pero sin palabra: se entra con el PIN
+    _showPinField = !auth.isPassphraseSet && auth.isPinSet;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initBiometrics());
+  }
+
+  /// Si hay huella registrada, la ofrece en cuanto se abre la pantalla.
+  Future<void> _initBiometrics() async {
+    final auth = ref.read(authProvider);
+    final hasSecret = auth.isPassphraseSet || auth.isPinSet;
+    if (!hasSecret) return;
+
+    final available = await DeviceAuthService.canUseBiometrics();
+    if (!mounted) return;
+    setState(() => _canUseBiometrics = available);
+    if (available) _authenticateWithBiometrics();
   }
 
   @override
@@ -48,18 +68,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     super.dispose();
   }
 
-  void _handleSuccess() {
-    HapticFeedback.lightImpact();
-    widget.onLoginSuccess();
-  }
-
   void _handleError(String message) {
     HapticFeedback.vibrate();
     _shakeController.forward(from: 0);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message), 
+        content: Text(message),
         backgroundColor: Theme.of(context).colorScheme.error,
         behavior: SnackBarBehavior.floating,
       ),
@@ -71,101 +86,146 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     });
   }
 
+  // --- Configuración inicial ---
+
+  Future<void> _createPassphrase() async {
+    final phrase = await showNewPassphraseDialog(context, title: 'Crea tu Santo y Seña');
+    if (phrase == null || !mounted) return;
+
+    final auth = ref.read(authProvider.notifier);
+    await auth.savePassphrase(phrase);
+    if (!mounted) return;
+
+    final wantsPin = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text("✨ Palabra Guardada"),
+        content: const Text(
+          "¿Quieres un PIN de 4 dígitos como respaldo? Podrás configurarlo después en Ajustes.",
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("AHORA NO")),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text("CONFIGURAR PIN")),
+        ],
+      ),
+    );
+
+    if (wantsPin == true && mounted) {
+      final pin = await showNewPinDialog(context);
+      if (pin != null) await auth.saveNewPin(pin);
+    }
+
+    HapticFeedback.lightImpact();
+    await auth.completeSetup();
+  }
+
+  Future<void> _skipLock() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Usar sin bloqueo?'),
+        content: const Text(
+          'Cualquiera con acceso a tu teléfono podrá abrir tu biblioteca. '
+          'Puedes activar el bloqueo cuando quieras en Ajustes → Seguridad.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCELAR')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('USAR SIN BLOQUEO')),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await ref.read(authProvider.notifier).setLockEnabled(false);
+    }
+  }
+
+  // --- Acceso ---
+
   void _submitPassphrase() async {
     final phrase = _passphraseController.text.trim();
     if (phrase.isEmpty) return;
 
-    final authNotifier = ref.read(authProvider.notifier);
-    final authState = ref.read(authProvider);
-
-    if (!authState.isPassphraseSet) {
-      await authNotifier.savePassphrase(phrase);
-      _showPinOnboardingDialog();
+    final isValid = await ref.read(authProvider.notifier).verifyPassphrase(phrase);
+    if (!mounted) return;
+    if (isValid) {
+      HapticFeedback.lightImpact();
     } else {
-      final isValid = await authNotifier.verifyPassphrase(phrase);
-      if (isValid) {
-        _handleSuccess();
-      } else {
-        _handleError("Esa no es la palabra mágica...");
-      }
+      _handleError("Esa no es la palabra mágica...");
     }
   }
 
   void _onNumberPressed(String number) async {
-    if (_currentPin.length < 4) {
-      setState(() => _currentPin += number);
-      
-      if (_currentPin.length == 4) {
-        final authNotifier = ref.read(authProvider.notifier);
-        final authState = ref.read(authProvider);
+    if (_currentPin.length >= AuthNotifier.pinLength) return;
+    setState(() => _currentPin += number);
 
-        if (!authState.isPinSet) {
-          await authNotifier.saveNewPin(_currentPin);
-          _handleSuccess();
-        } else {
-          final isValid = await authNotifier.verifyPin(_currentPin);
-          if (isValid) {
-            _handleSuccess();
-          } else {
-            _handleError("El PIN no es correcto.");
-          }
-        }
+    if (_currentPin.length == AuthNotifier.pinLength) {
+      final isValid = await ref.read(authProvider.notifier).verifyPin(_currentPin);
+      if (!mounted) return;
+      if (isValid) {
+        HapticFeedback.lightImpact();
+      } else {
+        _handleError("El PIN no es correcto.");
       }
     }
   }
 
   Future<void> _authenticateWithBiometrics() async {
     if (_isAuthenticating) return;
-    try {
-      final bool canCheck = await _localAuth.canCheckBiometrics;
-      if (!canCheck) return;
-
-      setState(() => _isAuthenticating = true);
-      final bool didAuth = await _localAuth.authenticate(
-        localizedReason: 'Acceso rápido a tu biblioteca',
-        options: const AuthenticationOptions(stickyAuth: true),
-      );
-
-      if (didAuth && mounted) _handleSuccess();
-    } on PlatformException catch (e) {
-      debugPrint("Error biometría: $e");
-    } finally {
-      if (mounted) setState(() => _isAuthenticating = false);
+    setState(() => _isAuthenticating = true);
+    final didAuth = await DeviceAuthService.authenticate(
+      reason: 'Acceso rápido a tu biblioteca',
+      biometricOnly: true,
+    );
+    if (!mounted) return;
+    setState(() => _isAuthenticating = false);
+    if (didAuth) {
+      HapticFeedback.lightImpact();
+      ref.read(authProvider.notifier).markAuthenticated();
     }
   }
 
-  void _showPinOnboardingDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text("✨ Palabra Guardada"),
-        content: const Text("¡Excelente! Ahora, por seguridad, configura un PIN de 4 dígitos como método de respaldo."),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() {
-                _currentPin = "";
-                _showPinField = true;
-              });
-            },
-            child: const Text("CONFIGURAR PIN"),
+  /// "Olvidé mi palabra": se verifica con el bloqueo del teléfono y se elige otra.
+  Future<void> _recoverAccess() async {
+    if (!await DeviceAuthService.isDeviceSecure()) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('No podemos verificar que eres tú'),
+          content: const Text(
+            'Para recuperar el acceso, activa un bloqueo de pantalla (PIN, patrón o huella) '
+            'en los ajustes de tu teléfono y vuelve a intentarlo. Tus libros siguen a salvo.',
           ),
-        ],
-      ),
+          actions: [
+            ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text('ENTENDIDO')),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final verified = await DeviceAuthService.authenticate(
+      reason: 'Verifica que eres tú para elegir una palabra nueva',
     );
+    if (!verified || !mounted) return;
+
+    final phrase = await showNewPassphraseDialog(context, title: 'Elige una palabra nueva');
+    if (phrase == null) return;
+    HapticFeedback.lightImpact();
+    await ref.read(authProvider.notifier).resetPassphrase(phrase);
   }
+
+  // --- UI ---
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authState = ref.watch(authProvider);
-    
-    if (authState.isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final isSetup = !authState.isPassphraseSet && !authState.isPinSet;
 
-    final String title = !authState.isPassphraseSet 
-        ? "Crea tu Santo y Seña para iniciar la aventura" 
+    final String title = isSetup
+        ? "Crea tu Santo y Seña para iniciar la aventura"
         : (_showPinField ? "Introduce tu PIN de respaldo" : "Di la palabra mágica para entrar");
 
     return Scaffold(
@@ -185,8 +245,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      _showPinField ? Icons.dialpad_rounded : Icons.auto_stories_rounded, 
-                      size: 70, 
+                      _showPinField ? Icons.dialpad_rounded : Icons.auto_stories_rounded,
+                      size: 70,
                       color: theme.colorScheme.primary
                     ),
                     const SizedBox(height: 16),
@@ -200,21 +260,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                     ),
                     const SizedBox(height: 32),
 
-                    if (!_showPinField) ...[
-                      _buildPassphraseInput(theme, authState.isPassphraseSet),
-                    ] else ...[
+                    if (isSetup)
+                      _buildSetup(theme)
+                    else if (!_showPinField)
+                      _buildPassphraseInput(theme)
+                    else ...[
                       _buildPinIndicators(theme),
                       const SizedBox(height: 32),
-                      _buildNumpadGrid(theme, authState.isPinSet),
+                      _buildNumpadGrid(theme),
                     ],
 
-                    const SizedBox(height: 24),
-                    if (authState.isPassphraseSet && authState.isPinSet)
-                      TextButton.icon(
-                        onPressed: () => setState(() => _showPinField = !_showPinField),
-                        icon: Icon(_showPinField ? Icons.auto_fix_high : Icons.dialpad),
-                        label: Text(_showPinField ? "Usar Santo y Seña" : "Usar PIN de respaldo"),
+                    if (!isSetup) ...[
+                      const SizedBox(height: 24),
+                      if (authState.isPassphraseSet && authState.isPinSet)
+                        TextButton.icon(
+                          onPressed: () => setState(() {
+                            _showPinField = !_showPinField;
+                            _currentPin = "";
+                          }),
+                          icon: Icon(_showPinField ? Icons.auto_fix_high : Icons.dialpad),
+                          label: Text(_showPinField ? "Usar Santo y Seña" : "Usar PIN de respaldo"),
+                        ),
+                      TextButton(
+                        onPressed: _recoverAccess,
+                        child: Text(
+                          _showPinField ? '¿Olvidaste tu PIN?' : '¿Olvidaste tu palabra secreta?',
+                          style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                        ),
                       ),
+                    ],
                   ],
                 ),
               ),
@@ -225,20 +299,56 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildPassphraseInput(ThemeData theme, bool isSet) {
+  Widget _buildSetup(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: Column(
+        children: [
+          Text(
+            'Una palabra secreta protege tu biblioteca. Si la olvidas, podrás recuperarla '
+            'con el bloqueo de tu teléfono.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _createPassphrase,
+            icon: const Icon(Icons.vpn_key_rounded),
+            label: const Text("CREAR PALABRA SECRETA"),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 56),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextButton(onPressed: _skipLock, child: const Text('Usar sin bloqueo')),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPassphraseInput(ThemeData theme) {
+    final hasText = _passphraseController.text.trim().isNotEmpty;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
         children: [
           TextField(
             controller: _passphraseController,
-            autofocus: true,
+            autofocus: !_canUseBiometrics,
             textAlign: TextAlign.center,
             style: const TextStyle(letterSpacing: 1.5, fontSize: 18),
             onChanged: (value) => setState(() {}),
             decoration: InputDecoration(
-              hintText: isSet ? "Escribe la palabra..." : "Tu palabra secreta...",
+              hintText: "Escribe la palabra...",
               prefixIcon: const Icon(Icons.vpn_key_rounded),
+              suffixIcon: _canUseBiometrics
+                  ? IconButton(
+                      icon: Icon(Icons.fingerprint, color: theme.colorScheme.primary),
+                      tooltip: 'Usar huella',
+                      onPressed: _authenticateWithBiometrics,
+                    )
+                  : null,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
               filled: true,
               fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
@@ -248,11 +358,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           const SizedBox(height: 24),
           AnimatedOpacity(
             duration: const Duration(milliseconds: 300),
-            opacity: _passphraseController.text.trim().isNotEmpty ? 1.0 : 0.0,
+            opacity: hasText ? 1.0 : 0.0,
             child: ElevatedButton.icon(
-              onPressed: _passphraseController.text.trim().isNotEmpty ? _submitPassphrase : null,
+              onPressed: hasText ? _submitPassphrase : null,
               icon: const Icon(Icons.auto_fix_high),
-              label: Text(isSet ? "REVELAR BIBLIOTECA" : "CONTINUAR"),
+              label: const Text("REVELAR BIBLIOTECA"),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -267,7 +377,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   Widget _buildPinIndicators(ThemeData theme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(4, (index) {
+      children: List.generate(AuthNotifier.pinLength, (index) {
         final filled = index < _currentPin.length;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -282,8 +392,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     );
   }
 
-  // NUEVO TECLADO EN GRID 3x4
-  Widget _buildNumpadGrid(ThemeData theme, bool showBiometrics) {
+  // TECLADO EN GRID 3x4
+  Widget _buildNumpadGrid(ThemeData theme) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
@@ -300,7 +410,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
               // Espacio para biometría a la izquierda del 0
               SizedBox(
                 width: 65,
-                child: showBiometrics ? IconButton(
+                child: _canUseBiometrics ? IconButton(
                   icon: Icon(Icons.fingerprint, color: theme.colorScheme.primary, size: 35),
                   onPressed: _authenticateWithBiometrics,
                 ) : null,
@@ -347,8 +457,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           shape: BoxShape.circle,
           color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         ),
-        child: isBackspace 
-            ? const Icon(Icons.backspace_outlined, size: 22) 
+        child: isBackspace
+            ? const Icon(Icons.backspace_outlined, size: 22)
             : Text(value, style: theme.textTheme.titleLarge?.copyWith(fontSize: 22, fontWeight: FontWeight.bold)),
       ),
     );

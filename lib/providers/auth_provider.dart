@@ -1,101 +1,166 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-/// Estado de la autenticación enriquecido para la aventura literaria
+/// Estado del bloqueo de la app.
 class AuthState {
-  final bool isAuthenticated;
-  final bool isPinSet;
-  final bool isPassphraseSet; // Nueva propiedad para el Santo y Seña
   final bool isLoading;
 
-  AuthState({
-    required this.isAuthenticated,
-    required this.isPinSet,
-    required this.isPassphraseSet,
+  /// Si es `false`, la app abre directamente sin pedir nada.
+  final bool isLockEnabled;
+  final bool isPassphraseSet;
+  final bool isPinSet;
+
+  /// Ya se identificó en esta ejecución de la app.
+  final bool isAuthenticated;
+
+  const AuthState({
     this.isLoading = false,
+    this.isLockEnabled = true,
+    this.isPassphraseSet = false,
+    this.isPinSet = false,
+    this.isAuthenticated = false,
   });
 
+  /// La app se puede usar (sin bloqueo o ya identificado).
+  bool get canEnterApp => !isLoading && (!isLockEnabled || isAuthenticated);
+
   AuthState copyWith({
-    bool? isAuthenticated,
-    bool? isPinSet,
-    bool? isPassphraseSet,
     bool? isLoading,
+    bool? isLockEnabled,
+    bool? isPassphraseSet,
+    bool? isPinSet,
+    bool? isAuthenticated,
   }) {
     return AuthState(
-      isAuthenticated: isAuthenticated ?? this.isAuthenticated,
-      isPinSet: isPinSet ?? this.isPinSet,
-      isPassphraseSet: isPassphraseSet ?? this.isPassphraseSet,
       isLoading: isLoading ?? this.isLoading,
+      isLockEnabled: isLockEnabled ?? this.isLockEnabled,
+      isPassphraseSet: isPassphraseSet ?? this.isPassphraseSet,
+      isPinSet: isPinSet ?? this.isPinSet,
+      isAuthenticated: isAuthenticated ?? this.isAuthenticated,
     );
   }
 }
 
-/// Notificador que gestiona la seguridad y la mística de la app
+/// Gestiona la palabra secreta ("Santo y Seña"), el PIN de respaldo y si el
+/// bloqueo está activo. Todo se guarda en el almacenamiento seguro.
 class AuthNotifier extends StateNotifier<AuthState> {
-  final _storage = const FlutterSecureStorage();
-  
-  // Claves para el almacenamiento seguro
-  static const _pinKey = 'user_pin_code';
-  static const _passphraseKey = 'user_passphrase';
+  // Claves para el almacenamiento seguro (no cambiar: las usan instalaciones existentes)
+  static const pinKey = 'user_pin_code';
+  static const passphraseKey = 'user_passphrase';
+  static const lockEnabledKey = 'app_lock_enabled';
 
-  AuthNotifier() : super(AuthState(
-    isAuthenticated: false, 
-    isPinSet: false, 
-    isPassphraseSet: false
-  )) {
+  static const pinLength = 4;
+
+  final FlutterSecureStorage _storage;
+
+  AuthNotifier({FlutterSecureStorage? storage})
+      : _storage = storage ?? const FlutterSecureStorage(),
+        super(const AuthState(isLoading: true)) {
     _checkInitialStatus();
   }
 
-  /// Comprueba al arrancar qué métodos de acceso tiene el usuario
+  /// Comprueba al arrancar qué métodos de acceso tiene el usuario.
   Future<void> _checkInitialStatus() async {
-    state = state.copyWith(isLoading: true);
-    
-    final savedPin = await _storage.read(key: _pinKey);
-    final savedPass = await _storage.read(key: _passphraseKey);
+    try {
+      final savedPin = await _storage.read(key: pinKey);
+      final savedPass = await _storage.read(key: passphraseKey);
+      final lockFlag = await _storage.read(key: lockEnabledKey);
+      if (!mounted) return;
+      state = AuthState(
+        isPinSet: savedPin != null,
+        isPassphraseSet: savedPass != null,
+        // Sin valor guardado: activo (así quedan los usuarios que ya tenían bloqueo)
+        isLockEnabled: lockFlag != 'false',
+      );
+    } catch (e) {
+      // El almacenamiento seguro no se puede leer (p. ej. copia restaurada en
+      // otro teléfono: sus claves de cifrado no viajan). Sin esto la app se
+      // quedaría cargando para siempre; se reinicia el bloqueo.
+      debugPrint('Almacenamiento seguro ilegible, se reinicia el bloqueo: $e');
+      try {
+        await _storage.deleteAll();
+      } catch (_) {}
+      if (mounted) state = const AuthState();
+    }
+  }
 
+  static String _normalizePassphrase(String phrase) => phrase.trim().toLowerCase();
+
+  // --- Verificación ---
+
+  /// Verifica el PIN y, si es correcto, da acceso.
+  Future<bool> verifyPin(String pin) async {
+    final ok = await _matchesPin(pin);
+    if (ok) state = state.copyWith(isAuthenticated: true);
+    return ok;
+  }
+
+  /// Verifica el "Santo y Seña" (sin distinguir mayúsculas ni espacios en los bordes).
+  Future<bool> verifyPassphrase(String phrase) async {
+    final ok = await _matchesPassphrase(phrase);
+    if (ok) state = state.copyWith(isAuthenticated: true);
+    return ok;
+  }
+
+  /// Comprueba la palabra secreta o el PIN sin cambiar el estado
+  /// (para confirmar acciones sensibles en Ajustes).
+  Future<bool> verifySecret(String input) async =>
+      await _matchesPassphrase(input) || await _matchesPin(input);
+
+  Future<bool> _matchesPin(String pin) async {
+    final saved = await _storage.read(key: pinKey);
+    return saved != null && saved == pin.trim();
+  }
+
+  Future<bool> _matchesPassphrase(String phrase) async {
+    final saved = await _storage.read(key: passphraseKey);
+    return saved != null &&
+        phrase.trim().isNotEmpty &&
+        _normalizePassphrase(saved) == _normalizePassphrase(phrase);
+  }
+
+  /// Acceso concedido por biometría o por el bloqueo del teléfono.
+  void markAuthenticated() => state = state.copyWith(isAuthenticated: true);
+
+  // --- Configuración ---
+
+  /// Guarda (o cambia) la palabra secreta. No da acceso por sí sola: la
+  /// pantalla de login decide cuándo termina la configuración.
+  Future<void> savePassphrase(String phrase) async {
+    await _storage.write(key: passphraseKey, value: phrase.trim());
+    state = state.copyWith(isPassphraseSet: true);
+  }
+
+  /// Guarda (o cambia) el PIN de respaldo.
+  Future<void> saveNewPin(String pin) async {
+    await _storage.write(key: pinKey, value: pin.trim());
+    state = state.copyWith(isPinSet: true);
+  }
+
+  /// Termina la configuración inicial y entra en la app.
+  Future<void> completeSetup() async {
+    await setLockEnabled(true);
+    state = state.copyWith(isAuthenticated: true);
+  }
+
+  /// Nueva palabra secreta tras verificar con el teléfono ("la olvidé").
+  Future<void> resetPassphrase(String phrase) async {
+    await savePassphrase(phrase);
+    state = state.copyWith(isAuthenticated: true);
+  }
+
+  /// Activa o desactiva el bloqueo al abrir la app.
+  Future<void> setLockEnabled(bool enabled) async {
+    await _storage.write(key: lockEnabledKey, value: enabled.toString());
     state = state.copyWith(
-      isPinSet: savedPin != null,
-      isPassphraseSet: savedPass != null,
-      isLoading: false,
+      isLockEnabled: enabled,
+      // Quien lo desactiva ya está dentro; al reactivarlo no se le echa
+      isAuthenticated: true,
     );
   }
 
-  /// Verifica el PIN numérico
-  Future<bool> verifyPin(String pin) async {
-    final savedPin = await _storage.read(key: _pinKey);
-    if (savedPin == pin) {
-      state = state.copyWith(isAuthenticated: true);
-      return true;
-    }
-    return false;
-  }
-
-  /// Verifica el "Santo y Seña" (Palabra mágica)
-  /// Lo comparamos en minúsculas para que no haya errores por mayúsculas accidentales
-  Future<bool> verifyPassphrase(String phrase) async {
-    final savedPass = await _storage.read(key: _passphraseKey);
-    if (savedPass?.toLowerCase().trim() == phrase.toLowerCase().trim()) {
-      state = state.copyWith(isAuthenticated: true);
-      return true;
-    }
-    return false;
-  }
-
-  /// Guarda el PIN inicial
-  Future<void> saveNewPin(String pin) async {
-    await _storage.write(key: _pinKey, value: pin);
-    state = state.copyWith(isPinSet: true);
-    // Nota: No marcamos isAuthenticated = true aquí directamente para 
-    // permitir que la pantalla de login decida si debe pedir el Santo y Seña justo después.
-  }
-
-  /// Guarda el Santo y Seña
-  Future<void> savePassphrase(String phrase) async {
-    await _storage.write(key: _passphraseKey, value: phrase.trim());
-    state = state.copyWith(isPassphraseSet: true, isAuthenticated: true);
-  }
-
-  /// Finaliza la sesión actual
+  /// Finaliza la sesión actual.
   void logout() {
     state = state.copyWith(isAuthenticated: false);
   }

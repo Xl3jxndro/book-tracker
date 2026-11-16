@@ -9,15 +9,13 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'screens/main_wrapper.dart';
 import 'screens/login_screen.dart';
 import 'providers/theme_provider.dart';
+import 'providers/auth_provider.dart';
 import 'providers/database_provider.dart';
 import 'providers/current_book_provider.dart';
 import 'providers/daily_goal_provider.dart';
 import 'providers/widget_action_provider.dart';
 import 'services/notification_service.dart';
 import 'services/home_widget_sync.dart';
-
-// Este provider gestiona si el usuario ha iniciado sesión en la sesión actual
-final isAuthenticatedProvider = StateProvider<bool>((ref) => false);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -111,7 +109,7 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
   @override
   Widget build(BuildContext context) {
     final mode = ref.watch(themeProvider);
-    final isAuthenticated = ref.watch(isAuthenticatedProvider);
+    final auth = ref.watch(authProvider);
 
     final lightScheme = ColorScheme.fromSeed(
       seedColor: Colors.indigo,
@@ -131,14 +129,9 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
       darkTheme: ref.watch(appThemeProvider(darkScheme)),
 
       // Lógica de enrutamiento principal:
-      home: isAuthenticated
-        ? const MainWrapper()
-        : LoginScreen(
-            onLoginSuccess: () {
-              // Cuando el login es exitoso, cambiamos el estado del provider
-              ref.read(isAuthenticatedProvider.notifier).state = true;
-            },
-          ),
+      home: auth.isLoading
+        ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+        : (auth.canEnterApp ? const MainWrapper() : const LoginScreen()),
     );
   }
 }

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/theme_provider.dart';
 import '../providers/notifications_provider.dart';
+import '../providers/auth_provider.dart';
+import '../widgets/secret_dialogs.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -87,6 +89,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentMode = ref.watch(themeProvider);
     final notifSettings = ref.watch(notificationsProvider);
+    final auth = ref.watch(authProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -182,6 +185,44 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 25),
 
+          _sectionHeader("SEGURIDAD", isDark),
+          _settingsGroup([
+            _settingsTile(
+              context,
+              title: 'Bloqueo de la app',
+              subtitle: auth.isLockEnabled
+                  ? 'Pide tu palabra secreta al abrir'
+                  : 'Desactivado: la app abre directamente',
+              leadingIcon: auth.isLockEnabled ? Icons.lock_rounded : Icons.lock_open_rounded,
+              iconColor: Colors.teal,
+              trailing: Switch.adaptive(
+                value: auth.isLockEnabled,
+                activeThumbColor: Colors.teal,
+                onChanged: (value) => _toggleLock(context, ref, value),
+              ),
+            ),
+            if (auth.isPassphraseSet)
+              _settingsTile(
+                context,
+                title: 'Cambiar palabra secreta',
+                subtitle: 'Tu "Santo y Seña" para entrar',
+                leadingIcon: Icons.vpn_key_rounded,
+                iconColor: Colors.teal,
+                onTap: () => _changePassphrase(context, ref),
+              ),
+            if (auth.isPassphraseSet || auth.isPinSet)
+              _settingsTile(
+                context,
+                title: auth.isPinSet ? 'Cambiar PIN de respaldo' : 'Configurar PIN de respaldo',
+                subtitle: 'Un código de 4 dígitos por si no recuerdas la palabra',
+                leadingIcon: Icons.dialpad_rounded,
+                iconColor: Colors.teal,
+                onTap: () => _changePin(context, ref),
+              ),
+          ], isDark),
+
+          const SizedBox(height: 25),
+
           _sectionHeader("SOPORTE", isDark),
           _settingsGroup([
             _settingsTile(
@@ -196,6 +237,58 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  // --- SEGURIDAD ---
+
+  void _showSaved(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
+
+  Future<void> _toggleLock(BuildContext context, WidgetRef ref, bool enable) async {
+    final notifier = ref.read(authProvider.notifier);
+    final state = ref.read(authProvider);
+
+    if (enable) {
+      // Para activar el bloqueo hace falta una palabra secreta
+      if (!state.isPassphraseSet && !state.isPinSet) {
+        final phrase = await showNewPassphraseDialog(context, title: 'Crea tu Santo y Seña');
+        if (phrase == null) return;
+        await notifier.savePassphrase(phrase);
+      }
+      await notifier.setLockEnabled(true);
+      if (context.mounted) _showSaved(context, '🔒 Bloqueo activado');
+      return;
+    }
+
+    // Desactivarlo es sensible: confirmar que es el dueño
+    if (!await confirmIdentity(context, notifier, state: state)) return;
+    await notifier.setLockEnabled(false);
+    if (context.mounted) _showSaved(context, 'Bloqueo desactivado');
+  }
+
+  Future<void> _changePassphrase(BuildContext context, WidgetRef ref) async {
+    final notifier = ref.read(authProvider.notifier);
+    if (!await confirmIdentity(context, notifier, state: ref.read(authProvider))) return;
+    if (!context.mounted) return;
+
+    final phrase = await showNewPassphraseDialog(context);
+    if (phrase == null) return;
+    await notifier.savePassphrase(phrase);
+    if (context.mounted) _showSaved(context, '✨ Palabra secreta actualizada');
+  }
+
+  Future<void> _changePin(BuildContext context, WidgetRef ref) async {
+    final notifier = ref.read(authProvider.notifier);
+    if (!await confirmIdentity(context, notifier, state: ref.read(authProvider))) return;
+    if (!context.mounted) return;
+
+    final pin = await showNewPinDialog(context);
+    if (pin == null) return;
+    await notifier.saveNewPin(pin);
+    if (context.mounted) _showSaved(context, 'PIN de respaldo guardado');
   }
 
   // --- COMPONENTES UI ---
