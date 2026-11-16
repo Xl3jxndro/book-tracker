@@ -58,6 +58,11 @@ class BookTrackerApp extends ConsumerStatefulWidget {
 class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBindingObserver {
   StreamSubscription<Uri?>? _widgetClickSubscription;
 
+  /// Ya se entró a la app en esta ejecución. A partir de entonces, si se
+  /// vuelve a bloquear (por estar fuera), el login se muestra encima sin
+  /// desmontar la app: al desbloquear se sigue en la misma pantalla.
+  bool _hasEnteredApp = false;
+
   @override
   void initState() {
     super.initState();
@@ -95,8 +100,18 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Al volver a la app: el widget pudo pausar/reanudar o cambió el día
-    if (state == AppLifecycleState.resumed) HomeWidgetSync.refresh();
+    final auth = ref.read(authProvider.notifier);
+    switch (state) {
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.paused:
+        auth.appBackgrounded();
+      case AppLifecycleState.resumed:
+        // "Bloquear al salir" y, además, el widget pudo pausar o cambió el día
+        auth.appResumed();
+        HomeWidgetSync.refresh();
+      default:
+        break;
+    }
   }
 
   @override
@@ -110,6 +125,8 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
   Widget build(BuildContext context) {
     final mode = ref.watch(themeProvider);
     final auth = ref.watch(authProvider);
+    if (auth.canEnterApp) _hasEnteredApp = true;
+    final isRelocked = _hasEnteredApp && !auth.isLoading && !auth.canEnterApp;
 
     final lightScheme = ColorScheme.fromSeed(
       seedColor: Colors.indigo,
@@ -131,7 +148,21 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
       // Lógica de enrutamiento principal:
       home: auth.isLoading
         ? const Scaffold(body: Center(child: CircularProgressIndicator()))
-        : (auth.canEnterApp ? const MainWrapper() : const LoginScreen()),
+        : ((auth.canEnterApp || _hasEnteredApp) ? const MainWrapper() : const LoginScreen()),
+
+      // Bloqueo al volver a la app: login por encima de todo (incluidas las
+      // pantallas abiertas), con su propio Navigator para sus diálogos.
+      builder: (context, child) => Stack(
+        children: [
+          child!,
+          if (isRelocked)
+            Positioned.fill(
+              child: Navigator(
+                onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => const LoginScreen()),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

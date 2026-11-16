@@ -239,4 +239,83 @@ void main() {
       expect(restarted.state.lockedUntil, isNull);
     });
   });
+
+  group('bloquear al salir', () {
+    late DateTime now;
+    DateTime clock() => now;
+
+    setUp(() {
+      now = DateTime(2026, 11, 16, 10);
+      FlutterSecureStorage.setMockInitialValues({AuthNotifier.passphraseKey: 'Macondo'});
+    });
+
+    Future<AuthNotifier> enteredApp({int? autoLock}) async {
+      final auth = await _loaded(now: clock);
+      if (autoLock != null) await auth.setAutoLockMinutes(autoLock);
+      expect(await auth.verifyPassphrase('macondo'), LoginResult.success);
+      return auth;
+    }
+
+    test('por defecto nunca bloquea al volver', () async {
+      final auth = await enteredApp();
+      expect(auth.state.autoLockMinutes, AuthNotifier.autoLockNever);
+
+      auth.appBackgrounded();
+      now = now.add(const Duration(hours: 3));
+      auth.appResumed();
+      expect(auth.state.isAuthenticated, isTrue);
+    });
+
+    test('con 5 min: volver antes no bloquea, volver después sí', () async {
+      final auth = await enteredApp(autoLock: 5);
+
+      auth.appBackgrounded();
+      now = now.add(const Duration(minutes: 4, seconds: 59));
+      auth.appResumed();
+      expect(auth.state.isAuthenticated, isTrue);
+
+      auth.appBackgrounded();
+      now = now.add(const Duration(minutes: 5));
+      auth.appResumed();
+      expect(auth.state.isAuthenticated, isFalse);
+      expect(auth.state.canEnterApp, isFalse);
+    });
+
+    test('cuenta desde la primera vez que salió (varios avisos seguidos)', () async {
+      final auth = await enteredApp(autoLock: 1);
+
+      auth.appBackgrounded(); // hidden
+      now = now.add(const Duration(seconds: 50));
+      auth.appBackgrounded(); // paused: no reinicia la cuenta
+      now = now.add(const Duration(seconds: 15));
+      auth.appResumed();
+      expect(auth.state.isAuthenticated, isFalse);
+    });
+
+    test('con el bloqueo desactivado no bloquea nunca', () async {
+      final auth = await enteredApp(autoLock: 1);
+      await auth.setLockEnabled(false);
+
+      auth.appBackgrounded();
+      now = now.add(const Duration(minutes: 30));
+      auth.appResumed();
+      expect(auth.state.canEnterApp, isTrue);
+    });
+
+    test('volver sin haber salido no hace nada', () async {
+      final auth = await enteredApp(autoLock: 1);
+      now = now.add(const Duration(minutes: 30));
+      auth.appResumed();
+      expect(auth.state.isAuthenticated, isTrue);
+    });
+
+    test('la opción se recuerda y rechaza valores no permitidos', () async {
+      final auth = await enteredApp(autoLock: 15);
+      await auth.setAutoLockMinutes(7); // no está entre las opciones
+      expect(auth.state.autoLockMinutes, 15);
+
+      final restarted = await _loaded(now: clock);
+      expect(restarted.state.autoLockMinutes, 15);
+    });
+  });
 }
