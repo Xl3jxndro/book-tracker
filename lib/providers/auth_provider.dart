@@ -23,6 +23,10 @@ class AuthState {
   /// esta hora (la huella y la recuperación con el teléfono sí funcionan).
   final DateTime? lockedUntil;
 
+  /// Minutos fuera de la app tras los que se vuelve a pedir la palabra
+  /// (`AuthNotifier.autoLockNever` = nunca).
+  final int autoLockMinutes;
+
   const AuthState({
     this.isLoading = false,
     this.isLockEnabled = true,
@@ -30,6 +34,7 @@ class AuthState {
     this.isPinSet = false,
     this.isAuthenticated = false,
     this.lockedUntil,
+    this.autoLockMinutes = AuthNotifier.autoLockNever,
   });
 
   /// La app se puede usar (sin bloqueo o ya identificado).
@@ -43,6 +48,7 @@ class AuthState {
     bool? isAuthenticated,
     DateTime? lockedUntil,
     bool clearLockout = false,
+    int? autoLockMinutes,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
@@ -51,6 +57,7 @@ class AuthState {
       isPinSet: isPinSet ?? this.isPinSet,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       lockedUntil: clearLockout ? null : (lockedUntil ?? this.lockedUntil),
+      autoLockMinutes: autoLockMinutes ?? this.autoLockMinutes,
     );
   }
 }
@@ -64,8 +71,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
   static const lockEnabledKey = 'app_lock_enabled';
   static const failedAttemptsKey = 'auth_failed_attempts';
   static const lockedUntilKey = 'auth_locked_until';
+  static const autoLockKey = 'auto_lock_minutes';
 
   static const pinLength = 4;
+
+  /// "Bloquear al salir": nunca, o tras estos minutos fuera de la app. No hay
+  /// opción inmediata: elegir una foto, compartir o verificar con el teléfono
+  /// también mandan la app a segundo plano y bloquearía a mitad de la acción.
+  static const autoLockNever = -1;
+  static const autoLockOptions = [autoLockNever, 1, 5, 15];
+
+  /// Momento en que la app pasó a segundo plano (null si está en primer plano).
+  DateTime? _backgroundedAt;
 
   /// Fallos seguidos permitidos antes de empezar a hacer esperar.
   static const maxAttempts = 5;
@@ -101,6 +118,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _failedAttempts = int.tryParse(await _storage.read(key: failedAttemptsKey) ?? '') ?? 0;
       final lockedUntilMs = int.tryParse(await _storage.read(key: lockedUntilKey) ?? '');
       final lockedUntil = lockedUntilMs == null ? null : DateTime.fromMillisecondsSinceEpoch(lockedUntilMs);
+      final autoLock = int.tryParse(await _storage.read(key: autoLockKey) ?? '');
       if (!mounted) return;
       state = AuthState(
         isPinSet: savedPin != null,
@@ -108,6 +126,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         // Sin valor guardado: activo (así quedan los usuarios que ya tenían bloqueo)
         isLockEnabled: lockFlag != 'false',
         lockedUntil: (lockedUntil != null && lockedUntil.isAfter(_now())) ? lockedUntil : null,
+        autoLockMinutes: autoLockOptions.contains(autoLock) ? autoLock! : autoLockNever,
       );
     } catch (e) {
       // El almacenamiento seguro no se puede leer (p. ej. copia restaurada en
@@ -213,6 +232,33 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> resetPassphrase(String phrase) async {
     await savePassphrase(phrase);
     await markAuthenticated();
+  }
+
+  // --- Bloquear al salir de la app ---
+
+  Future<void> setAutoLockMinutes(int minutes) async {
+    if (!autoLockOptions.contains(minutes)) return;
+    await _storage.write(key: autoLockKey, value: '$minutes');
+    state = state.copyWith(autoLockMinutes: minutes);
+  }
+
+  /// La app pasó a segundo plano (se guarda el primer momento).
+  void appBackgrounded() => _backgroundedAt ??= _now();
+
+  /// La app volvió: si estuvo fuera el tiempo configurado, vuelve a bloquear.
+  void appResumed() {
+    final since = _backgroundedAt;
+    _backgroundedAt = null;
+    if (since == null) return;
+
+    final s = state;
+    final hasSecret = s.isPassphraseSet || s.isPinSet;
+    if (!s.isLockEnabled || !s.isAuthenticated || !hasSecret) return;
+    if (s.autoLockMinutes == autoLockNever) return;
+
+    if (_now().difference(since) >= Duration(minutes: s.autoLockMinutes)) {
+      state = s.copyWith(isAuthenticated: false);
+    }
   }
 
   /// Activa o desactiva el bloqueo al abrir la app.

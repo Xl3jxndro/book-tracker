@@ -223,6 +223,15 @@ class SettingsScreen extends ConsumerWidget {
                 iconColor: Colors.teal,
                 onTap: () => _changePin(context, ref),
               ),
+            if (auth.isLockEnabled && (auth.isPassphraseSet || auth.isPinSet))
+              _settingsTile(
+                context,
+                title: 'Bloquear al salir',
+                subtitle: _autoLockLabel(auth.autoLockMinutes),
+                leadingIcon: Icons.timer_outlined,
+                iconColor: Colors.teal,
+                onTap: () => _showAutoLockPicker(context, ref, isDark),
+              ),
           ], isDark),
 
           const SizedBox(height: 25),
@@ -359,6 +368,51 @@ class SettingsScreen extends ConsumerWidget {
     if (phrase == null) return;
     await notifier.savePassphrase(phrase);
     if (context.mounted) _showSaved(context, '✨ Palabra secreta actualizada');
+  }
+
+  static String _autoLockLabel(int minutes) => minutes == AuthNotifier.autoLockNever
+      ? 'Nunca: solo al abrir la app'
+      : 'Tras $minutes min fuera de la app';
+
+  void _showAutoLockPicker(BuildContext context, WidgetRef ref, bool isDark) {
+    final current = ref.read(authProvider).autoLockMinutes;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        padding: const EdgeInsets.fromLTRB(8, 20, 8, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(10))),
+            const SizedBox(height: 20),
+            const Text('Bloquear al salir', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(24, 8, 24, 8),
+              child: Text(
+                'Vuelve a pedir tu palabra si sales de la app durante este tiempo. '
+                'Al desbloquear sigues donde estabas.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+            ),
+            for (final minutes in AuthNotifier.autoLockOptions)
+              ListTile(
+                title: Text(minutes == AuthNotifier.autoLockNever ? 'Nunca' : 'Tras $minutes min'),
+                trailing: minutes == current ? const Icon(Icons.check_circle_rounded, color: Colors.teal) : null,
+                onTap: () {
+                  ref.read(authProvider.notifier).setAutoLockMinutes(minutes);
+                  Navigator.pop(sheetContext);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _changePin(BuildContext context, WidgetRef ref) async {
