@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/theme_provider.dart';
 import '../providers/notifications_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/database_provider.dart';
+import '../services/library_export_service.dart';
 import '../widgets/secret_dialogs.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -223,6 +225,20 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 25),
 
+          _sectionHeader("DATOS", isDark),
+          _settingsGroup([
+            _settingsTile(
+              context,
+              title: 'Exportar biblioteca',
+              subtitle: 'Guarda o comparte una copia de tus libros y notas',
+              leadingIcon: Icons.ios_share_rounded,
+              iconColor: Colors.deepPurpleAccent,
+              onTap: () => _showExportOptions(context, ref, isDark),
+            ),
+          ], isDark),
+
+          const SizedBox(height: 25),
+
           _sectionHeader("SOPORTE", isDark),
           _settingsGroup([
             _settingsTile(
@@ -237,6 +253,69 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  // --- DATOS ---
+
+  void _showExportOptions(BuildContext context, WidgetRef ref, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        padding: const EdgeInsets.fromLTRB(8, 20, 8, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(10))),
+            const SizedBox(height: 20),
+            const Text('Exportar biblioteca', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: const Icon(Icons.data_object_rounded, color: Colors.deepPurpleAccent),
+              title: const Text('Copia completa (JSON)', style: TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: const Text('Libros, notas y sesiones de lectura. Sin portadas.'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _export(context, ref, ExportFormat.json);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.table_chart_rounded, color: Colors.green),
+              title: const Text('Hoja de cálculo (CSV)', style: TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: const Text('Lista de libros para Excel o Google Sheets.'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _export(context, ref, ExportFormat.csv);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _export(BuildContext context, WidgetRef ref, ExportFormat format) async {
+    try {
+      final count = await LibraryExportService.exportAndShare(ref.read(databaseProvider), format);
+      if (count == 0 && context.mounted) {
+        _showSaved(context, 'Tu biblioteca está vacía: el archivo no tiene libros.');
+      }
+    } catch (e) {
+      debugPrint('Error exportando: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('No se pudo exportar. Inténtalo de nuevo.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   // --- SEGURIDAD ---
