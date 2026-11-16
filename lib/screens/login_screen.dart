@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,6 +28,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   bool _showPinField = false;
   bool _canUseBiometrics = false;
 
+  /// Refresca la cuenta atrás mientras hay espera por intentos fallidos.
+  Timer? _lockTimer;
+
+  bool get _isLockedOut {
+    final until = ref.read(authProvider).lockedUntil;
+    return until != null && until.isAfter(DateTime.now());
+  }
+
+  String get _remainingText {
+    final until = ref.read(authProvider).lockedUntil;
+    if (until == null) return '';
+    final left = until.difference(DateTime.now());
+    final seconds = left.inSeconds < 0 ? 0 : left.inSeconds + 1;
+    return '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
+  }
+
+  void _syncLockTimer() {
+    if (!_isLockedOut) {
+      _lockTimer?.cancel();
+      _lockTimer = null;
+      return;
+    }
+    _lockTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {}); // actualiza la cuenta atrás
+      if (!_isLockedOut) {
+        _lockTimer?.cancel();
+        _lockTimer = null;
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -46,7 +80,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     // Instalaciones antiguas con PIN pero sin palabra: se entra con el PIN
     _showPinField = !auth.isPassphraseSet && auth.isPinSet;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => _initBiometrics());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncLockTimer();
+      _initBiometrics();
+    });
   }
 
   /// Si hay huella registrada, la ofrece en cuanto se abre la pantalla.
@@ -63,6 +100,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
 
   @override
   void dispose() {
+    _lockTimer?.cancel();
     _shakeController.dispose();
     _passphraseController.dispose();
     super.dispose();
@@ -146,27 +184,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     final phrase = _passphraseController.text.trim();
     if (phrase.isEmpty) return;
 
-    final isValid = await ref.read(authProvider.notifier).verifyPassphrase(phrase);
+    final result = await ref.read(authProvider.notifier).verifyPassphrase(phrase);
     if (!mounted) return;
-    if (isValid) {
-      HapticFeedback.lightImpact();
-    } else {
-      _handleError("Esa no es la palabra mágica...");
+    _handleResult(result, "Esa no es la palabra mágica...");
+  }
+
+  void _handleResult(LoginResult result, String wrongMessage) {
+    switch (result) {
+      case LoginResult.success:
+        HapticFeedback.lightImpact();
+      case LoginResult.wrong:
+        _syncLockTimer();
+        _handleError(_isLockedOut
+            ? 'Demasiados intentos. Espera $_remainingText para volver a probar.'
+            : wrongMessage);
+      case LoginResult.locked:
+        _syncLockTimer();
+        _handleError('Espera $_remainingText para volver a probar.');
     }
   }
 
   void _onNumberPressed(String number) async {
-    if (_currentPin.length >= AuthNotifier.pinLength) return;
+    if (_isLockedOut || _currentPin.length >= AuthNotifier.pinLength) return;
     setState(() => _currentPin += number);
 
     if (_currentPin.length == AuthNotifier.pinLength) {
-      final isValid = await ref.read(authProvider.notifier).verifyPin(_currentPin);
+      final result = await ref.read(authProvider.notifier).verifyPin(_currentPin);
       if (!mounted) return;
-      if (isValid) {
-        HapticFeedback.lightImpact();
-      } else {
-        _handleError("El PIN no es correcto.");
-      }
+      _handleResult(result, "El PIN no es correcto.");
     }
   }
 
@@ -260,6 +305,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                     ),
                     const SizedBox(height: 32),
 
+                    if (!isSetup && _isLockedOut) _buildLockoutBanner(theme),
+
                     if (isSetup)
                       _buildSetup(theme)
                     else if (!_showPinField)
@@ -299,6 +346,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     );
   }
 
+  Widget _buildLockoutBanner(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(40, 0, 40, 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.timer_outlined, color: theme.colorScheme.onErrorContainer),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Demasiados intentos. Podrás volver a probar en $_remainingText.\n'
+              'Mientras, puedes usar la huella o «¿Olvidaste…?».',
+              style: TextStyle(color: theme.colorScheme.onErrorContainer, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSetup(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -328,7 +399,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   }
 
   Widget _buildPassphraseInput(ThemeData theme) {
-    final hasText = _passphraseController.text.trim().isNotEmpty;
+    final hasText = _passphraseController.text.trim().isNotEmpty && !_isLockedOut;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(

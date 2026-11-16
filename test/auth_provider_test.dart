@@ -30,8 +30,8 @@ class _UnreadableStorage extends FlutterSecureStorage {
       wiped = true;
 }
 
-Future<AuthNotifier> _loaded({FlutterSecureStorage? storage}) async {
-  final notifier = AuthNotifier(storage: storage);
+Future<AuthNotifier> _loaded({FlutterSecureStorage? storage, DateTime Function()? now}) async {
+  final notifier = AuthNotifier(storage: storage, now: now);
   for (var i = 0; i < 50 && notifier.state.isLoading; i++) {
     await Future<void>.delayed(Duration.zero);
   }
@@ -85,21 +85,21 @@ void main() {
 
     test('la palabra no distingue mayúsculas ni espacios en los bordes', () async {
       final auth = await _loaded();
-      expect(await auth.verifyPassphrase('  MACONDO '), isTrue);
+      expect(await auth.verifyPassphrase('  MACONDO '), LoginResult.success);
       expect(auth.state.isAuthenticated, isTrue);
     });
 
     test('palabra o PIN incorrectos no dan acceso', () async {
       final auth = await _loaded();
-      expect(await auth.verifyPassphrase('Comala'), isFalse);
-      expect(await auth.verifyPin('0000'), isFalse);
-      expect(await auth.verifyPassphrase('   '), isFalse);
+      expect(await auth.verifyPassphrase('Comala'), LoginResult.wrong);
+      expect(await auth.verifyPin('0000'), LoginResult.wrong);
+      expect(await auth.verifyPassphrase('   '), LoginResult.wrong);
       expect(auth.state.isAuthenticated, isFalse);
     });
 
     test('el PIN correcto da acceso', () async {
       final auth = await _loaded();
-      expect(await auth.verifyPin('1234'), isTrue);
+      expect(await auth.verifyPin('1234'), LoginResult.success);
       expect(auth.state.canEnterApp, isTrue);
     });
 
@@ -155,6 +155,88 @@ void main() {
       expect(restarted.state.canEnterApp, isTrue);
       // La palabra se conserva por si lo vuelve a activar
       expect(restarted.state.isPassphraseSet, isTrue);
+    });
+  });
+
+  group('límite de intentos', () {
+    late DateTime now;
+    DateTime clock() => now;
+
+    setUp(() {
+      now = DateTime(2026, 11, 16, 10);
+      FlutterSecureStorage.setMockInitialValues({
+        AuthNotifier.passphraseKey: 'Macondo',
+        AuthNotifier.pinKey: '1234',
+      });
+    });
+
+    Future<void> fail(AuthNotifier auth, int times) async {
+      for (var i = 0; i < times; i++) {
+        expect(await auth.verifyPin('0000'), LoginResult.wrong);
+      }
+    }
+
+    test('esperas: 30 s al 5.º fallo, se duplican y se limitan a 15 min', () {
+      expect(AuthNotifier.lockoutFor(4), Duration.zero);
+      expect(AuthNotifier.lockoutFor(5), const Duration(seconds: 30));
+      expect(AuthNotifier.lockoutFor(6), const Duration(minutes: 1));
+      expect(AuthNotifier.lockoutFor(7), const Duration(minutes: 2));
+      expect(AuthNotifier.lockoutFor(20), const Duration(minutes: 15));
+    });
+
+    test('4 fallos no bloquean; el 5.º sí, incluso con el PIN correcto', () async {
+      final auth = await _loaded(now: clock);
+      await fail(auth, 4);
+      expect(auth.state.lockedUntil, isNull);
+
+      await fail(auth, 1);
+      expect(auth.state.lockedUntil, now.add(const Duration(seconds: 30)));
+      expect(await auth.verifyPin('1234'), LoginResult.locked);
+      expect(await auth.verifyPassphrase('macondo'), LoginResult.locked);
+      expect(auth.state.isAuthenticated, isFalse);
+    });
+
+    test('al terminar la espera se puede entrar y el contador vuelve a cero', () async {
+      final auth = await _loaded(now: clock);
+      await fail(auth, 5);
+
+      now = now.add(const Duration(seconds: 31));
+      expect(await auth.verifyPin('1234'), LoginResult.success);
+      expect(auth.state.lockedUntil, isNull);
+
+      // Contador reiniciado: otros 4 fallos no bloquean
+      await fail(auth, 4);
+      expect(auth.state.lockedUntil, isNull);
+    });
+
+    test('un fallo tras la primera espera duplica la siguiente', () async {
+      final auth = await _loaded(now: clock);
+      await fail(auth, 5);
+      now = now.add(const Duration(seconds: 31));
+
+      await fail(auth, 1);
+      expect(auth.state.lockedUntil, now.add(const Duration(minutes: 1)));
+    });
+
+    test('la espera sobrevive a cerrar y abrir la app', () async {
+      final auth = await _loaded(now: clock);
+      await fail(auth, 5);
+
+      final restarted = await _loaded(now: clock);
+      expect(restarted.state.lockedUntil, isNotNull);
+      expect(await restarted.verifyPin('1234'), LoginResult.locked);
+    });
+
+    test('la huella (o el teléfono) entra durante la espera y la anula', () async {
+      final auth = await _loaded(now: clock);
+      await fail(auth, 5);
+
+      await auth.markAuthenticated();
+      expect(auth.state.isAuthenticated, isTrue);
+      expect(auth.state.lockedUntil, isNull);
+
+      final restarted = await _loaded(now: clock);
+      expect(restarted.state.lockedUntil, isNull);
     });
   });
 }

@@ -1,6 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+/// Resultado de intentar entrar con la palabra secreta o el PIN.
+enum LoginResult { success, wrong, locked }
 
 /// Estado del bloqueo de la app.
 class AuthState {
@@ -14,12 +19,17 @@ class AuthState {
   /// Ya se identificó en esta ejecución de la app.
   final bool isAuthenticated;
 
+  /// Tras demasiados intentos fallidos, no se aceptan palabra ni PIN hasta
+  /// esta hora (la huella y la recuperación con el teléfono sí funcionan).
+  final DateTime? lockedUntil;
+
   const AuthState({
     this.isLoading = false,
     this.isLockEnabled = true,
     this.isPassphraseSet = false,
     this.isPinSet = false,
     this.isAuthenticated = false,
+    this.lockedUntil,
   });
 
   /// La app se puede usar (sin bloqueo o ya identificado).
@@ -31,6 +41,8 @@ class AuthState {
     bool? isPassphraseSet,
     bool? isPinSet,
     bool? isAuthenticated,
+    DateTime? lockedUntil,
+    bool clearLockout = false,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
@@ -38,6 +50,7 @@ class AuthState {
       isPassphraseSet: isPassphraseSet ?? this.isPassphraseSet,
       isPinSet: isPinSet ?? this.isPinSet,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+      lockedUntil: clearLockout ? null : (lockedUntil ?? this.lockedUntil),
     );
   }
 }
@@ -49,15 +62,34 @@ class AuthNotifier extends StateNotifier<AuthState> {
   static const pinKey = 'user_pin_code';
   static const passphraseKey = 'user_passphrase';
   static const lockEnabledKey = 'app_lock_enabled';
+  static const failedAttemptsKey = 'auth_failed_attempts';
+  static const lockedUntilKey = 'auth_locked_until';
 
   static const pinLength = 4;
 
-  final FlutterSecureStorage _storage;
+  /// Fallos seguidos permitidos antes de empezar a hacer esperar.
+  static const maxAttempts = 5;
+  static const baseLockout = Duration(seconds: 30);
+  static const maxLockout = Duration(minutes: 15);
 
-  AuthNotifier({FlutterSecureStorage? storage})
+  final FlutterSecureStorage _storage;
+  final DateTime Function() _now;
+  int _failedAttempts = 0;
+
+  AuthNotifier({FlutterSecureStorage? storage, DateTime Function()? now})
       : _storage = storage ?? const FlutterSecureStorage(),
+        _now = now ?? DateTime.now,
         super(const AuthState(isLoading: true)) {
     _checkInitialStatus();
+  }
+
+  /// Espera tras el fallo número [failures]: 30 s al 5.º, y se duplica con
+  /// cada fallo siguiente hasta 15 min.
+  static Duration lockoutFor(int failures) {
+    if (failures < maxAttempts) return Duration.zero;
+    final exponent = math.min(failures - maxAttempts, 10);
+    final seconds = baseLockout.inSeconds * (1 << exponent);
+    return Duration(seconds: math.min(seconds, maxLockout.inSeconds));
   }
 
   /// Comprueba al arrancar qué métodos de acceso tiene el usuario.
@@ -66,12 +98,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final savedPin = await _storage.read(key: pinKey);
       final savedPass = await _storage.read(key: passphraseKey);
       final lockFlag = await _storage.read(key: lockEnabledKey);
+      _failedAttempts = int.tryParse(await _storage.read(key: failedAttemptsKey) ?? '') ?? 0;
+      final lockedUntilMs = int.tryParse(await _storage.read(key: lockedUntilKey) ?? '');
+      final lockedUntil = lockedUntilMs == null ? null : DateTime.fromMillisecondsSinceEpoch(lockedUntilMs);
       if (!mounted) return;
       state = AuthState(
         isPinSet: savedPin != null,
         isPassphraseSet: savedPass != null,
         // Sin valor guardado: activo (así quedan los usuarios que ya tenían bloqueo)
         isLockEnabled: lockFlag != 'false',
+        lockedUntil: (lockedUntil != null && lockedUntil.isAfter(_now())) ? lockedUntil : null,
       );
     } catch (e) {
       // El almacenamiento seguro no se puede leer (p. ej. copia restaurada en
@@ -81,30 +117,56 @@ class AuthNotifier extends StateNotifier<AuthState> {
       try {
         await _storage.deleteAll();
       } catch (_) {}
+      _failedAttempts = 0;
       if (mounted) state = const AuthState();
     }
   }
 
   static String _normalizePassphrase(String phrase) => phrase.trim().toLowerCase();
 
-  // --- Verificación ---
+  // --- Verificación (login) ---
 
-  /// Verifica el PIN y, si es correcto, da acceso.
-  Future<bool> verifyPin(String pin) async {
-    final ok = await _matchesPin(pin);
-    if (ok) state = state.copyWith(isAuthenticated: true);
-    return ok;
+  bool get _isLockedOut {
+    final until = state.lockedUntil;
+    return until != null && until.isAfter(_now());
   }
 
+  /// Verifica el PIN y, si es correcto, da acceso.
+  Future<LoginResult> verifyPin(String pin) => _attempt(() => _matchesPin(pin));
+
   /// Verifica el "Santo y Seña" (sin distinguir mayúsculas ni espacios en los bordes).
-  Future<bool> verifyPassphrase(String phrase) async {
-    final ok = await _matchesPassphrase(phrase);
-    if (ok) state = state.copyWith(isAuthenticated: true);
-    return ok;
+  Future<LoginResult> verifyPassphrase(String phrase) => _attempt(() => _matchesPassphrase(phrase));
+
+  Future<LoginResult> _attempt(Future<bool> Function() check) async {
+    if (_isLockedOut) return LoginResult.locked;
+
+    if (await check()) {
+      await _resetFailures();
+      state = state.copyWith(isAuthenticated: true);
+      return LoginResult.success;
+    }
+
+    _failedAttempts++;
+    final wait = lockoutFor(_failedAttempts);
+    final lockedUntil = wait == Duration.zero ? null : _now().add(wait);
+    await _storage.write(key: failedAttemptsKey, value: '$_failedAttempts');
+    if (lockedUntil != null) {
+      await _storage.write(key: lockedUntilKey, value: '${lockedUntil.millisecondsSinceEpoch}');
+      state = state.copyWith(lockedUntil: lockedUntil);
+    }
+    return LoginResult.wrong;
+  }
+
+  Future<void> _resetFailures() async {
+    if (_failedAttempts == 0 && state.lockedUntil == null) return;
+    _failedAttempts = 0;
+    await _storage.delete(key: failedAttemptsKey);
+    await _storage.delete(key: lockedUntilKey);
+    state = state.copyWith(clearLockout: true);
   }
 
   /// Comprueba la palabra secreta o el PIN sin cambiar el estado
-  /// (para confirmar acciones sensibles en Ajustes).
+  /// (para confirmar acciones sensibles en Ajustes, ya dentro de la app).
   Future<bool> verifySecret(String input) async =>
       await _matchesPassphrase(input) || await _matchesPin(input);
 
@@ -121,7 +183,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Acceso concedido por biometría o por el bloqueo del teléfono.
-  void markAuthenticated() => state = state.copyWith(isAuthenticated: true);
+  Future<void> markAuthenticated() async {
+    await _resetFailures();
+    state = state.copyWith(isAuthenticated: true);
+  }
 
   // --- Configuración ---
 
@@ -147,7 +212,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Nueva palabra secreta tras verificar con el teléfono ("la olvidé").
   Future<void> resetPassphrase(String phrase) async {
     await savePassphrase(phrase);
-    state = state.copyWith(isAuthenticated: true);
+    await markAuthenticated();
   }
 
   /// Activa o desactiva el bloqueo al abrir la app.

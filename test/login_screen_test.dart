@@ -101,4 +101,35 @@ void main() {
 
     expect(container.read(authProvider).isAuthenticated, isTrue);
   });
+
+  testWidgets('5 PIN incorrectos muestran la espera y bloquean el teclado', (tester) async {
+    FlutterSecureStorage.setMockInitialValues({
+      AuthNotifier.passphraseKey: 'Macondo',
+      AuthNotifier.pinKey: '1234',
+    });
+    final container = await _pumpLogin(tester);
+
+    await tester.tap(find.text('Usar PIN de respaldo'));
+    await tester.pumpAndSettle();
+
+    Future<void> typePin(String pin) async {
+      for (final digit in pin.split('')) {
+        await tester.tap(find.text(digit));
+        await tester.pump();
+      }
+      await tester.pump(const Duration(milliseconds: 600)); // animación de error
+    }
+
+    for (var i = 0; i < 5; i++) {
+      await typePin('0000');
+    }
+    expect(find.textContaining('Demasiados intentos. Podrás volver a probar'), findsOneWidget);
+
+    // Con la espera activa, ni el PIN correcto entra
+    await typePin('1234');
+    expect(container.read(authProvider).isAuthenticated, isFalse);
+
+    // Cerrar la pantalla cancela la cuenta atrás
+    await tester.pumpWidget(const SizedBox());
+  });
 }
