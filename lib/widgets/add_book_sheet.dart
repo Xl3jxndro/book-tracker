@@ -9,6 +9,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../database/database.dart';
 import '../providers/database_provider.dart';
+import '../services/book_api_service.dart';
+import 'book_search_field.dart';
 
 class AddBookSheet extends ConsumerStatefulWidget {
   final Book? bookToEdit;
@@ -28,6 +30,11 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
   late int _selectedStatus;
   File? _imagePreview;
   bool _isSaving = false;
+
+  // Búsqueda de libros en internet (solo al añadir un libro)
+  final _bookApi = BookApiService();
+  bool _isDownloadingCover = false;
+  int _coverRequestId = 0; // evita que una descarga lenta pise una foto elegida después
 
   // Límites definidos en la tabla Books (database.dart)
   static const _maxTextLength = 100;
@@ -69,7 +76,41 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
     _authorController.dispose();
     _pagesController.dispose();
     _categoryController.dispose();
+    _bookApi.dispose();
     super.dispose();
+  }
+
+  String _fitText(String text) {
+    final clean = text.trim();
+    return clean.length <= _maxTextLength ? clean : clean.substring(0, _maxTextLength).trim();
+  }
+
+  /// Rellena el formulario con un resultado de la búsqueda y descarga su portada.
+  Future<void> _applySearchResult(BookModel book) async {
+    setState(() {
+      _titleController.text = _fitText(book.title);
+      _authorController.text = _fitText(book.author);
+      if (book.pageCount > 0) _pagesController.text = book.pageCount.toString();
+      if (book.category != null && book.category!.isNotEmpty) {
+        _categoryController.text = _fitText(book.category!);
+      }
+    });
+
+    final thumbnail = book.thumbnail;
+    if (thumbnail == null) return;
+
+    final requestId = ++_coverRequestId;
+    setState(() => _isDownloadingCover = true);
+
+    // Se descarga en la carpeta temporal; al guardar se copia a documentos.
+    final tempDir = await getTemporaryDirectory();
+    final cover = await _bookApi.downloadCover(thumbnail, tempDir);
+
+    if (!mounted || requestId != _coverRequestId) return;
+    setState(() {
+      _isDownloadingCover = false;
+      if (cover != null) _imagePreview = cover;
+    });
   }
 
   Future<void> _showImageSourceOptions() async {
@@ -128,7 +169,13 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: source, imageQuality: 70);
-    if (pickedFile != null) setState(() => _imagePreview = File(pickedFile.path));
+    if (pickedFile != null && mounted) {
+      _coverRequestId++; // la foto elegida a mano manda sobre una descarga en curso
+      setState(() {
+        _isDownloadingCover = false;
+        _imagePreview = File(pickedFile.path);
+      });
+    }
   }
 
   Future<String?> _saveImagePermanently(File image) async {
@@ -229,7 +276,12 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
               children: [
                 Center(child: Container(width: 45, height: 5, decoration: BoxDecoration(color: isDark ? Colors.white12 : Colors.black12, borderRadius: BorderRadius.circular(10)))),
                 const SizedBox(height: 32),
-                
+
+                if (widget.bookToEdit == null) ...[
+                  BookSearchField(service: _bookApi, onSelected: _applySearchResult),
+                  const SizedBox(height: 24),
+                ],
+
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -252,9 +304,11 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                             ],
                             image: _imagePreview != null ? DecorationImage(image: FileImage(_imagePreview!), fit: BoxFit.cover) : null,
                           ),
-                          child: _imagePreview == null 
-                            ? Icon(Icons.add_a_photo_rounded, color: theme.colorScheme.primary, size: 30) 
-                            : isDNF ? const Center(child: Icon(Icons.heart_broken_rounded, color: Colors.white, size: 32)) : null,
+                          child: _isDownloadingCover
+                            ? const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)))
+                            : _imagePreview == null
+                              ? Icon(Icons.add_a_photo_rounded, color: theme.colorScheme.primary, size: 30)
+                              : isDNF ? const Center(child: Icon(Icons.heart_broken_rounded, color: Colors.white, size: 32)) : null,
                         ),
                       ),
                     ),
