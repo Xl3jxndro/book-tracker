@@ -57,12 +57,31 @@ class BookTrackerApp extends ConsumerStatefulWidget {
 
 class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBindingObserver {
   StreamSubscription<Uri?>? _widgetClickSubscription;
+  StreamSubscription<String?>? _notificationTapSubscription;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initHomeWidget();
+    _initNotificationTaps();
+  }
+
+  /// Tocar el recordatorio diario abre el libro actual (en frío o con la app
+  /// abierta). Usa la misma acción pendiente que el widget, que espera al login.
+  void _initNotificationTaps() {
+    NotificationService.launchPayload().then((payload) {
+      if (payload != null) _handleNotificationPayload(payload);
+    });
+    _notificationTapSubscription = NotificationService.taps.listen(_handleNotificationPayload);
+  }
+
+  Future<void> _handleNotificationPayload(String? payload) async {
+    if (!NotificationService.opensCurrentBook(payload)) return;
+    final book = await HomeWidgetSync.currentBook(ref.read(databaseProvider));
+    if (book == null || !mounted) return; // sin libros: solo se abre la app
+    ref.read(pendingWidgetActionProvider.notifier).state =
+        WidgetAction(bookId: book.id, finishSession: false);
   }
 
   void _initHomeWidget() {
@@ -103,6 +122,7 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _widgetClickSubscription?.cancel();
+    _notificationTapSubscription?.cancel();
     super.dispose();
   }
 

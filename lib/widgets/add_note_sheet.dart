@@ -10,10 +10,17 @@ class AddNoteSheet extends ConsumerStatefulWidget {
   final int bookId;
   final VoiceService voiceService;
 
+  /// Si se indica, el formulario edita esta nota en lugar de crear una nueva.
+  final Note? noteToEdit;
+
+  /// Límite de la columna `content` en la base de datos.
+  static const maxLength = 1000;
+
   const AddNoteSheet({
-    super.key, 
-    required this.bookId, 
+    super.key,
+    required this.bookId,
     required this.voiceService,
+    this.noteToEdit,
   });
 
   @override
@@ -34,6 +41,13 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     );
+
+    final note = widget.noteToEdit;
+    if (note != null) {
+      _contentController.text = note.content;
+      _pageController.text = note.pageNumber?.toString() ?? '';
+      _isEmpty = note.content.trim().isEmpty;
+    }
 
     _contentController.addListener(() {
       if (mounted) {
@@ -65,7 +79,9 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
       onResult: (text) {
         if (mounted) {
           setState(() {
-            _contentController.text = text;
+            _contentController.text = text.length > AddNoteSheet.maxLength
+                ? text.substring(0, AddNoteSheet.maxLength)
+                : text;
             _contentController.selection = TextSelection.fromPosition(
               TextPosition(offset: _contentController.text.length),
             );
@@ -106,15 +122,35 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
   }
 
   void _saveNote() async {
-    if (_contentController.text.trim().isNotEmpty) {
-      HapticFeedback.mediumImpact();
-      final db = ref.read(databaseProvider);
-      await db.insertNote(NotesCompanion(
-        bookId: drift.Value(widget.bookId),
-        content: drift.Value(_contentController.text.trim()),
-        pageNumber: drift.Value(int.tryParse(_pageController.text)),
-      ));
+    final content = _contentController.text.trim();
+    if (content.isEmpty) return;
+
+    HapticFeedback.mediumImpact();
+    final db = ref.read(databaseProvider);
+    final page = int.tryParse(_pageController.text);
+    try {
+      final note = widget.noteToEdit;
+      if (note == null) {
+        await db.insertNote(NotesCompanion(
+          bookId: drift.Value(widget.bookId),
+          content: drift.Value(content),
+          pageNumber: drift.Value(page),
+        ));
+      } else {
+        await db.updateNote(note, content: content, pageNumber: page);
+      }
       if (mounted) Navigator.pop(context);
+    } catch (e) {
+      debugPrint('Error guardando nota: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('No se pudo guardar la nota. Inténtalo de nuevo.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -152,7 +188,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Nueva Anotación', 
+                      widget.noteToEdit == null ? 'Nueva Anotación' : 'Editar anotación',
                       style: TextStyle(
                         fontSize: 22, 
                         fontWeight: FontWeight.w800, 
@@ -237,6 +273,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
             controller: _contentController,
             maxLines: 5,
             minLines: 1,
+            inputFormatters: [LengthLimitingTextInputFormatter(AddNoteSheet.maxLength)],
             autofocus: true,
             style: const TextStyle(fontSize: 17, height: 1.4),
             decoration: InputDecoration(
@@ -302,7 +339,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
                 borderRadius: BorderRadius.circular(30),
                 child: Center(
                   child: Text(
-                    'Guardar nota', 
+                    widget.noteToEdit == null ? 'Guardar nota' : 'Guardar cambios',
                     style: TextStyle(
                       color: _isEmpty ? scheme.onSurfaceVariant : Colors.white, 
                       fontWeight: FontWeight.bold,

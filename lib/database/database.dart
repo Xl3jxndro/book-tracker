@@ -107,6 +107,17 @@ class AppDatabase extends _$AppDatabase {
   Future<int> insertNote(NotesCompanion note) => into(notes).insert(note);
   Future deleteNote(Note note) => delete(notes).delete(note);
 
+  /// Cambia el texto y la página de una nota (conserva su fecha).
+  Future<void> updateNote(Note note, {required String content, int? pageNumber}) =>
+      (update(notes)..where((t) => t.id.equals(note.id))).write(
+        NotesCompanion(content: Value(content), pageNumber: Value(pageNumber)),
+      );
+
+  /// Vuelve a guardar una nota borrada tal como estaba (mismo id y fecha):
+  /// es el "Deshacer" tras eliminarla.
+  Future<void> restoreNote(Note note) =>
+      into(notes).insert(note.toCompanion(true), mode: InsertMode.insertOrReplace);
+
   // --- MÉTODOS DE SESIONES Y MOTOR DE PROGRESO ---
   Future<int> insertSession(ReadingSessionsCompanion session) => into(readingSessions).insert(session);
 

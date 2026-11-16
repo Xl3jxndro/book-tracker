@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -14,6 +16,33 @@ class NotificationService {
   static const prefsMinuteKey = 'notifications_minute';
 
   static const _dailyReminderId = 0;
+
+  /// Contenido del recordatorio diario: al tocarlo se abre el libro actual.
+  static const openCurrentBookPayload = 'open_current_book';
+
+  static final _taps = StreamController<String?>.broadcast();
+
+  /// Notificaciones tocadas con la app ya abierta (o en segundo plano).
+  static Stream<String?> get taps => _taps.stream;
+
+  /// ¿Esta notificación debe abrir el libro actual? Los recordatorios
+  /// programados antes de esta versión no llevan contenido (`null`).
+  static bool opensCurrentBook(String? payload) =>
+      payload == null || payload == openCurrentBookPayload;
+
+  /// Si la app se abrió en frío tocando una notificación, devuelve su
+  /// contenido (el recordatorio sin contenido se trata como "abrir libro").
+  /// Devuelve `null` si la app no se abrió desde una notificación.
+  static Future<String?> launchPayload() async {
+    try {
+      final details = await _notificationsPlugin.getNotificationAppLaunchDetails();
+      if (details?.didNotificationLaunchApp != true) return null;
+      return details!.notificationResponse?.payload ?? openCurrentBookPayload;
+    } catch (e) {
+      debugPrint('No se pudo leer el lanzamiento desde notificación: $e');
+      return null;
+    }
+  }
 
   static Future<void> init() async {
     tz.initializeTimeZones();
@@ -34,7 +63,7 @@ class NotificationService {
     await _notificationsPlugin.initialize(
         initializationSettings,
         onDidReceiveNotificationResponse: (NotificationResponse response) {
-          debugPrint("Notificación tocada: ${response.payload}");
+          _taps.add(response.payload);
         },
     );
 
@@ -131,6 +160,7 @@ class NotificationService {
         androidScheduleMode: scheduleMode,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
+        payload: openCurrentBookPayload,
       );
     } catch (e) {
       debugPrint("Error al programar notificación: $e");

@@ -126,6 +126,11 @@ class HomeWidgetSync {
     await _save('sessionRunningSinceMs', session.runningSince?.millisecondsSinceEpoch ?? 0);
   }
 
+  /// El "libro actual" (el mismo que muestra el widget). Lo usa también la
+  /// notificación diaria para abrirlo.
+  static Future<Book?> currentBook(AppDatabase db) async =>
+      _pickBook(db, await TimerPersistence.getActiveSession());
+
   /// Libro a mostrar: el de la sesión activa; si no, el último abierto;
   /// si no, el último "Leyendo"; si no, el último no terminado.
   static Future<Book?> _pickBook(AppDatabase db, PersistedSession? session) async {

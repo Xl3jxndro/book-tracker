@@ -375,12 +375,15 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                   child: Dismissible(
                     key: Key('note_${note.id}'),
                     direction: DismissDirection.endToStart,
-                    onDismissed: (_) => ref.read(databaseProvider).deleteNote(note),
+                    onDismissed: (_) => _deleteNoteWithUndo(note),
                     background: Container(
-                      alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 20), 
-                      decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(24)), 
+                      alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 20),
+                      decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(24)),
                       child: const Icon(Icons.delete_forever, color: Colors.white)
                     ),
+                    child: GestureDetector(
+                    // Tocar la nota la abre para editarla
+                    onTap: () => _showAddNote(context, currentBook.id, noteToEdit: note),
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -421,6 +424,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                           Text('"${note.content}"', style: theme.textTheme.bodyLarge?.copyWith(fontStyle: FontStyle.italic, height: 1.4)),
                         ],
                       ),
+                    ),
                     ),
                   ),
                 );
@@ -649,8 +653,34 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     );
   }
 
-  void _showAddNote(BuildContext context, int bookId) {
-    showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent, builder: (_) => AddNoteSheet(bookId: bookId, voiceService: _voiceService));
+  void _showAddNote(BuildContext context, int bookId, {Note? noteToEdit}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddNoteSheet(bookId: bookId, voiceService: _voiceService, noteToEdit: noteToEdit),
+    );
+  }
+
+  /// Borra la nota y ofrece deshacerlo durante unos segundos.
+  void _deleteNoteWithUndo(Note note) {
+    final db = ref.read(databaseProvider);
+    db.deleteNote(note);
+    HapticFeedback.mediumImpact();
+
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: const Text('Nota eliminada'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: 'DESHACER',
+          onPressed: () => db.restoreNote(note),
+        ),
+      ),
+    );
   }
 
   void _showUpdateDialog(BuildContext context, WidgetRef ref, Book book) {
