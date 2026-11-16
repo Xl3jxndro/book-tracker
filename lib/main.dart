@@ -16,6 +16,7 @@ import 'providers/daily_goal_provider.dart';
 import 'providers/widget_action_provider.dart';
 import 'services/notification_service.dart';
 import 'services/home_widget_sync.dart';
+import 'widgets/app_lock_overlay.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -151,17 +152,11 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
         : ((auth.canEnterApp || _hasEnteredApp) ? const MainWrapper() : const LoginScreen()),
 
       // Bloqueo al volver a la app: login por encima de todo (incluidas las
-      // pantallas abiertas), con su propio Navigator para sus diálogos.
-      builder: (context, child) => Stack(
-        children: [
-          child!,
-          if (isRelocked)
-            Positioned.fill(
-              child: Navigator(
-                onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => const LoginScreen()),
-              ),
-            ),
-        ],
+      // pantallas abiertas), sin desmontar la app.
+      builder: (context, child) => AppLockOverlay(
+        isLocked: isRelocked,
+        lockScreenBuilder: (_) => const LoginScreen(),
+        child: child!,
       ),
     );
   }
