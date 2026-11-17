@@ -160,10 +160,40 @@ class BookApiService {
     return docs.map(_parseOpenLibrary).whereType<BookModel>().toList();
   }
 
+  /// Open Library suele añadir la traducción y la colección al título:
+  /// "Satanas / Satan (Biblioteca Breve (Barcelona, Spain).)" → "Satanas".
+  @visibleForTesting
+  static String cleanOpenLibraryTitle(String raw) {
+    String stripTrailingParens(String s) {
+      var t = s.trim();
+      while (t.endsWith(')')) {
+        var depth = 0;
+        var start = -1;
+        for (var i = t.length - 1; i >= 0; i--) {
+          if (t[i] == ')') depth++;
+          if (t[i] == '(') depth--;
+          if (depth == 0) {
+            start = i;
+            break;
+          }
+        }
+        if (start <= 0) break; // todo el título entre paréntesis: se deja
+        t = t.substring(0, start).trim();
+      }
+      return t;
+    }
+
+    var title = stripTrailingParens(raw);
+    final slash = title.indexOf(' / ');
+    if (slash > 0) title = stripTrailingParens(title.substring(0, slash));
+    return title.isEmpty ? raw.trim() : title;
+  }
+
   static BookModel? _parseOpenLibrary(dynamic doc) {
     if (doc is! Map<String, dynamic>) return null;
-    final title = (doc['title'] as String?)?.trim();
-    if (title == null || title.isEmpty) return null;
+    final rawTitle = (doc['title'] as String?)?.trim();
+    if (rawTitle == null || rawTitle.isEmpty) return null;
+    final title = cleanOpenLibraryTitle(rawTitle);
 
     final authors = (doc['author_name'] as List?)?.whereType<String>().toList() ?? const [];
     final coverId = (doc['cover_i'] as num?)?.toInt();

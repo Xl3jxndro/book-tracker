@@ -12,6 +12,7 @@ import '../providers/database_provider.dart';
 import '../services/book_api_service.dart';
 import 'book_search_field.dart';
 import '../screens/isbn_scanner_screen.dart';
+import 'isbn_help.dart';
 
 class AddBookSheet extends ConsumerStatefulWidget {
   final Book? bookToEdit;
@@ -364,6 +365,15 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                         ),
                       ),
                     ],
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                      onPressed: () => showIsbnHelp(context),
+                      icon: const Icon(Icons.help_outline_rounded, size: 16),
+                      label: const Text('¿Dónde encuentro el ISBN?', style: TextStyle(fontSize: 12)),
+                    ),
                   ),
                   if (_isbnMessage != null)
                     Padding(

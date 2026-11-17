@@ -6,6 +6,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../services/isbn.dart';
+import '../widgets/isbn_help.dart';
 
 /// Escanea el código de barras de un libro y devuelve su ISBN-13
 /// (`Navigator.pop(context, isbn)`), o `null` si se cancela.
@@ -35,8 +36,26 @@ class _IsbnScannerScreenState extends State<IsbnScannerScreen> {
     super.dispose();
   }
 
+  bool _typing = false;
+
+  /// Por si el código de barras está dañado o no se lee: escribirlo a mano.
+  Future<void> _typeIsbn() async {
+    _typing = true;
+    await _controller.stop();
+    if (!mounted) return;
+    final isbn = await showManualIsbnDialog(context);
+    if (!mounted) return;
+    if (isbn != null) {
+      _done = true;
+      Navigator.pop(context, isbn);
+      return;
+    }
+    _typing = false;
+    await _controller.start();
+  }
+
   void _onDetect(BarcodeCapture capture) {
-    if (_done) return;
+    if (_done || _typing) return;
     for (final barcode in capture.barcodes) {
       final raw = barcode.rawValue;
       if (raw == null) continue;
@@ -109,6 +128,34 @@ class _IsbnScannerScreenState extends State<IsbnScannerScreen> {
                   ),
                 ),
               ],
+            ),
+          ),
+          // Alternativas: escribirlo a mano y ayuda para encontrarlo
+          Positioned(
+            left: 24,
+            right: 24,
+            bottom: 24,
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.tonalIcon(
+                      onPressed: _typeIsbn,
+                      icon: const Icon(Icons.keyboard_rounded),
+                      label: const Text('Escribir el ISBN'),
+                      style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => showIsbnHelp(context),
+                    icon: const Icon(Icons.help_outline_rounded, color: Colors.white70, size: 18),
+                    label: const Text('¿Dónde está el ISBN?', style: TextStyle(color: Colors.white70)),
+                  ),
+                ],
+              ),
             ),
           ),
           SafeArea(

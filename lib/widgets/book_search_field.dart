@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../services/book_api_service.dart';
+import '../services/isbn.dart';
 
 /// Buscador de libros (Open Library y, si hay clave, Google Books): muestra resultados mientras se escribe y avisa
 /// con [onSelected] cuando el usuario elige uno.
@@ -32,6 +33,9 @@ class _BookSearchFieldState extends State<BookSearchField> {
   String? _error;
   List<BookModel> _results = const [];
 
+  /// ISBN de la última búsqueda, si lo escrito era un ISBN.
+  String? _searchedIsbn;
+
   @override
   void dispose() {
     _debounceTimer?.cancel();
@@ -46,6 +50,7 @@ class _BookSearchFieldState extends State<BookSearchField> {
       setState(() {
         _isLoading = false;
         _hasSearched = false;
+        _searchedIsbn = null;
         _error = null;
         _results = const [];
       });
@@ -62,7 +67,12 @@ class _BookSearchFieldState extends State<BookSearchField> {
     });
 
     try {
-      final results = await widget.service.searchBooks(query);
+      // Un ISBN escrito (13 o 10 dígitos, con o sin guiones) → búsqueda exacta
+      final isbn = Isbn.normalize(query);
+      _searchedIsbn = isbn;
+      final results = isbn != null
+          ? await widget.service.searchByIsbn(isbn)
+          : await widget.service.searchBooks(query);
       if (!mounted || requestId != _requestId) return;
       setState(() {
         _results = results;
@@ -94,6 +104,7 @@ class _BookSearchFieldState extends State<BookSearchField> {
     setState(() {
       _isLoading = false;
       _hasSearched = false;
+      _searchedIsbn = null;
       _error = null;
       _results = const [];
     });
@@ -144,7 +155,15 @@ class _BookSearchFieldState extends State<BookSearchField> {
         if (_error != null)
           _message(Icons.cloud_off_rounded, _error!, theme.colorScheme.error)
         else if (_hasSearched && _results.isEmpty && !_isLoading)
-          _message(Icons.search_off_rounded, 'No lo encontramos. Escribe los datos a mano.', muted),
+          _message(
+            Icons.search_off_rounded,
+            _searchedIsbn != null
+                ? 'No encontramos el ISBN $_searchedIsbn. Revisa el número o escribe los datos a mano.'
+                : 'No lo encontramos. Escribe los datos a mano.',
+            muted,
+          )
+        else if (_searchedIsbn != null && _results.isNotEmpty)
+          _message(Icons.pin_rounded, 'Resultado por ISBN $_searchedIsbn', theme.colorScheme.primary),
         if (_results.isNotEmpty) ...[
           const SizedBox(height: 8),
           Container(
