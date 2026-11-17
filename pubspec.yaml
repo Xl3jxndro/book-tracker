@@ -68,6 +68,8 @@ dependencies:
 
   # Versión instalada (se muestra en Ajustes)
   package_info_plus: ^9.0.1
+  archive: ^4.7.1
+  file_picker: ^11.0.3
 
 dev_dependencies:
   flutter_test:

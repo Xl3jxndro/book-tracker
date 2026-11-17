@@ -7,6 +7,7 @@ import '../providers/auth_provider.dart';
 import '../providers/app_info_provider.dart';
 import '../providers/database_provider.dart';
 import '../services/library_export_service.dart';
+import '../widgets/backup_actions.dart';
 import '../widgets/secret_dialogs.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -240,12 +241,29 @@ class SettingsScreen extends ConsumerWidget {
           _settingsGroup([
             _settingsTile(
               context,
-              title: 'Exportar biblioteca',
-              subtitle: 'Guarda o comparte una copia de tus libros y notas',
+              title: 'Respaldar o exportar',
+              subtitle: 'Guarda una copia de tus libros, notas y portadas',
               leadingIcon: Icons.ios_share_rounded,
               iconColor: Colors.deepPurpleAccent,
               onTap: () => _showExportOptions(context, ref, isDark),
             ),
+            _settingsTile(
+              context,
+              title: 'Restaurar respaldo',
+              subtitle: 'Desde un respaldo .zip o una exportación .json',
+              leadingIcon: Icons.settings_backup_restore_rounded,
+              iconColor: Colors.deepPurpleAccent,
+              onTap: () => restoreFromPickedFile(context, ref),
+            ),
+            if (ref.watch(autoBackupExistsProvider).valueOrNull ?? false)
+              _settingsTile(
+                context,
+                title: 'Deshacer la última restauración',
+                subtitle: 'Vuelve a la biblioteca que tenías antes',
+                leadingIcon: Icons.undo_rounded,
+                iconColor: Colors.deepPurpleAccent,
+                onTap: () => undoLastRestore(context, ref),
+              ),
           ], isDark),
 
           const SizedBox(height: 25),
@@ -283,12 +301,21 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(10))),
             const SizedBox(height: 20),
-            const Text('Exportar biblioteca', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+            const Text('Respaldar o exportar', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
             const SizedBox(height: 12),
             ListTile(
+              leading: const Icon(Icons.inventory_2_rounded, color: Colors.deepPurpleAccent),
+              title: const Text('Respaldo completo (.zip)', style: TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: const Text('Todo, con portadas. Sirve para restaurar en otro teléfono.'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                shareFullBackup(context, ref);
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.data_object_rounded, color: Colors.deepPurpleAccent),
-              title: const Text('Copia completa (JSON)', style: TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: const Text('Libros, notas y sesiones de lectura. Sin portadas.'),
+              title: const Text('Datos sin portadas (JSON)', style: TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: const Text('Libros, notas y sesiones de lectura.'),
               onTap: () {
                 Navigator.pop(sheetContext);
                 _export(context, ref, ExportFormat.json);
