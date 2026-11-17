@@ -79,10 +79,21 @@ class BookApiService {
   Future<List<BookModel>> searchBooks(String query) async {
     final cleanQuery = query.trim();
     if (cleanQuery.length < minQueryLength) return [];
+    return _searchWithFallback(googleQuery: cleanQuery, openLibraryCriteria: {'q': cleanQuery});
+  }
 
+  /// Búsqueda exacta por ISBN-13 (del escáner de códigos de barras).
+  Future<List<BookModel>> searchByIsbn(String isbn13) =>
+      _searchWithFallback(googleQuery: 'isbn:$isbn13', openLibraryCriteria: {'isbn': isbn13});
+
+  /// Google primero (si hay clave) y, si falla o no encuentra nada, Open Library.
+  Future<List<BookModel>> _searchWithFallback({
+    required String googleQuery,
+    required Map<String, String> openLibraryCriteria,
+  }) async {
     if (usesGoogle) {
       try {
-        final results = await _searchGoogle(cleanQuery);
+        final results = await _searchGoogle(googleQuery);
         if (results.isNotEmpty) return results;
       } on BookSearchException catch (e) {
         // Sin conexión, Open Library tampoco va a responder
@@ -90,7 +101,7 @@ class BookApiService {
         debugPrint('Google Books falló ($e); se usa Open Library');
       }
     }
-    return _searchOpenLibrary(cleanQuery);
+    return _searchOpenLibrary(openLibraryCriteria);
   }
 
   // --- Google Books ---
@@ -138,9 +149,10 @@ class BookApiService {
 
   // --- Open Library ---
 
-  Future<List<BookModel>> _searchOpenLibrary(String query) async {
+  /// [criteria]: `{'q': texto}` para búsqueda libre o `{'isbn': ...}` exacta.
+  Future<List<BookModel>> _searchOpenLibrary(Map<String, String> criteria) async {
     final data = await _getJson(Uri.https('openlibrary.org', '/search.json', {
-      'q': query,
+      ...criteria,
       'limit': '$_maxResults',
       'fields': 'title,author_name,number_of_pages_median,cover_i',
     }));

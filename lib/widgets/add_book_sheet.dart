@@ -11,6 +11,7 @@ import '../database/database.dart';
 import '../providers/database_provider.dart';
 import '../services/book_api_service.dart';
 import 'book_search_field.dart';
+import '../screens/isbn_scanner_screen.dart';
 
 class AddBookSheet extends ConsumerStatefulWidget {
   final Book? bookToEdit;
@@ -35,6 +36,58 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
   final _bookApi = BookApiService();
   bool _isDownloadingCover = false;
   int _coverRequestId = 0; // evita que una descarga lenta pise una foto elegida después
+
+  // Escáner de ISBN
+  bool _isLookingUpIsbn = false;
+  String? _isbnMessage;
+  bool _isbnMessageIsError = false;
+
+  /// Abre el escáner y, con el ISBN leído, rellena el formulario.
+  Future<void> _scanIsbn() async {
+    FocusScope.of(context).unfocus();
+    final isbn = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const IsbnScannerScreen()),
+    );
+    if (isbn == null || !mounted) return;
+
+    setState(() {
+      _isLookingUpIsbn = true;
+      _isbnMessage = null;
+    });
+    try {
+      final results = await _bookApi.searchByIsbn(isbn);
+      if (!mounted) return;
+      if (results.isEmpty) {
+        setState(() {
+          _isbnMessage = 'No encontramos el ISBN $isbn. Escribe los datos a mano.';
+          _isbnMessageIsError = true;
+        });
+        return;
+      }
+      setState(() {
+        _isbnMessage = 'Encontrado por ISBN $isbn';
+        _isbnMessageIsError = false;
+      });
+      await _applySearchResult(results.first);
+    } on BookSearchException catch (e) {
+      if (mounted) {
+        setState(() {
+          _isbnMessage = e.message;
+          _isbnMessageIsError = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error buscando ISBN: $e');
+      if (mounted) {
+        setState(() {
+          _isbnMessage = 'No se pudo buscar el ISBN. Escribe los datos a mano.';
+          _isbnMessageIsError = true;
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _isLookingUpIsbn = false);
+    }
+  }
 
   // Límites definidos en la tabla Books (database.dart)
   static const _maxTextLength = 100;
@@ -293,7 +346,45 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                 const SizedBox(height: 32),
 
                 if (widget.bookToEdit == null) ...[
-                  BookSearchField(service: _bookApi, onSelected: _applySearchResult),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: BookSearchField(service: _bookApi, onSelected: _applySearchResult)),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 52,
+                        width: 52,
+                        child: IconButton.filledTonal(
+                          tooltip: 'Escanear código de barras',
+                          style: IconButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
+                          onPressed: _isLookingUpIsbn ? null : _scanIsbn,
+                          icon: _isLookingUpIsbn
+                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.qr_code_scanner_rounded),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_isbnMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, left: 8),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _isbnMessageIsError ? Icons.info_outline_rounded : Icons.check_circle_rounded,
+                            size: 16,
+                            color: _isbnMessageIsError ? theme.colorScheme.error : Colors.green,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _isbnMessage!,
+                              style: TextStyle(fontSize: 12, color: _isbnMessageIsError ? theme.colorScheme.error : Colors.green),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   const SizedBox(height: 24),
                 ],
 
