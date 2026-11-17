@@ -232,6 +232,9 @@ class BackupService {
           status: Value(status >= 0 && status <= 3 ? status : 0),
           category: Value(_text(b['category'], _maxText) ?? 'General'),
           rating: Value(rating >= 0 && rating <= 5 ? rating : 0),
+          // Opcionales: los respaldos anteriores no los tienen (= desconocido)
+          startedAt: Value(_date(b['started_at'])),
+          finishedAt: Value(_date(b['finished_at'])),
         ),
         cover: b['cover_file'] is String ? p.basename(b['cover_file'] as String) : null,
       ));

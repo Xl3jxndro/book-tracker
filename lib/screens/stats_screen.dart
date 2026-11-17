@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/database_provider.dart';
 import '../providers/today_provider.dart';
+import '../widgets/reading_challenge_card.dart';
 import '../database/database.dart';
 
 class StatsScreen extends ConsumerStatefulWidget {
@@ -121,7 +122,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
           child: TabBarView(
             controller: _tabController,
             children: [
-              _buildActivityTab(sessions, isDark),
+              _buildActivityTab(books, sessions, isDark),
               _buildLibraryTab(books, completedBooks, totalPagesRead, totalSeconds, streak, isDark),
             ],
           ),
@@ -200,12 +201,14 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildActivityTab(List<ReadingSession> sessions, bool isDark) {
+  Widget _buildActivityTab(List<Book> books, List<ReadingSession> sessions, bool isDark) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(25),
       physics: const BouncingScrollPhysics(),
       child: Column(
         children: [
+          ReadingChallengeCard(books: books),
+          const SizedBox(height: 32),
           ReadingHeatMap(sessions: sessions),
           const SizedBox(height: 40),
           _sectionHeader("Rendimiento Mensual", isDark),

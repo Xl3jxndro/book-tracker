@@ -16,6 +16,8 @@ Book _book({
   String? coverUrl,
   int? rating = 0,
   int totalReadTime = 3600,
+  DateTime? startedAt,
+  DateTime? finishedAt,
 }) =>
     Book(
       id: id,
@@ -28,6 +30,8 @@ Book _book({
       category: category,
       coverUrl: coverUrl,
       rating: rating,
+      startedAt: startedAt,
+      finishedAt: finishedAt,
     );
 
 void main() {
@@ -86,7 +90,7 @@ void main() {
       final csv = LibraryExportService.buildCsv(
         books: [
           _book(),
-          _book(id: 2, title: 'El Principito', status: 2, readPages: 96, totalPages: 96, rating: 5, totalReadTime: 125),
+          _book(id: 2, title: 'El Principito', status: 2, readPages: 96, totalPages: 96, rating: 5, totalReadTime: 125, startedAt: DateTime(2026, 3, 1), finishedAt: DateTime(2026, 3, 9)),
         ],
         notes: [
           Note(id: 1, bookId: 1, content: 'a', createdAt: DateTime(2026)),
@@ -97,8 +101,8 @@ void main() {
 
       expect(rows, hasLength(3));
       expect(rows[0], startsWith('Título,Autor,Categoría,Estado'));
-      expect(rows[1], 'Cien años de soledad,Gabriel García Márquez,Novela,Leyendo,100,400,25,,60,2');
-      expect(rows[2], 'El Principito,Gabriel García Márquez,Novela,Terminado,96,96,100,5,2,0');
+      expect(rows[1], 'Cien años de soledad,Gabriel García Márquez,Novela,Leyendo,100,400,25,,60,2,,');
+      expect(rows[2], 'El Principito,Gabriel García Márquez,Novela,Terminado,96,96,100,5,2,0,2026-03-01,2026-03-09');
     });
 
     test('escapa comas, comillas y saltos de línea', () {
@@ -131,7 +135,7 @@ void main() {
       exportedAt: exportedAt,
     )) as Map<String, dynamic>;
 
-    expect(data['schema_version'], 7);
+    expect(data['schema_version'], 8);
     expect(data['counts'], {'books': 1, 'notes': 1, 'sessions': 1});
     final book = (data['books'] as List).single as Map<String, dynamic>;
     expect(book['read_pages'], 50);

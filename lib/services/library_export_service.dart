@@ -55,6 +55,9 @@ class LibraryExportService {
             'status_label': statusLabels[b.status],
             'rating': b.rating,
             'total_read_seconds': b.totalReadTime,
+            // Opcionales (desde la versión 8 de la base de datos)
+            'started_at': b.startedAt == null ? null : iso(b.startedAt!),
+            'finished_at': b.finishedAt == null ? null : iso(b.finishedAt!),
             // Solo el nombre: la ruta completa es de este teléfono
             'cover_file': (b.coverUrl == null || b.coverUrl!.isEmpty) ? null : p.basename(b.coverUrl!),
           },
@@ -87,8 +90,13 @@ class LibraryExportService {
 
   static const _csvHeaders = [
     'Título', 'Autor', 'Categoría', 'Estado', 'Páginas leídas', 'Páginas totales',
-    'Progreso (%)', 'Calificación', 'Tiempo de lectura (min)', 'Notas',
+    'Progreso (%)', 'Calificación', 'Tiempo de lectura (min)', 'Notas', 'Empezado', 'Terminado',
   ];
+
+  /// Fecha AAAA-MM-DD: las hojas de cálculo la reconocen como fecha.
+  static String _csvDate(DateTime? d) => d == null
+      ? ''
+      : '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   static String buildCsv({required List<Book> books, required List<Note> notes}) {
     final notesPerBook = <int, int>{};
@@ -110,6 +118,8 @@ class LibraryExportService {
           (b.rating ?? 0) > 0 ? b.rating : '',
           b.totalReadTime ~/ 60,
           notesPerBook[b.id] ?? 0,
+          _csvDate(b.startedAt),
+          b.status == 2 ? _csvDate(b.finishedAt) : '',
         ],
     ];
 

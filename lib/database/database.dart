@@ -19,6 +19,12 @@ class Books extends Table {
   TextColumn get coverUrl => text().nullable()(); 
   // NUEVA COLUMNA: Calificación de 1 a 5 estrellas
   IntColumn get rating => integer().nullable().withDefault(const Constant(0))();
+
+  // Versión 8: cuándo se empezó y se terminó la lectura (null = desconocido).
+  // Al releer se conserva `finishedAt` de la lectura anterior hasta terminar
+  // de nuevo, para que el reto de ese año no baje.
+  DateTimeColumn get startedAt => dateTime().nullable()();
+  DateTimeColumn get finishedAt => dateTime().nullable()();
 }
 
 class Notes extends Table {
@@ -45,7 +51,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 7; // Incrementado de 6 a 7
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -57,6 +63,23 @@ class AppDatabase extends _$AppDatabase {
       if (from < 6) await m.addColumn(readingSessions, readingSessions.pagesRead);
       // MIGRACIÓN A VERSIÓN 7: Añadir columna rating
       if (from < 7) await m.addColumn(books, books.rating);
+      // MIGRACIÓN A VERSIÓN 8: fechas de inicio y fin, estimadas a partir de
+      // las sesiones de lectura (primera sesión = inicio; última = fin si
+      // está terminado). Sin sesiones quedan desconocidas (se pueden poner a mano).
+      if (from < 8) {
+        await m.addColumn(books, books.startedAt);
+        await m.addColumn(books, books.finishedAt);
+        await customStatement(
+          'UPDATE books SET started_at = '
+          '(SELECT MIN(date) FROM reading_sessions WHERE reading_sessions.book_id = books.id) '
+          'WHERE status IN (1, 2, 3) OR read_pages > 0',
+        );
+        await customStatement(
+          'UPDATE books SET finished_at = '
+          '(SELECT MAX(date) FROM reading_sessions WHERE reading_sessions.book_id = books.id) '
+          'WHERE status = 2',
+        );
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -127,6 +150,32 @@ class AppDatabase extends _$AppDatabase {
   /// [newReadPages] es la página en la que quedó el usuario. Puede ser menor que
   /// la actual (corrección): el libro se actualiza pero no se restan páginas de
   /// las sesiones, que son historial.
+  /// Fechas de inicio y fin tras un cambio de estado.
+  ///
+  /// - Empezar (Leyendo, Terminado o DNF, o tener páginas leídas) fija el
+  ///   inicio si no lo había.
+  /// - Pasar a Terminado fija el fin (hoy).
+  /// - Dejar de estar Terminado (corrección de páginas o de estado) borra el
+  ///   fin: no estaba terminado. "Releer" no pasa por aquí (conserva el fin
+  ///   de la lectura anterior hasta terminar de nuevo).
+  static ({DateTime? startedAt, DateTime? finishedAt}) readingDatesAfter({
+    required int oldStatus,
+    required int newStatus,
+    required DateTime? startedAt,
+    required DateTime? finishedAt,
+    required bool hasProgress,
+    required DateTime now,
+  }) {
+    final started = (newStatus != 0 || hasProgress) ? (startedAt ?? now) : startedAt;
+    DateTime? finished = finishedAt;
+    if (newStatus == 2 && oldStatus != 2) {
+      finished = now;
+    } else if (oldStatus == 2 && newStatus != 2) {
+      finished = null;
+    }
+    return (startedAt: started, finishedAt: finished);
+  }
+
   Future<void> logProgress(int bookId, int newReadPages, {int additionalSeconds = 0}) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -152,11 +201,22 @@ class AppDatabase extends _$AppDatabase {
         newStatus = book.status == 2 ? 0 : book.status;
       }
 
+      final dates = readingDatesAfter(
+        oldStatus: book.status,
+        newStatus: newStatus,
+        startedAt: book.startedAt,
+        finishedAt: book.finishedAt,
+        hasProgress: pages > 0 || seconds > 0,
+        now: now,
+      );
+
       await (update(books)..where((t) => t.id.equals(bookId))).write(
         BooksCompanion(
           readPages: Value(pages),
           totalReadTime: Value(book.totalReadTime + seconds),
           status: Value(newStatus),
+          startedAt: Value(dates.startedAt),
+          finishedAt: Value(dates.finishedAt),
         ),
       );
 

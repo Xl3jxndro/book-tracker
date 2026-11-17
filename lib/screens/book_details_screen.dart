@@ -10,6 +10,7 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:share_plus/share_plus.dart';
 import 'package:screenshot/screenshot.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../database/database.dart';
@@ -589,8 +590,75 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
         LinearProgressIndicator(value: progress, minHeight: 14, borderRadius: BorderRadius.circular(20), color: isFinished ? Colors.greenAccent : scheme.primary),
         const SizedBox(height: 8),
         Text('${book.readPages} de ${book.totalPages} páginas (${(progress * 100).toInt()}%)'),
+        _buildReadingDates(book, scheme, theme),
       ],
     );
+  }
+
+  /// "Empezado el… · Terminado el… (N días)". Tocar una fecha la corrige
+  /// (útil para libros terminados antes de que existiera esta función).
+  Widget _buildReadingDates(Book book, ColorScheme scheme, ThemeData theme) {
+    final isFinished = book.status == 2;
+    if (book.startedAt == null && !isFinished && book.status == 0) return const SizedBox.shrink();
+
+    final fmt = DateFormat("d MMM y", 'es');
+    Widget chip({required IconData icon, required String label, required VoidCallback onTap}) => ActionChip(
+          avatar: Icon(icon, size: 16, color: scheme.primary),
+          label: Text(label, style: const TextStyle(fontSize: 12)),
+          onPressed: onTap,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        );
+
+    String? duration;
+    if (isFinished && book.startedAt != null && book.finishedAt != null) {
+      final days = DateUtils.dateOnly(book.finishedAt!).difference(DateUtils.dateOnly(book.startedAt!)).inDays + 1;
+      duration = days == 1 ? '1 día' : '$days días';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          chip(
+            icon: Icons.play_arrow_rounded,
+            label: book.startedAt == null ? 'Inicio: añadir fecha' : 'Empezado el ${fmt.format(book.startedAt!)}',
+            onTap: () => _editReadingDate(book, isStart: true),
+          ),
+          if (isFinished)
+            chip(
+              icon: Icons.flag_rounded,
+              label: book.finishedAt == null
+                  ? 'Fin: añadir fecha'
+                  : 'Terminado el ${fmt.format(book.finishedAt!)}${duration == null ? '' : ' · $duration'}',
+              onTap: () => _editReadingDate(book, isStart: false),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _editReadingDate(Book book, {required bool isStart}) async {
+    final today = DateUtils.dateOnly(DateTime.now());
+    // El inicio no puede ser posterior al fin, ni el fin anterior al inicio
+    final first = isStart ? DateTime(1950) : (book.startedAt != null ? DateUtils.dateOnly(book.startedAt!) : DateTime(1950));
+    final last = isStart && book.finishedAt != null && book.status == 2 ? DateUtils.dateOnly(book.finishedAt!) : today;
+    final current = (isStart ? book.startedAt : book.finishedAt) ?? last;
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: current.isBefore(first) ? first : (current.isAfter(last) ? last : current),
+      firstDate: first,
+      lastDate: last,
+      helpText: isStart ? '¿CUÁNDO LO EMPEZASTE?' : '¿CUÁNDO LO TERMINASTE?',
+    );
+    if (picked == null || !mounted) return;
+
+    await ref.read(databaseProvider).updateBook(isStart
+        ? book.copyWith(startedAt: Value(picked))
+        : book.copyWith(finishedAt: Value(picked)));
+    HapticFeedback.selectionClick();
   }
 
   Widget _buildReadingStats(Book book, ColorScheme scheme, ThemeData theme) {
@@ -761,7 +829,14 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
         ElevatedButton(onPressed: () async {
-          await ref.read(databaseProvider).updateBook(book.copyWith(readPages: 0, status: 1, rating: const Value(0)));
+          // Nueva lectura: empieza hoy. Se conserva la fecha de fin de la
+          // anterior hasta terminar de nuevo (el reto de ese año no baja).
+          await ref.read(databaseProvider).updateBook(book.copyWith(
+            readPages: 0,
+            status: 1,
+            rating: const Value(0),
+            startedAt: Value(DateTime.now()),
+          ));
           if (context.mounted) Navigator.pop(context);
         }, child: const Text('¡VAMOS!')),
       ],

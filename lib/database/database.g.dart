@@ -125,6 +125,28 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _finishedAtMeta = const VerificationMeta(
+    'finishedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> finishedAt = GeneratedColumn<DateTime>(
+    'finished_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -137,6 +159,8 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     category,
     coverUrl,
     rating,
+    startedAt,
+    finishedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -216,6 +240,18 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         rating.isAcceptableOrUnknown(data['rating']!, _ratingMeta),
       );
     }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    }
+    if (data.containsKey('finished_at')) {
+      context.handle(
+        _finishedAtMeta,
+        finishedAt.isAcceptableOrUnknown(data['finished_at']!, _finishedAtMeta),
+      );
+    }
     return context;
   }
 
@@ -265,6 +301,14 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.int,
         data['${effectivePrefix}rating'],
       ),
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      ),
+      finishedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}finished_at'],
+      ),
     );
   }
 
@@ -285,6 +329,8 @@ class Book extends DataClass implements Insertable<Book> {
   final String? category;
   final String? coverUrl;
   final int? rating;
+  final DateTime? startedAt;
+  final DateTime? finishedAt;
   const Book({
     required this.id,
     required this.title,
@@ -296,6 +342,8 @@ class Book extends DataClass implements Insertable<Book> {
     this.category,
     this.coverUrl,
     this.rating,
+    this.startedAt,
+    this.finishedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -315,6 +363,12 @@ class Book extends DataClass implements Insertable<Book> {
     }
     if (!nullToAbsent || rating != null) {
       map['rating'] = Variable<int>(rating);
+    }
+    if (!nullToAbsent || startedAt != null) {
+      map['started_at'] = Variable<DateTime>(startedAt);
+    }
+    if (!nullToAbsent || finishedAt != null) {
+      map['finished_at'] = Variable<DateTime>(finishedAt);
     }
     return map;
   }
@@ -337,6 +391,12 @@ class Book extends DataClass implements Insertable<Book> {
       rating: rating == null && nullToAbsent
           ? const Value.absent()
           : Value(rating),
+      startedAt: startedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startedAt),
+      finishedAt: finishedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(finishedAt),
     );
   }
 
@@ -356,6 +416,8 @@ class Book extends DataClass implements Insertable<Book> {
       category: serializer.fromJson<String?>(json['category']),
       coverUrl: serializer.fromJson<String?>(json['coverUrl']),
       rating: serializer.fromJson<int?>(json['rating']),
+      startedAt: serializer.fromJson<DateTime?>(json['startedAt']),
+      finishedAt: serializer.fromJson<DateTime?>(json['finishedAt']),
     );
   }
   @override
@@ -372,6 +434,8 @@ class Book extends DataClass implements Insertable<Book> {
       'category': serializer.toJson<String?>(category),
       'coverUrl': serializer.toJson<String?>(coverUrl),
       'rating': serializer.toJson<int?>(rating),
+      'startedAt': serializer.toJson<DateTime?>(startedAt),
+      'finishedAt': serializer.toJson<DateTime?>(finishedAt),
     };
   }
 
@@ -386,6 +450,8 @@ class Book extends DataClass implements Insertable<Book> {
     Value<String?> category = const Value.absent(),
     Value<String?> coverUrl = const Value.absent(),
     Value<int?> rating = const Value.absent(),
+    Value<DateTime?> startedAt = const Value.absent(),
+    Value<DateTime?> finishedAt = const Value.absent(),
   }) => Book(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -397,6 +463,8 @@ class Book extends DataClass implements Insertable<Book> {
     category: category.present ? category.value : this.category,
     coverUrl: coverUrl.present ? coverUrl.value : this.coverUrl,
     rating: rating.present ? rating.value : this.rating,
+    startedAt: startedAt.present ? startedAt.value : this.startedAt,
+    finishedAt: finishedAt.present ? finishedAt.value : this.finishedAt,
   );
   Book copyWithCompanion(BooksCompanion data) {
     return Book(
@@ -414,6 +482,10 @@ class Book extends DataClass implements Insertable<Book> {
       category: data.category.present ? data.category.value : this.category,
       coverUrl: data.coverUrl.present ? data.coverUrl.value : this.coverUrl,
       rating: data.rating.present ? data.rating.value : this.rating,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      finishedAt: data.finishedAt.present
+          ? data.finishedAt.value
+          : this.finishedAt,
     );
   }
 
@@ -429,7 +501,9 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('status: $status, ')
           ..write('category: $category, ')
           ..write('coverUrl: $coverUrl, ')
-          ..write('rating: $rating')
+          ..write('rating: $rating, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('finishedAt: $finishedAt')
           ..write(')'))
         .toString();
   }
@@ -446,6 +520,8 @@ class Book extends DataClass implements Insertable<Book> {
     category,
     coverUrl,
     rating,
+    startedAt,
+    finishedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -460,7 +536,9 @@ class Book extends DataClass implements Insertable<Book> {
           other.status == this.status &&
           other.category == this.category &&
           other.coverUrl == this.coverUrl &&
-          other.rating == this.rating);
+          other.rating == this.rating &&
+          other.startedAt == this.startedAt &&
+          other.finishedAt == this.finishedAt);
 }
 
 class BooksCompanion extends UpdateCompanion<Book> {
@@ -474,6 +552,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<String?> category;
   final Value<String?> coverUrl;
   final Value<int?> rating;
+  final Value<DateTime?> startedAt;
+  final Value<DateTime?> finishedAt;
   const BooksCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -485,6 +565,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.category = const Value.absent(),
     this.coverUrl = const Value.absent(),
     this.rating = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.finishedAt = const Value.absent(),
   });
   BooksCompanion.insert({
     this.id = const Value.absent(),
@@ -497,6 +579,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.category = const Value.absent(),
     this.coverUrl = const Value.absent(),
     this.rating = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.finishedAt = const Value.absent(),
   }) : title = Value(title),
        author = Value(author),
        totalPages = Value(totalPages);
@@ -511,6 +595,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<String>? category,
     Expression<String>? coverUrl,
     Expression<int>? rating,
+    Expression<DateTime>? startedAt,
+    Expression<DateTime>? finishedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -523,6 +609,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
       if (category != null) 'category': category,
       if (coverUrl != null) 'cover_url': coverUrl,
       if (rating != null) 'rating': rating,
+      if (startedAt != null) 'started_at': startedAt,
+      if (finishedAt != null) 'finished_at': finishedAt,
     });
   }
 
@@ -537,6 +625,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<String?>? category,
     Value<String?>? coverUrl,
     Value<int?>? rating,
+    Value<DateTime?>? startedAt,
+    Value<DateTime?>? finishedAt,
   }) {
     return BooksCompanion(
       id: id ?? this.id,
@@ -549,6 +639,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
       category: category ?? this.category,
       coverUrl: coverUrl ?? this.coverUrl,
       rating: rating ?? this.rating,
+      startedAt: startedAt ?? this.startedAt,
+      finishedAt: finishedAt ?? this.finishedAt,
     );
   }
 
@@ -585,6 +677,12 @@ class BooksCompanion extends UpdateCompanion<Book> {
     if (rating.present) {
       map['rating'] = Variable<int>(rating.value);
     }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (finishedAt.present) {
+      map['finished_at'] = Variable<DateTime>(finishedAt.value);
+    }
     return map;
   }
 
@@ -600,7 +698,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('status: $status, ')
           ..write('category: $category, ')
           ..write('coverUrl: $coverUrl, ')
-          ..write('rating: $rating')
+          ..write('rating: $rating, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('finishedAt: $finishedAt')
           ..write(')'))
         .toString();
   }
@@ -1352,6 +1452,8 @@ typedef $$BooksTableCreateCompanionBuilder =
       Value<String?> category,
       Value<String?> coverUrl,
       Value<int?> rating,
+      Value<DateTime?> startedAt,
+      Value<DateTime?> finishedAt,
     });
 typedef $$BooksTableUpdateCompanionBuilder =
     BooksCompanion Function({
@@ -1365,6 +1467,8 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<String?> category,
       Value<String?> coverUrl,
       Value<int?> rating,
+      Value<DateTime?> startedAt,
+      Value<DateTime?> finishedAt,
     });
 
 final class $$BooksTableReferences
@@ -1466,6 +1570,16 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
 
   ColumnFilters<int> get rating => $composableBuilder(
     column: $table.rating,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get finishedAt => $composableBuilder(
+    column: $table.finishedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1578,6 +1692,16 @@ class $$BooksTableOrderingComposer
     column: $table.rating,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get finishedAt => $composableBuilder(
+    column: $table.finishedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BooksTableAnnotationComposer
@@ -1622,6 +1746,14 @@ class $$BooksTableAnnotationComposer
 
   GeneratedColumn<int> get rating =>
       $composableBuilder(column: $table.rating, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get finishedAt => $composableBuilder(
+    column: $table.finishedAt,
+    builder: (column) => column,
+  );
 
   Expression<T> notesRefs<T extends Object>(
     Expression<T> Function($$NotesTableAnnotationComposer a) f,
@@ -1712,6 +1844,8 @@ class $$BooksTableTableManager
                 Value<String?> category = const Value.absent(),
                 Value<String?> coverUrl = const Value.absent(),
                 Value<int?> rating = const Value.absent(),
+                Value<DateTime?> startedAt = const Value.absent(),
+                Value<DateTime?> finishedAt = const Value.absent(),
               }) => BooksCompanion(
                 id: id,
                 title: title,
@@ -1723,6 +1857,8 @@ class $$BooksTableTableManager
                 category: category,
                 coverUrl: coverUrl,
                 rating: rating,
+                startedAt: startedAt,
+                finishedAt: finishedAt,
               ),
           createCompanionCallback:
               ({
@@ -1736,6 +1872,8 @@ class $$BooksTableTableManager
                 Value<String?> category = const Value.absent(),
                 Value<String?> coverUrl = const Value.absent(),
                 Value<int?> rating = const Value.absent(),
+                Value<DateTime?> startedAt = const Value.absent(),
+                Value<DateTime?> finishedAt = const Value.absent(),
               }) => BooksCompanion.insert(
                 id: id,
                 title: title,
@@ -1747,6 +1885,8 @@ class $$BooksTableTableManager
                 category: category,
                 coverUrl: coverUrl,
                 rating: rating,
+                startedAt: startedAt,
+                finishedAt: finishedAt,
               ),
           withReferenceMapper: (p0) => p0
               .map(

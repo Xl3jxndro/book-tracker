@@ -82,6 +82,7 @@ dev_dependencies:
 
   # Generador de Iconos de App
   flutter_launcher_icons: ^0.14.1
+  sqlite3: ^2.9.4
 
 # Configuración del Icono de la App
 flutter_launcher_icons:

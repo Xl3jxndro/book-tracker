@@ -219,6 +219,15 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
       } else {
         // Coherencia estado/progreso: marcar "Leído" completa las páginas.
         final readPages = _selectedStatus == 2 ? totalPages : bookToEdit.readPages;
+        // Fechas de inicio y fin según el cambio de estado (mismas reglas que el progreso)
+        final dates = AppDatabase.readingDatesAfter(
+          oldStatus: bookToEdit.status,
+          newStatus: _selectedStatus,
+          startedAt: bookToEdit.startedAt,
+          finishedAt: bookToEdit.finishedAt,
+          hasProgress: readPages > 0,
+          now: DateTime.now(),
+        );
         await db.updateBook(bookToEdit.copyWith(
           title: title,
           author: author,
@@ -227,6 +236,8 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
           category: drift.Value(category),
           status: _selectedStatus,
           coverUrl: drift.Value(finalImagePath),
+          startedAt: drift.Value(dates.startedAt),
+          finishedAt: drift.Value(dates.finishedAt),
         ));
         // Si cambió la portada, la anterior ya no ocupa espacio (si nadie más la usa)
         if (bookToEdit.coverUrl != finalImagePath) {

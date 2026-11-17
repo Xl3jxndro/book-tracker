@@ -53,6 +53,23 @@ void main() {
 
   Future<BackupPreview> read(File f) => BackupService.read(f, Directory(p.join(tmp.path, 'work_${f.hashCode}')));
 
+  test('las fechas de inicio y fin sobreviven al respaldo (y los respaldos sin fechas también sirven)', () async {
+    final id = await addBook(dbA, 'Dune', status: 2);
+    await (dbA.update(dbA.books)..where((t) => t.id.equals(id))).write(BooksCompanion(
+      startedAt: Value(DateTime(2026, 3, 1, 9)),
+      finishedAt: Value(DateTime(2026, 3, 9, 21, 30)),
+    ));
+    await addBook(dbA, 'Sin fechas', status: 0);
+
+    await BackupService.restore(dbB, await read(await saveZip(dbA, 'fechas.zip')), coversDir: coversB.path);
+
+    final books = {for (final b in await dbB.select(dbB.books).get()) b.title: b};
+    expect(books['Dune']!.startedAt, DateTime(2026, 3, 1, 9));
+    expect(books['Dune']!.finishedAt, DateTime(2026, 3, 9, 21, 30));
+    expect(books['Sin fechas']!.startedAt, isNull);
+    expect(books['Sin fechas']!.finishedAt, isNull);
+  });
+
   test('ida y vuelta: se restaura todo, con portadas, y reemplaza lo anterior', () async {
     // Teléfono A: dos libros (uno con portada), una nota y una sesión
     final cover = coverFile(coversA, 'cover_1.jpg', List.generate(2000, (i) => i % 256));
