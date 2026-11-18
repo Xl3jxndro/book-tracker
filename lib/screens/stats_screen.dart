@@ -6,6 +6,9 @@ import 'package:intl/intl.dart';
 import '../providers/database_provider.dart';
 import '../providers/today_provider.dart';
 import '../widgets/reading_challenge_card.dart';
+import '../widgets/share_year_summary.dart';
+import '../services/year_summary.dart';
+import '../providers/yearly_goal_provider.dart';
 import '../database/database.dart';
 
 class StatsScreen extends ConsumerStatefulWidget {
@@ -36,6 +39,24 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
     final duration = Duration(seconds: totalSeconds);
     if (duration.inHours > 0) return '${duration.inHours}h ${duration.inMinutes.remainder(60)}m';
     return '${duration.inMinutes}m';
+  }
+
+  void _shareYear(List<Book> books, List<ReadingSession> sessions) {
+    final year = ref.read(todayProvider).year;
+    final summary = YearSummary.compute(
+      year: year,
+      books: books,
+      sessions: sessions,
+      goal: ref.read(yearlyGoalProvider(year)),
+    );
+    if (summary.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text('Aún no hay lecturas en $year para compartir. ¡Empieza un libro!'),
+      ));
+      return;
+    }
+    showYearSummaryShare(context, summary);
   }
 
   int _calculateStreak(List<ReadingSession> sessions) {
@@ -89,6 +110,17 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                 fontSize: 28,
                 color: isDark ? Colors.white : Colors.black,
                 letterSpacing: -1)),
+        actions: [
+          // Compartir "Mi año lector" como imagen
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: IconButton.filledTonal(
+              tooltip: 'Compartir mi año lector',
+              icon: const Icon(Icons.ios_share_rounded),
+              onPressed: () => _shareYear(booksAsync.valueOrNull ?? const [], sessionsAsync.valueOrNull ?? const []),
+            ),
+          ),
+        ],
       ),
       body: booksAsync.when(
         data: (books) => sessionsAsync.when(
