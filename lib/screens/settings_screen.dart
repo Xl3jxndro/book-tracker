@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/theme_provider.dart';
 import '../providers/notifications_provider.dart';
+import '../providers/streak_risk_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/app_info_provider.dart';
 import '../providers/database_provider.dart';
@@ -24,6 +25,17 @@ class SettingsScreen extends ConsumerWidget {
     
     if (picked != null) {
       ref.read(notificationsProvider.notifier).updateTime(picked.hour, picked.minute);
+    }
+  }
+
+  Future<void> _selectStreakRiskTime(BuildContext context, WidgetRef ref, StreakRiskSettings settings) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: settings.hour, minute: settings.minute),
+      helpText: 'HORA DEL AVISO DE RACHA',
+    );
+    if (picked != null) {
+      await ref.read(streakRiskProvider.notifier).updateTime(picked.hour, picked.minute);
     }
   }
 
@@ -93,6 +105,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentMode = ref.watch(themeProvider);
     final notifSettings = ref.watch(notificationsProvider);
+    final streakRisk = ref.watch(streakRiskProvider);
     final auth = ref.watch(authProvider);
     final appVersion = ref.watch(appVersionProvider).valueOrNull ?? '…';
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -182,6 +195,29 @@ class SettingsScreen extends ConsumerWidget {
                     }
                   } else {
                     await ref.read(notificationsProvider.notifier).toggleNotifications(false);
+                  }
+                },
+              ),
+            ),
+            _settingsTile(
+              context,
+              title: 'Aviso de racha en riesgo',
+              subtitle: streakRisk.enabled
+                  ? 'Si llevas racha y hoy no has leído, te aviso a las ${streakRisk.formattedTime}'
+                  : 'Desactivado',
+              leadingIcon: Icons.local_fire_department_rounded,
+              iconColor: Colors.deepOrange,
+              onTap: streakRisk.enabled ? () => _selectStreakRiskTime(context, ref, streakRisk) : null,
+              trailing: Switch.adaptive(
+                value: streakRisk.enabled,
+                activeThumbColor: Colors.deepOrange,
+                onChanged: (value) async {
+                  final result = await ref.read(streakRiskProvider.notifier).setEnabled(value);
+                  if (value && !result && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Activa las notificaciones de Book Tracker para recibir el aviso.'),
+                      behavior: SnackBarBehavior.floating,
+                    ));
                   }
                 },
               ),

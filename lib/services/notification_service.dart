@@ -3,9 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+
+import 'streak.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -16,6 +19,10 @@ class NotificationService {
   static const prefsMinuteKey = 'notifications_minute';
 
   static const _dailyReminderId = 0;
+  static const _streakRiskId = 1;
+  static const _streakChannelId = 'streak_alerts';
+  static const _streakChannelName = 'Racha en riesgo';
+  static const _streakChannelDescription = 'Aviso cuando llevas racha y aún no has leído hoy';
 
   /// Contenido del recordatorio diario: al tocarlo se abre el libro actual.
   static const openCurrentBookPayload = 'open_current_book';
@@ -82,6 +89,16 @@ class NotificationService {
       showBadge: true,
       enableVibration: true,
     ));
+
+    await androidImplementation?.createNotificationChannel(const AndroidNotificationChannel(
+      _streakChannelId,
+      _streakChannelName,
+      description: _streakChannelDescription,
+      importance: Importance.high,
+      playSound: true,
+      showBadge: true,
+      enableVibration: true,
+    ));
   }
 
   /// Ajusta `tz.local` a la zona horaria real del dispositivo.
@@ -116,23 +133,24 @@ class NotificationService {
     }
   }
 
-  static Future<void> scheduleDailyNotification(int hour, int minute, {bool requestPermission = true}) async {
+  /// Si no hay permiso de alarmas exactas, se usa una alarma inexacta en lugar
+  /// de no programar nada (Android puede retrasarla unos minutos).
+  static Future<AndroidScheduleMode> _scheduleMode({required bool requestPermission}) async {
     final androidImplementation = _notificationsPlugin
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    if (androidImplementation == null) return AndroidScheduleMode.exactAllowWhileIdle;
 
-    // Si no hay permiso de alarmas exactas, usamos una alarma inexacta en lugar
-    // de no programar nada (Android puede retrasarla unos minutos).
-    var scheduleMode = AndroidScheduleMode.exactAllowWhileIdle;
-    if (androidImplementation != null) {
-      bool canScheduleExact = await androidImplementation.canScheduleExactNotifications() ?? true;
-      if (!canScheduleExact && requestPermission) {
-        canScheduleExact = await androidImplementation.requestExactAlarmsPermission() ?? false;
-      }
-      if (!canScheduleExact) {
-        debugPrint("Sin permiso de alarmas exactas: se programa recordatorio inexacto.");
-        scheduleMode = AndroidScheduleMode.inexactAllowWhileIdle;
-      }
+    bool canScheduleExact = await androidImplementation.canScheduleExactNotifications() ?? true;
+    if (!canScheduleExact && requestPermission) {
+      canScheduleExact = await androidImplementation.requestExactAlarmsPermission() ?? false;
     }
+    if (canScheduleExact) return AndroidScheduleMode.exactAllowWhileIdle;
+    debugPrint("Sin permiso de alarmas exactas: se programa un aviso inexacto.");
+    return AndroidScheduleMode.inexactAllowWhileIdle;
+  }
+
+  static Future<void> scheduleDailyNotification(int hour, int minute, {bool requestPermission = true}) async {
+    final scheduleMode = await _scheduleMode(requestPermission: requestPermission);
 
     await _notificationsPlugin.cancel(_dailyReminderId);
 
@@ -164,6 +182,43 @@ class NotificationService {
       );
     } catch (e) {
       debugPrint("Error al programar notificación: $e");
+    }
+  }
+
+  /// Apaga solo el recordatorio diario (el aviso de racha va aparte).
+  static Future<void> cancelDailyReminder() => _notificationsPlugin.cancel(_dailyReminderId);
+
+  /// Programa el aviso "racha en riesgo" (reemplaza el anterior) o lo cancela
+  /// si [alert] es null. No pide permisos: si no hay, no hace nada.
+  static Future<void> scheduleStreakRisk(StreakRiskAlert? alert) async {
+    try {
+      await _notificationsPlugin.cancel(_streakRiskId);
+      if (alert == null) return;
+      if (!await Permission.notification.isGranted) return;
+
+      await _notificationsPlugin.zonedSchedule(
+        _streakRiskId,
+        StreakRisk.title(alert.streak),
+        StreakRisk.body,
+        tz.TZDateTime.from(alert.at, tz.local),
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            _streakChannelId,
+            _streakChannelName,
+            channelDescription: _streakChannelDescription,
+            importance: Importance.high,
+            priority: Priority.high,
+            styleInformation: BigTextStyleInformation(StreakRisk.body),
+          ),
+          iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
+        ),
+        androidScheduleMode: await _scheduleMode(requestPermission: false),
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        payload: openCurrentBookPayload,
+      );
+      debugPrint('🔥 Aviso de racha programado: $alert');
+    } catch (e) {
+      debugPrint('Error programando el aviso de racha: $e');
     }
   }
 

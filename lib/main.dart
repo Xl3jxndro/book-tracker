@@ -14,6 +14,8 @@ import 'providers/database_provider.dart';
 import 'providers/current_book_provider.dart';
 import 'providers/daily_goal_provider.dart';
 import 'providers/widget_action_provider.dart';
+import 'providers/streak_risk_provider.dart';
+import 'providers/today_provider.dart';
 import 'services/notification_service.dart';
 import 'services/home_widget_sync.dart';
 import 'widgets/app_lock_overlay.dart';
@@ -71,6 +73,16 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
     WidgetsBinding.instance.addObserver(this);
     _initHomeWidget();
     _initNotificationTaps();
+    _initStreakRisk();
+  }
+
+  /// Aviso "racha en riesgo": se reprograma al leer, al cambiar el ajuste o
+  /// el día, y al volver a la app.
+  void _initStreakRisk() {
+    void sync(_, __) => StreakRiskSync.sync(ref.read);
+    ref.listenManual(sessionsStreamProvider, sync);
+    ref.listenManual(streakRiskProvider, sync);
+    ref.listenManual(todayProvider, sync);
   }
 
   /// Tocar el recordatorio diario abre el libro actual (en frío o con la app
@@ -129,6 +141,7 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
         // "Bloquear al salir" y, además, el widget pudo pausar o cambió el día
         auth.appResumed();
         HomeWidgetSync.refresh();
+        StreakRiskSync.sync(ref.read);
       default:
         break;
     }

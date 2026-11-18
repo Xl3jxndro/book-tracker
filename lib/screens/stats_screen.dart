@@ -7,6 +7,7 @@ import '../providers/database_provider.dart';
 import '../providers/today_provider.dart';
 import '../widgets/reading_challenge_card.dart';
 import '../widgets/share_year_summary.dart';
+import '../services/streak.dart';
 import '../services/year_summary.dart';
 import '../providers/yearly_goal_provider.dart';
 import '../database/database.dart';
@@ -59,36 +60,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
     showYearSummaryShare(context, summary);
   }
 
-  int _calculateStreak(List<ReadingSession> sessions) {
-    if (sessions.isEmpty) return 0;
-
-    final readingDays = sessions
-        .map((s) => DateTime(s.date.year, s.date.month, s.date.day))
-        .toSet()
-        .toList()
-      ..sort((a, b) => b.compareTo(a));
-
-    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-    final yesterday = today.subtract(const Duration(days: 1));
-
-    if (readingDays.isEmpty || (readingDays.first.isBefore(yesterday) && readingDays.first != today)) {
-      return 0;
-    }
-
-    int streak = 0;
-    DateTime currentCheck = readingDays.first == today ? today : yesterday;
-
-    for (int i = 0; i < readingDays.length; i++) {
-      if (readingDays.any((d) => d.isAtSameMomentAs(currentCheck))) {
-        streak++;
-        currentCheck = currentCheck.subtract(const Duration(days: 1));
-      } else {
-        break;
-      }
-    }
-
-    return streak;
-  }
+  int _calculateStreak(List<ReadingSession> sessions) =>
+      ReadingStreak.current(sessions.map((s) => s.date), DateTime.now());
 
   @override
   Widget build(BuildContext context) {

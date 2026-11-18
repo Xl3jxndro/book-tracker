@@ -81,7 +81,7 @@ class NotificationsNotifier extends StateNotifier<NotificationSettings> {
     if (enabled) {
       await NotificationService.scheduleDailyNotification(state.hour, state.minute);
     } else {
-      await NotificationService.cancelAll();
+      await NotificationService.cancelDailyReminder();
     }
   }
 
