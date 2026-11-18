@@ -26,6 +26,11 @@ final isSearchingProvider = StateProvider<bool>((ref) => false);
 final selectedFilterProvider = StateProvider<String?>((ref) => null);
 final sortOptionProvider = StateProvider<BookSortOption>((ref) => BookSortOption.recentlyAdded);
 
+/// ¿El libro es de la categoría [tag]? Sin distinguir mayúsculas ni espacios
+/// en los bordes (los chips muestran la categoría normalizada).
+bool _categoryMatches(Book book, String tag) =>
+    (book.category ?? 'General').trim().toLowerCase() == tag.trim().toLowerCase();
+
 final filteredBooksProvider = Provider<AsyncValue<List<Book>>>((ref) {
   final booksAsync = ref.watch(booksStreamProvider);
   final query = ref.watch(searchQueryProvider).toLowerCase();
@@ -42,7 +47,7 @@ final filteredBooksProvider = Provider<AsyncValue<List<Book>>>((ref) {
       if (filter == 'status_1') return book.status == 1;
       if (filter == 'status_2') return book.status == 2;
       if (filter == 'status_3') return book.status == 3;
-      return (book.category ?? 'General').toLowerCase() == filter.toLowerCase();
+      return _categoryMatches(book, filter);
     }).toList();
 
     switch (sort) {
@@ -187,6 +192,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             'status_1': allBooks.where((b) => b.status == 1).length,
             'status_2': allBooks.where((b) => b.status == 2).length,
             'status_3': allBooks.where((b) => b.status == 3).length,
+            // Categorías: mismo criterio que el filtro (sin distinguir mayúsculas)
+            for (final tag in tags)
+              tag: allBooks.where((b) => _categoryMatches(b, tag)).length,
           };
 
           return NotificationListener<UserScrollNotification>(
