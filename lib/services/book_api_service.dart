@@ -162,7 +162,7 @@ class BookApiService {
 
   /// Open Library suele añadir la traducción y la colección al título:
   /// "Satanas / Satan (Biblioteca Breve (Barcelona, Spain).)" → "Satanas".
-  @visibleForTesting
+  /// También sirve para comparar títulos (p. ej. al detectar duplicados).
   static String cleanOpenLibraryTitle(String raw) {
     String stripTrailingParens(String s) {
       var t = s.trim();
@@ -242,7 +242,7 @@ class BookApiService {
 
   /// Descarga la portada a [directory]. Devuelve `null` si no se pudo
   /// (la portada es opcional: nunca debe impedir añadir el libro).
-  Future<File?> downloadCover(String url, Directory directory) async {
+  Future<File?> downloadCover(String url, Directory directory, {String? fileName}) async {
     try {
       final response = await _client.get(Uri.parse(url), headers: _headers).timeout(_timeout);
       final isImage = response.headers['content-type']?.startsWith('image/') ?? false;
@@ -251,7 +251,7 @@ class BookApiService {
 
       final file = File(p.join(
         directory.path,
-        'cover_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        fileName ?? 'cover_${DateTime.now().millisecondsSinceEpoch}.jpg',
       ));
       return file.writeAsBytes(response.bodyBytes);
     } catch (e) {

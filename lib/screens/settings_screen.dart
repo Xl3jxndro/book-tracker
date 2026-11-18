@@ -11,6 +11,7 @@ import '../providers/database_provider.dart';
 import '../services/notification_service.dart';
 import '../services/library_export_service.dart';
 import '../widgets/backup_actions.dart';
+import '../widgets/goodreads_import_actions.dart';
 import '../widgets/secret_dialogs.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -306,6 +307,14 @@ class SettingsScreen extends ConsumerWidget {
               leadingIcon: Icons.settings_backup_restore_rounded,
               iconColor: Colors.deepPurpleAccent,
               onTap: () => restoreFromPickedFile(context, ref),
+            ),
+            _settingsTile(
+              context,
+              title: 'Importar de Goodreads',
+              subtitle: 'Añade tus libros desde el archivo .csv de Goodreads',
+              leadingIcon: Icons.download_rounded,
+              iconColor: Colors.brown,
+              onTap: () => importFromGoodreads(context, ref),
             ),
             if (ref.watch(autoBackupExistsProvider).valueOrNull ?? false)
               _settingsTile(

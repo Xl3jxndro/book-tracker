@@ -4,22 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../database/database.dart';
 import '../providers/database_provider.dart';
+import '../services/text_normalize.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/quote_share.dart';
 import 'book_details_screen.dart';
-
-/// Quita tildes y mayúsculas para buscar "corazon" y encontrar "Corazón".
-String normalizeForSearch(String text) {
-  const from = 'áàäâéèëêíìïîóòöôúùüûñ';
-  const to = 'aaaaeeeeiiiioooouuuun';
-  final lower = text.toLowerCase();
-  final buffer = StringBuffer();
-  for (final ch in lower.split('')) {
-    final i = from.indexOf(ch);
-    buffer.write(i >= 0 ? to[i] : ch);
-  }
-  return buffer.toString();
-}
 
 /// Filtra las citas por texto (en la cita, el título o el autor) y, si se
 /// pide, solo las favoritas. Conserva el orden recibido.
