@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'session_goal.dart';
+
 /// Sesión de lectura (cronómetro) guardada en disco.
 ///
 /// Es la fuente única de verdad del cronómetro: la usan la app y el widget de
@@ -34,6 +36,8 @@ class TimerPersistence {
   static const _keyBookId = 'reading_book_id';
   static const _keyIsPaused = 'reading_is_paused';
   static const _keyAccumulatedSeconds = 'reading_accumulated';
+  static const _keyGoal = 'reading_session_goal';
+  static const _keyLastTimeGoal = 'session_goal_last_minutes';
 
   /// Siempre recarga desde disco: otro isolate (el widget) puede haber escrito.
   static Future<SharedPreferences> _prefs() async {
@@ -101,5 +105,29 @@ class TimerPersistence {
     await prefs.remove(_keyBookId);
     await prefs.remove(_keyIsPaused);
     await prefs.remove(_keyAccumulatedSeconds);
+    await prefs.remove(_keyGoal);
+  }
+
+  // --- Meta de la sesión ---
+
+  /// Guarda la meta de la sesión (null = libre). Si es de tiempo, la recuerda
+  /// para proponerla la próxima vez.
+  static Future<void> saveGoal(SessionGoal? goal) async {
+    final prefs = await _prefs();
+    if (goal == null) {
+      await prefs.remove(_keyGoal);
+      await prefs.setInt(_keyLastTimeGoal, 0);
+      return;
+    }
+    await prefs.setString(_keyGoal, goal.encode());
+    if (goal.isTime) await prefs.setInt(_keyLastTimeGoal, goal.minutes!);
+  }
+
+  static Future<SessionGoal?> getGoal() async => SessionGoal.decode((await _prefs()).getString(_keyGoal));
+
+  /// La última meta de tiempo elegida (null si la última vez fue libre).
+  static Future<SessionGoal?> lastTimeGoal() async {
+    final minutes = (await _prefs()).getInt(_keyLastTimeGoal) ?? 0;
+    return minutes > 0 ? SessionGoal.time(minutes) : null;
   }
 }

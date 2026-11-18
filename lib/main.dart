@@ -18,6 +18,7 @@ import 'providers/streak_risk_provider.dart';
 import 'providers/today_provider.dart';
 import 'services/notification_service.dart';
 import 'services/home_widget_sync.dart';
+import 'services/session_goal_alarm.dart';
 import 'widgets/app_lock_overlay.dart';
 
 void main() async {
@@ -137,10 +138,14 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
       case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
         auth.appBackgrounded();
+        // Fuera de la app, la meta de la sesión se avisa con una notificación
+        SessionGoalAlarm.sync();
       case AppLifecycleState.resumed:
         // "Bloquear al salir" y, además, el widget pudo pausar o cambió el día
         auth.appResumed();
         HomeWidgetSync.refresh();
+        // Con la app abierta avisa la pantalla del cronómetro
+        NotificationService.cancelSessionGoal();
         ref.invalidate(notificationPermissionProvider);
         StreakRiskSync.sync(ref.read);
       default:

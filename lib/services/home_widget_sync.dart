@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../providers/current_book_provider.dart';
 import '../providers/daily_goal_provider.dart';
+import 'session_goal_alarm.dart';
 import 'timer_persistence.dart';
 
 /// Rutas (URIs) que usa el widget de Android. Deben coincidir con
@@ -184,4 +185,10 @@ Future<void> homeWidgetBackgroundCallback(Uri? uri) async {
   if (uri?.host != WidgetUris.togglePause) return;
   await TimerPersistence.togglePause();
   await HomeWidgetSync.refreshSessionOnly();
+  // Pausar cancela el aviso de meta de la sesión; reanudar lo reprograma
+  try {
+    await SessionGoalAlarm.sync();
+  } catch (e) {
+    debugPrint('Aviso de meta desde el widget: $e');
+  }
 }

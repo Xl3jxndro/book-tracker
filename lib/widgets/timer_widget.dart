@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../database/database.dart';
 import '../providers/database_provider.dart';
+import '../services/notification_service.dart';
+import '../services/session_goal.dart';
 import '../services/timer_persistence.dart';
 import '../services/home_widget_sync.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -34,6 +36,10 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
   int _accumulatedSeconds = 0; 
   
   AnimationController? _fadeController;
+
+  /// Meta de la sesión (null = libre) y si ya se celebró en esta sesión.
+  SessionGoal? _goal;
+  bool _goalCelebrated = false;
 
   @override
   void initState() {
@@ -65,7 +71,15 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
   /// Alinea la pantalla con la sesión guardada en disco (fuente de verdad).
   Future<void> _syncFromPersistence({bool autoFinish = false}) async {
     final session = await TimerPersistence.getActiveSession();
+    final savedGoal = await TimerPersistence.getGoal();
+    final ownSession = session != null && session.bookId == widget.book.id;
+    final goal = savedGoal ?? (ownSession ? null : await TimerPersistence.lastTimeGoal());
     if (!mounted) return;
+    setState(() {
+      _goal = goal;
+      // Si ya estaba cumplida (p. ej. al volver a la app), no se celebra otra vez
+      _goalCelebrated = ownSession && (goal?.timeReached(session.elapsedSeconds) ?? false);
+    });
 
     if (session == null || session.bookId != widget.book.id) {
       // No hay sesión de este libro: si mostrábamos una, la limpiamos
@@ -130,8 +144,88 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
         setState(() {
           _seconds = _accumulatedSeconds + difference;
         });
+        _checkGoal();
       }
     });
+  }
+
+  void _checkGoal() {
+    final goal = _goal;
+    if (goal == null || _goalCelebrated || !goal.timeReached(_seconds)) return;
+    _goalCelebrated = true;
+    HapticFeedback.heavyImpact();
+    NotificationService.cancelSessionGoal();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 5),
+      content: Text('🎯 ¡Meta de ${goal.minutes} min cumplida! Sigue si quieres o finaliza la lectura.'),
+    ));
+  }
+
+  Future<void> _setGoal(SessionGoal? goal) async {
+    setState(() {
+      _goal = goal;
+      // Elegir una meta ya superada la da por cumplida, sin celebrarla
+      _goalCelebrated = goal?.timeReached(_seconds) ?? false;
+    });
+    await TimerPersistence.saveGoal(goal);
+  }
+
+  Future<void> _showGoalPicker() async {
+    HapticFeedback.selectionClick();
+    final picked = await showModalBottomSheet<_GoalChoice>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _GoalPickerSheet(current: _goal),
+    );
+    if (picked == null || !mounted) return;
+    if (picked.askPage) {
+      final page = await _askGoalPage();
+      if (page != null) await _setGoal(SessionGoal.page(page));
+    } else {
+      await _setGoal(picked.goal);
+    }
+  }
+
+  Future<int?> _askGoalPage() {
+    final book = widget.book;
+    final suggested = book.totalPages > 0 ? (book.readPages + 20).clamp(1, book.totalPages) : book.readPages + 20;
+    final controller = TextEditingController(text: '$suggested');
+    return showDialog<int>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(builder: (dialogContext, setDialogState) {
+        final value = int.tryParse(controller.text);
+        final String? error = value == null
+            ? 'Escribe una página'
+            : value <= book.readPages
+                ? 'Ya vas en la pág. ${book.readPages}'
+                : (book.totalPages > 0 && value > book.totalPages ? 'El libro tiene ${book.totalPages} páginas' : null);
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          title: const Text('¿Hasta qué página?'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            onChanged: (_) => setDialogState(() {}),
+            decoration: InputDecoration(
+              labelText: 'Llegar a la página',
+              suffixText: book.totalPages > 0 ? '/ ${book.totalPages}' : null,
+              errorText: error,
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('CANCELAR')),
+            ElevatedButton(
+              onPressed: error != null ? null : () => Navigator.pop(dialogContext, value),
+              child: const Text('LISTO'),
+            ),
+          ],
+        );
+      }),
+    );
   }
 
   void _startTimer() async {
@@ -145,6 +239,7 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
       isPaused: false,
       accumulatedSeconds: _accumulatedSeconds,
     );
+    if (_accumulatedSeconds == 0) await TimerPersistence.saveGoal(_goal); // sesión nueva
     HomeWidgetSync.refresh();
   }
 
@@ -180,12 +275,14 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
     _resetAnimation();
 
     final int sessionSeconds = _seconds;
+    final SessionGoal? goal = _goal;
 
     // Reset de variables de precisión
     _startTime = null;
     _accumulatedSeconds = 0;
 
     await TimerPersistence.clearSession();
+    await NotificationService.cancelSessionGoal();
     HomeWidgetSync.refresh();
     WakelockPlus.disable();
     if (!mounted) return;
@@ -194,9 +291,12 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
       _isRunning = false;
       _isPaused = false;
       _seconds = 0;
+      // La próxima sesión propone la misma meta de tiempo (la de páginas no)
+      _goal = (goal?.isTime ?? false) ? goal : null;
+      _goalCelebrated = false;
     });
 
-    _showUpdateProgressDialog(sessionSeconds);
+    _showUpdateProgressDialog(sessionSeconds, goal: goal);
   }
 
   @override
@@ -250,8 +350,17 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
           _fadeController == null 
             ? _RawTimerText(seconds: _seconds)
             : _TimerDisplay(seconds: _seconds, fadeController: _fadeController!),
-          
-          const SizedBox(height: 24),
+
+          const SizedBox(height: 12),
+          _GoalRow(
+            goal: _goal,
+            seconds: _seconds,
+            active: _isRunning || _isPaused,
+            reached: _goalCelebrated,
+            onTap: _showGoalPicker,
+          ),
+
+          const SizedBox(height: 20),
           
           Row(
             children: [
@@ -301,7 +410,7 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
     );
   }
 
-  void _showUpdateProgressDialog(int seconds) {
+  void _showUpdateProgressDialog(int seconds, {SessionGoal? goal}) {
     final scheme = Theme.of(context).colorScheme;
     final controller = TextEditingController(text: widget.book.readPages.toString());
     final int mins = seconds ~/ 60;
@@ -337,6 +446,10 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
                     ],
                   ),
                 ),
+                if (goal != null) ...[
+                  const SizedBox(height: 12),
+                  _GoalResult(goal: goal, seconds: seconds, page: inputVal ?? widget.book.readPages),
+                ],
                 const SizedBox(height: 24),
                 _ShakeWidget(
                   shake: isOverLimit,
@@ -505,5 +618,166 @@ class _ShakeWidget extends StatelessWidget {
       },
       child: child,
     );
+  }
+}
+
+/// Elección del selector de meta: una meta (o libre) o "pedir página".
+class _GoalChoice {
+  final SessionGoal? goal;
+  final bool askPage;
+  const _GoalChoice(this.goal, {this.askPage = false});
+}
+
+class _GoalPickerSheet extends StatelessWidget {
+  final SessionGoal? current;
+  const _GoalPickerSheet({required this.current});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    Widget chip(String label, _GoalChoice choice, bool selected) => ChoiceChip(
+          label: Text(label),
+          selected: selected,
+          onSelected: (_) => Navigator.pop(context, choice),
+        );
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: Colors.grey[500], borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text('🎯 Meta de esta sesión', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text(
+              'Te aviso al cumplir la meta de tiempo, aunque tengas la pantalla apagada.',
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 16),
+            Text('Tiempo', style: theme.textTheme.labelLarge),
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              chip('Libre', const _GoalChoice(null), current == null),
+              for (final m in SessionGoal.timeOptions)
+                chip('$m min', _GoalChoice(SessionGoal.time(m)), current == SessionGoal.time(m)),
+            ]),
+            const SizedBox(height: 16),
+            Text('Páginas', style: theme.textTheme.labelLarge),
+            const SizedBox(height: 8),
+            chip(
+              current?.untilPage != null ? 'Hasta la pág. ${current!.untilPage}' : 'Hasta la página…',
+              const _GoalChoice(null, askPage: true),
+              current?.untilPage != null,
+            ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "🎯 Meta: 30 min ▸" y, durante la sesión, el progreso.
+class _GoalRow extends StatelessWidget {
+  final SessionGoal? goal;
+  final int seconds;
+  final bool active;
+  final bool reached;
+  final VoidCallback onTap;
+  const _GoalRow({
+    required this.goal,
+    required this.seconds,
+    required this.active,
+    required this.reached,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final g = goal;
+    final String text;
+    if (g == null) {
+      text = 'Meta: libre';
+    } else if (g.isTime && active) {
+      text = reached ? '¡Meta de ${g.minutes} min cumplida!' : 'Meta: ${g.timeProgressLabel(seconds)}';
+    } else {
+      text = 'Meta: ${g.label}';
+    }
+    final color = reached ? Colors.green.shade600 : scheme.primary;
+
+    return InkWell(
+      key: const Key('session_goal_row'),
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(reached ? '✅' : '🎯', style: const TextStyle(fontSize: 14)),
+                const SizedBox(width: 6),
+                Flexible(child: Text(text, style: TextStyle(fontWeight: FontWeight.w700, color: color))),
+                Icon(Icons.chevron_right_rounded, size: 18, color: color),
+              ],
+            ),
+            if (g != null && g.isTime && active) ...[
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: g.progress(seconds),
+                  minHeight: 6,
+                  color: color,
+                  backgroundColor: color.withValues(alpha: 0.15),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Resultado de la meta en el diálogo de fin de sesión.
+class _GoalResult extends StatelessWidget {
+  final SessionGoal goal;
+  final int seconds;
+  final int page;
+  const _GoalResult({required this.goal, required this.seconds, required this.page});
+
+  @override
+  Widget build(BuildContext context) {
+    final bool met;
+    final String text;
+    if (goal.isTime) {
+      met = goal.timeReached(seconds);
+      final missing = (goal.remainingSeconds(seconds) / 60).ceil();
+      text = met ? '🎯 Meta de ${goal.minutes} min cumplida' : 'Meta: ${goal.minutes} min · te faltaron $missing min';
+    } else {
+      met = goal.pageReached(page);
+      text = met
+          ? '🎯 ¡Llegaste a la pág. ${goal.untilPage}!'
+          : 'Meta: pág. ${goal.untilPage} · te faltan ${goal.untilPage! - page} páginas';
+    }
+    final color = met ? Colors.green.shade700 : Theme.of(context).colorScheme.onSurfaceVariant;
+    return Text(text, textAlign: TextAlign.center, style: TextStyle(color: color, fontWeight: FontWeight.w700));
   }
 }

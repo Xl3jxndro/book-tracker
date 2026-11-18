@@ -20,6 +20,12 @@ class NotificationService {
 
   static const _dailyReminderId = 0;
   static const _streakRiskId = 1;
+  static const _sessionGoalId = 2;
+  static const _sessionChannelId = 'session_goal';
+  static const _sessionChannelName = 'Meta de la sesión';
+  static const _sessionChannelDescription = 'Aviso cuando cumples la meta de tiempo de una sesión de lectura';
+
+  static bool _initialized = false;
   static const _streakChannelId = 'streak_alerts';
   static const _streakChannelName = 'Racha en riesgo';
   static const _streakChannelDescription = 'Aviso cuando llevas racha y aún no has leído hoy';
@@ -51,7 +57,14 @@ class NotificationService {
     }
   }
 
+  /// Inicializa una sola vez por isolate (la app o el widget en segundo plano).
+  static Future<void> ensureInitialized() async {
+    if (_initialized) return;
+    await init();
+  }
+
   static Future<void> init() async {
+    _initialized = true;
     tz.initializeTimeZones();
     await _configureLocalTimeZone();
 
@@ -87,6 +100,15 @@ class NotificationService {
       importance: Importance.max, // Permite que la notificación "flote" (heads-up)
       playSound: true,
       showBadge: true,
+      enableVibration: true,
+    ));
+
+    await androidImplementation?.createNotificationChannel(const AndroidNotificationChannel(
+      _sessionChannelId,
+      _sessionChannelName,
+      description: _sessionChannelDescription,
+      importance: Importance.high,
+      playSound: true,
       enableVibration: true,
     ));
 
@@ -217,6 +239,42 @@ class NotificationService {
       debugPrint('🔥 Aviso de racha programado: $alert');
     } catch (e) {
       debugPrint('Error programando el aviso de racha: $e');
+    }
+  }
+
+  /// Programa el aviso "meta de la sesión cumplida" dentro de [inSeconds].
+  static Future<void> scheduleSessionGoal({required int minutes, required int inSeconds}) async {
+    try {
+      await _notificationsPlugin.cancel(id: _sessionGoalId);
+      if (!await Permission.notification.isGranted) return;
+      await _notificationsPlugin.zonedSchedule(
+        id: _sessionGoalId,
+        title: '🎯 ¡Meta de $minutes min cumplida!',
+        body: 'Puedes seguir leyendo o terminar la sesión y guardar tu página.',
+        scheduledDate: tz.TZDateTime.now(tz.local).add(Duration(seconds: inSeconds)),
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            _sessionChannelId,
+            _sessionChannelName,
+            channelDescription: _sessionChannelDescription,
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(presentAlert: true, presentSound: true),
+        ),
+        androidScheduleMode: await _scheduleMode(requestPermission: false),
+        payload: openCurrentBookPayload,
+      );
+    } catch (e) {
+      debugPrint('Error programando el aviso de meta de sesión: $e');
+    }
+  }
+
+  static Future<void> cancelSessionGoal() async {
+    try {
+      await _notificationsPlugin.cancel(id: _sessionGoalId);
+    } catch (e) {
+      debugPrint('Error cancelando el aviso de meta de sesión: $e');
     }
   }
 
