@@ -21,19 +21,22 @@ String finishSummary(Book book) {
   return parts.join(' · ');
 }
 
-/// Hoja que aparece al terminar un libro: calificación y reseña opcional.
-Future<void> showFinishReviewSheet(BuildContext context, Book book) {
+/// Hoja de calificación y reseña. Con [celebrate] es la que aparece justo al
+/// terminar el libro; sin él, la de "Escribir/Editar reseña" (en cualquier
+/// momento, también para libros abandonados).
+Future<void> showFinishReviewSheet(BuildContext context, Book book, {bool celebrate = true}) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => FinishReviewSheet(book: book),
+    builder: (_) => FinishReviewSheet(book: book, celebrate: celebrate),
   );
 }
 
 class FinishReviewSheet extends ConsumerStatefulWidget {
   final Book book;
-  const FinishReviewSheet({super.key, required this.book});
+  final bool celebrate;
+  const FinishReviewSheet({super.key, required this.book, this.celebrate = true});
 
   @override
   ConsumerState<FinishReviewSheet> createState() => _FinishReviewSheetState();
@@ -43,6 +46,22 @@ class _FinishReviewSheetState extends ConsumerState<FinishReviewSheet> {
   final _controller = TextEditingController();
   late int _rating = widget.book.rating ?? 0;
   bool _saving = false;
+  bool _hadReview = false;
+
+  bool get _abandoned => widget.book.status == 3;
+
+  @override
+  void initState() {
+    super.initState();
+    // Si ya tiene reseña, se edita (no se crea otra)
+    ref.read(databaseProvider).getReview(widget.book.id).then((note) {
+      if (note == null || !mounted || _controller.text.isNotEmpty) return;
+      setState(() {
+        _hadReview = true;
+        _controller.text = AppDatabase.reviewText(note);
+      });
+    });
+  }
 
   static const _ratingLabels = ['', 'No me gustó', 'Regular', 'Bueno', 'Muy bueno', '¡Me encantó!'];
 
@@ -60,11 +79,13 @@ class _FinishReviewSheetState extends ConsumerState<FinishReviewSheet> {
     await ref.read(databaseProvider).saveReview(widget.book.id, rating: _rating, text: _controller.text);
     HapticFeedback.mediumImpact();
     navigator.pop();
-    if (hasText || _rating > 0) {
-      messenger.showSnackBar(SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text(hasText ? 'Reseña guardada en tus notas ✍️' : 'Calificación guardada ⭐'),
-      ));
+    final message = hasText
+        ? 'Reseña guardada en tus notas ✍️'
+        : _hadReview
+            ? 'Reseña eliminada'
+            : (_rating > 0 ? 'Calificación guardada ⭐' : null);
+    if (message != null) {
+      messenger.showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, content: Text(message)));
     }
   }
 
@@ -90,12 +111,18 @@ class _FinishReviewSheetState extends ConsumerState<FinishReviewSheet> {
               children: [
                 Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[500], borderRadius: BorderRadius.circular(10))),
                 const SizedBox(height: 20),
-                const Text('🎉', style: TextStyle(fontSize: 44)),
+                Text(widget.celebrate ? '🎉' : (_abandoned ? '📕' : '✍️'), style: const TextStyle(fontSize: 44)),
                 const SizedBox(height: 8),
-                Text('¡Terminaste ${widget.book.title}!',
+                Text(
+                    widget.celebrate
+                        ? '¡Terminaste ${widget.book.title}!'
+                        : (_hadReview ? 'Tu reseña de ${widget.book.title}' : 'Reseña de ${widget.book.title}'),
                     textAlign: TextAlign.center,
                     style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-                if (summary.isNotEmpty) ...[
+                if (_abandoned && !widget.celebrate) ...[
+                  const SizedBox(height: 6),
+                  Text('Lo dejaste sin terminar', textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant)),
+                ] else if (summary.isNotEmpty && widget.book.status == 2) ...[
                   const SizedBox(height: 6),
                   Text(summary, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant)),
                 ],
@@ -128,7 +155,9 @@ class _FinishReviewSheetState extends ConsumerState<FinishReviewSheet> {
                   maxLength: 900,
                   textCapitalization: TextCapitalization.sentences,
                   decoration: InputDecoration(
-                    hintText: '¿Qué te pareció? Una frase basta (opcional)',
+                    hintText: _abandoned
+                        ? '¿Por qué lo dejaste? (opcional)'
+                        : '¿Qué te pareció? Una frase basta (opcional)',
                     filled: true,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                   ),
@@ -139,7 +168,7 @@ class _FinishReviewSheetState extends ConsumerState<FinishReviewSheet> {
                     Expanded(
                       child: TextButton(
                         onPressed: _saving ? null : () => Navigator.pop(context),
-                        child: const Text('AHORA NO'),
+                        child: Text(widget.celebrate ? 'AHORA NO' : 'CANCELAR'),
                       ),
                     ),
                     const SizedBox(width: 12),

@@ -402,6 +402,10 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
           if (isFinished) ...[
             _buildFinishedBadge(currentBook, scheme, theme),
           ] else ...[
+            if (currentBook.status == 3) ...[
+              _buildAbandonedCard(currentBook, scheme, theme),
+              const SizedBox(height: 24),
+            ],
             _buildReadingStats(currentBook, scheme, theme),
             const SizedBox(height: 24),
             _buildDailyGoalSection(scheme, theme),
@@ -637,7 +641,61 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
           icon: Icon(i < (book.rating ?? 0) ? Icons.star : Icons.star_border, color: Colors.amber, size: 32),
           onPressed: () => ref.read(databaseProvider).updateBook(book.copyWith(rating: Value(i + 1))),
         ))),
+        const SizedBox(height: 8),
+        _buildReviewSection(book, scheme, theme),
       ]),
+    );
+  }
+
+  /// Recuadro de un libro abandonado: estrellas y reseña ("¿por qué lo dejaste?").
+  Widget _buildAbandonedCard(Book book, ColorScheme scheme, ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.red.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.18)),
+      ),
+      child: Column(children: [
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(Icons.bookmark_remove_rounded, color: Colors.red.shade400),
+          const SizedBox(width: 8),
+          const Text('ABANDONADO', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2)),
+        ]),
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (i) => IconButton(
+          icon: Icon(i < (book.rating ?? 0) ? Icons.star : Icons.star_border, color: Colors.amber, size: 28),
+          onPressed: () => ref.read(databaseProvider).updateBook(book.copyWith(rating: Value(i + 1))),
+        ))),
+        _buildReviewSection(book, scheme, theme),
+      ]),
+    );
+  }
+
+  /// La reseña del libro (si tiene) y el botón para escribirla o editarla.
+  Widget _buildReviewSection(Book book, ColorScheme scheme, ThemeData theme) {
+    return StreamBuilder<Note?>(
+      stream: ref.read(databaseProvider).watchReview(book.id),
+      builder: (context, snapshot) {
+        final review = snapshot.data;
+        return Column(children: [
+          if (review != null) ...[
+            Text(
+              '"${AppDatabase.reviewText(review)}"',
+              textAlign: TextAlign.center,
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic, height: 1.4),
+            ),
+            const SizedBox(height: 8),
+          ],
+          OutlinedButton.icon(
+            onPressed: () => showFinishReviewSheet(context, book, celebrate: false),
+            icon: Icon(review == null ? Icons.rate_review_outlined : Icons.edit_note_rounded),
+            label: Text(review == null ? 'ESCRIBIR RESEÑA' : 'EDITAR RESEÑA'),
+          ),
+        ]);
+      },
     );
   }
 

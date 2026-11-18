@@ -60,6 +60,33 @@ void main() {
       expect(await db.select(db.notes).get(), isEmpty);
     });
 
+    test('editar en cualquier momento: no duplica, conserva la fecha; vaciarla la borra', () async {
+      await db.saveReview(id, rating: 4, text: 'Primera versión');
+      final first = (await db.select(db.notes).get()).single;
+
+      await db.saveReview(id, rating: 5, text: 'Versión corregida');
+      final notes = await db.select(db.notes).get();
+      expect(notes, hasLength(1), reason: 'edita la reseña existente');
+      expect(notes.single.id, first.id);
+      expect(notes.single.createdAt, first.createdAt);
+      expect(notes.single.content, 'Mi reseña: Versión corregida');
+      expect((await db.select(db.books).get()).single.rating, 5);
+
+      await db.saveReview(id, rating: 0, text: '');
+      expect(await db.select(db.notes).get(), isEmpty, reason: 'texto vacío = borrar la reseña');
+    });
+
+    test('reconoce como reseña la importada de Goodreads y no toca las demás notas', () async {
+      await db.insertNote(NotesCompanion.insert(bookId: id, content: 'Una cita cualquiera', createdAt: Value(DateTime(2026, 1, 1))));
+      await db.insertNote(NotesCompanion.insert(bookId: id, content: 'Mi reseña: importada', createdAt: Value(DateTime(2025, 6, 1))));
+      final review = await db.getReview(id);
+      expect(AppDatabase.reviewText(review!), 'importada');
+
+      await db.saveReview(id, rating: 0, text: 'editada');
+      final contents = (await db.select(db.notes).get()).map((n) => n.content);
+      expect(contents, unorderedEquals(['Una cita cualquiera', 'Mi reseña: editada']));
+    });
+
     test('una reseña muy larga se recorta al límite de las notas', () async {
       await db.saveReview(id, rating: 5, text: 'a' * 2000);
       expect((await db.select(db.notes).get()).single.content.length, 1000);
@@ -106,5 +133,50 @@ void main() {
     expect(saved.rating, 5);
     final notes = (await tester.runAsync(() => db.select(db.notes).get()))!;
     expect(notes.single.content, 'Mi reseña: Imprescindible.');
+  });
+
+  Future<void> openSheet(WidgetTester tester, AppDatabase db, Book book, {bool celebrate = false}) async {
+    await tester.pumpWidget(ProviderScope(
+      overrides: [databaseProvider.overrideWithValue(db)],
+      child: MaterialApp(
+        home: Scaffold(
+          body: Builder(builder: (context) => TextButton(
+                onPressed: () => showFinishReviewSheet(context, book, celebrate: celebrate),
+                child: const Text('abrir'),
+              )),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('abrir'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('editar: carga la reseña existente', (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    await tester.runAsync(() async {
+      final id = await db.insertBook(BooksCompanion.insert(title: 'Dune', author: 'Herbert', totalPages: 600, status: const Value(2)));
+      await db.saveReview(id, rating: 4, text: 'La especia debe fluir');
+    });
+    final book = (await tester.runAsync(() => db.select(db.books).get()))!.single;
+
+    await openSheet(tester, db, book);
+    expect(find.text('Tu reseña de Dune'), findsOneWidget);
+    expect(find.text('La especia debe fluir'), findsOneWidget, reason: 'texto precargado');
+    expect(find.text('CANCELAR'), findsOneWidget);
+  });
+
+  testWidgets('abandonado: pregunta por qué lo dejaste', (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    await tester.runAsync(() => db.insertBook(BooksCompanion.insert(title: 'Ulises', author: 'Joyce', totalPages: 783, status: const Value(3))));
+    final book = (await tester.runAsync(() => db.select(db.books).get()))!.single;
+
+    await openSheet(tester, db, book);
+    expect(find.text('Reseña de Ulises'), findsOneWidget);
+    expect(find.text('Lo dejaste sin terminar'), findsOneWidget);
+    expect(find.text('¿Por qué lo dejaste? (opcional)'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

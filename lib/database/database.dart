@@ -153,8 +153,22 @@ class AppDatabase extends _$AppDatabase {
   /// Prefijo de las reseñas (al terminar un libro o importadas de Goodreads).
   static const reviewPrefix = 'Mi reseña: ';
 
-  /// Guarda la reseña al terminar un libro: la calificación (1–5; 0 = no
-  /// cambiarla) y, si hay texto, una nota "Mi reseña: …".
+  /// Consulta de la reseña de un libro: la nota "Mi reseña: …" más reciente.
+  SimpleSelectStatement<$NotesTable, Note> _reviewQuery(int bookId) => select(notes)
+    ..where((t) => t.bookId.equals(bookId) & t.content.like('$reviewPrefix%'))
+    ..orderBy([(t) => OrderingTerm.desc(t.createdAt), (t) => OrderingTerm.desc(t.id)])
+    ..limit(1);
+
+  Future<Note?> getReview(int bookId) => _reviewQuery(bookId).getSingleOrNull();
+  Stream<Note?> watchReview(int bookId) => _reviewQuery(bookId).watchSingleOrNull();
+
+  /// Texto de una reseña sin el prefijo.
+  static String reviewText(Note note) =>
+      note.content.startsWith(reviewPrefix) ? note.content.substring(reviewPrefix.length) : note.content;
+
+  /// Guarda la reseña de un libro (al terminarlo o en cualquier momento):
+  /// la calificación (1–5; 0 = no cambiarla) y el texto. Si ya tenía reseña,
+  /// la edita (conserva su fecha); si el texto queda vacío, la borra.
   Future<void> saveReview(int bookId, {required int rating, String text = ''}) async {
     await transaction(() async {
       if (rating > 0) {
@@ -162,12 +176,17 @@ class AppDatabase extends _$AppDatabase {
             .write(BooksCompanion(rating: Value(rating.clamp(1, 5).toInt())));
       }
       final review = text.trim();
-      if (review.isNotEmpty) {
-        final content = '$reviewPrefix$review';
-        await into(notes).insert(NotesCompanion.insert(
-          bookId: bookId,
-          content: content.length > 1000 ? content.substring(0, 1000) : content,
-        ));
+      final existing = await getReview(bookId);
+      if (review.isEmpty) {
+        if (existing != null) await (delete(notes)..where((t) => t.id.equals(existing.id))).go();
+        return;
+      }
+      final full = '$reviewPrefix$review';
+      final content = full.length > 1000 ? full.substring(0, 1000) : full;
+      if (existing != null) {
+        await (update(notes)..where((t) => t.id.equals(existing.id))).write(NotesCompanion(content: Value(content)));
+      } else {
+        await into(notes).insert(NotesCompanion.insert(bookId: bookId, content: content));
       }
     });
   }
