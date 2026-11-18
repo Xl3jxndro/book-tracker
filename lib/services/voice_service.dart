@@ -48,9 +48,9 @@ class VoiceService {
           onDone();
         }
       },
-      listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 15),
       listenOptions: SpeechListenOptions(
+        listenFor: const Duration(seconds: 30),
+        pauseFor: const Duration(seconds: 15),
         cancelOnError: true,
         partialResults: true,
         listenMode: ListenMode.dictation, // Optimizado para dictado de notas
