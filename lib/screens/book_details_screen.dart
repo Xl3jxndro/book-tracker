@@ -17,6 +17,7 @@ import '../providers/theme_provider.dart';
 import '../widgets/timer_widget.dart';
 import '../widgets/add_note_sheet.dart';
 import '../widgets/quote_share.dart';
+import '../widgets/finish_review_sheet.dart';
 import '../widgets/empty_state_widget.dart';
 import '../providers/tutorial_provider.dart';
 import '../providers/daily_goal_provider.dart';
@@ -111,8 +112,40 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     );
   }
 
+  /// Al pasar a "Terminado" (desde el progreso o el cronómetro): confeti y
+  /// la hoja para calificar y reseñar.
+  void _onBooksChanged(AsyncValue<List<Book>>? previous, AsyncValue<List<Book>> next) {
+    Book? find(AsyncValue<List<Book>>? value) {
+      for (final b in value?.valueOrNull ?? const <Book>[]) {
+        if (b.id == widget.book.id) return b;
+      }
+      return null;
+    }
+
+    final before = find(previous), after = find(next);
+    if (before == null || after == null) return;
+    if (before.status != 2 && after.status == 2) _celebrateFinish(after);
+  }
+
+  Future<void> _celebrateFinish(Book book) async {
+    _confettiController.play();
+    // Esperar a que se cierre el diálogo que guardó el progreso: si la hoja se
+    // abriera antes, ese cierre la cerraría a ella.
+    for (var i = 0; i < 20; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (!mounted) return;
+      if (ModalRoute.of(context)?.isCurrent ?? false) break;
+    }
+    if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) return;
+    await Future<void>.delayed(const Duration(milliseconds: 600)); // dejar ver el confeti
+    if (!mounted) return;
+    final latest = ref.read(booksStreamProvider).valueOrNull?.where((b) => b.id == book.id).firstOrNull ?? book;
+    await showFinishReviewSheet(context, latest);
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<List<Book>>>(booksStreamProvider, _onBooksChanged);
     final booksAsync = ref.watch(booksStreamProvider);
     final theme = Theme.of(context);
     
@@ -672,8 +705,8 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
             ElevatedButton(
               onPressed: error != null ? null : () async {
                 final navigator = Navigator.of(dialogContext);
+                // Si con esto se termina el libro, _onBooksChanged lanza el confeti y la reseña
                 await ref.read(databaseProvider).logProgress(book.id, val!);
-                if (val >= book.totalPages && val > book.readPages) _confettiController.play();
                 navigator.pop();
               },
               child: const Text('GUARDAR'),

@@ -150,6 +150,28 @@ class AppDatabase extends _$AppDatabase {
         ]);
   }
 
+  /// Prefijo de las reseñas (al terminar un libro o importadas de Goodreads).
+  static const reviewPrefix = 'Mi reseña: ';
+
+  /// Guarda la reseña al terminar un libro: la calificación (1–5; 0 = no
+  /// cambiarla) y, si hay texto, una nota "Mi reseña: …".
+  Future<void> saveReview(int bookId, {required int rating, String text = ''}) async {
+    await transaction(() async {
+      if (rating > 0) {
+        await (update(books)..where((t) => t.id.equals(bookId)))
+            .write(BooksCompanion(rating: Value(rating.clamp(1, 5).toInt())));
+      }
+      final review = text.trim();
+      if (review.isNotEmpty) {
+        final content = '$reviewPrefix$review';
+        await into(notes).insert(NotesCompanion.insert(
+          bookId: bookId,
+          content: content.length > 1000 ? content.substring(0, 1000) : content,
+        ));
+      }
+    });
+  }
+
   /// Marca o desmarca una nota como cita favorita.
   Future<void> setNoteFavorite(int noteId, bool favorite) =>
       (update(notes)..where((t) => t.id.equals(noteId))).write(NotesCompanion(isFavorite: Value(favorite)));

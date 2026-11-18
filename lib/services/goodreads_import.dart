@@ -130,7 +130,7 @@ class GoodreadsImport {
 
       final notes = <String>[];
       final review = cleanReview(cell(row, reviewCol));
-      if (review.isNotEmpty) notes.add(_truncate('Mi reseña: $review', _maxNote));
+      if (review.isNotEmpty) notes.add(_truncate('${AppDatabase.reviewPrefix}$review', _maxNote));
       final privateNotes = cleanReview(cell(row, privateNotesCol));
       if (privateNotes.isNotEmpty) notes.add(_truncate(privateNotes, _maxNote));
 
