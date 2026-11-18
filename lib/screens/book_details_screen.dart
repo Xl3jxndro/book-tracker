@@ -72,7 +72,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     text += "📊 *Progreso:* ${book.readPages}/${book.totalPages} pág.\n\n";
     text += "✨ Compartido desde $appName";
     
-    Share.share(text);
+    SharePlus.instance.share(ShareParams(text: text));
   }
 
   // --- LÓGICA DE FILTRADO Y TIEMPO ---
@@ -246,7 +246,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: sortedNotes.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 16),
+              separatorBuilder: (_, _) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 final note = sortedNotes[index];
                 return _NoteEntranceAnimation(
@@ -587,7 +587,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
         );
       },
       loading: () => const SizedBox(),
-      error: (_, __) => const SizedBox(),
+      error: (_, _) => const SizedBox(),
     );
   }
 

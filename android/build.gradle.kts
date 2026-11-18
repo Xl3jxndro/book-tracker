@@ -12,18 +12,10 @@ rootProject.layout.buildDirectory.value(newBuildDir)
 subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
-    
-    // PARCHE CRUCIAL PARA ISAR Y LIBRERÍAS ANTIGUAS
-    afterEvaluate {
-        if (project.hasProperty("android")) {
-            val android = project.extensions.findByName("android") as? com.android.build.gradle.BaseExtension
-            android?.apply {
-                if (namespace == null) {
-                    namespace = "com.fix.${project.name.replace("-", ".")}"
-                }
-            }
-        }
-    }
+}
+subprojects {
+    // Los plugins necesitan que la app se configure antes (como en la plantilla de Flutter)
+    project.evaluationDependsOn(":app")
 }
 
 tasks.register<Delete>("clean") {

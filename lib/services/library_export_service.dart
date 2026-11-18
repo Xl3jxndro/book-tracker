@@ -175,10 +175,10 @@ class LibraryExportService {
     final file = File(p.join(dir.path, fileName(format, now)));
     await file.writeAsString(content, encoding: utf8, flush: true);
 
-    await Share.shareXFiles(
-      [XFile(file.path, mimeType: mimeType)],
+    await SharePlus.instance.share(ShareParams(
+      files: [XFile(file.path, mimeType: mimeType)],
       subject: 'Mi biblioteca de Book Tracker',
-    );
+    ));
     return books.length;
   }
 }

@@ -45,7 +45,7 @@ void main() {
       );
       raw.execute("INSERT INTO notes (book_id, content) VALUES (1, 'Una cita')");
       raw.execute('PRAGMA user_version = 7');
-      raw.dispose();
+      raw.close();
 
       // La app nueva abre esa base: se ejecuta la migración
       final db = AppDatabase.forTesting(NativeDatabase(file));

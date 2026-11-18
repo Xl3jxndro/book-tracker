@@ -79,7 +79,7 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
   /// Aviso "racha en riesgo": se reprograma al leer, al cambiar el ajuste o
   /// el día, y al volver a la app.
   void _initStreakRisk() {
-    void sync(_, __) => StreakRiskSync.sync(ref.read);
+    void sync(_, _) => StreakRiskSync.sync(ref.read);
     ref.listenManual(sessionsStreamProvider, sync);
     ref.listenManual(streakRiskProvider, sync);
     ref.listenManual(todayProvider, sync);
@@ -106,7 +106,7 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
     HomeWidgetSync.attach(ref.read(databaseProvider));
 
     // Cualquier cambio que se vea en el widget dispara una actualización
-    void refresh(_, __) => HomeWidgetSync.refresh();
+    void refresh(_, _) => HomeWidgetSync.refresh();
     ref.listenManual(booksStreamProvider, refresh);
     ref.listenManual(sessionsStreamProvider, refresh);
     ref.listenManual(currentBookProvider, refresh);

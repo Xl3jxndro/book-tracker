@@ -31,10 +31,10 @@ Future<void> shareFullBackup(BuildContext context, WidgetRef ref) async {
       return BackupService.writeZip(ref.read(databaseProvider), tmp, BackupService.backupFileName(DateTime.now()));
     });
     if (file == null) return;
-    await Share.shareXFiles(
-      [XFile(file.path, mimeType: 'application/zip')],
+    await SharePlus.instance.share(ShareParams(
+      files: [XFile(file.path, mimeType: 'application/zip')],
       subject: 'Respaldo de Book Tracker',
-    );
+    ));
   } catch (e) {
     debugPrint('Error creando respaldo: $e');
     if (context.mounted) _showError(context, 'No se pudo crear el respaldo. Inténtalo de nuevo.');
@@ -44,7 +44,7 @@ Future<void> shareFullBackup(BuildContext context, WidgetRef ref) async {
 /// Elegir un respaldo (.zip) o exportación (.json) y restaurarlo.
 Future<void> restoreFromPickedFile(BuildContext context, WidgetRef ref) async {
   final picked = await FilePicker.pickFiles(dialogTitle: 'Elige tu respaldo');
-  final path = picked?.files.single.path;
+  final path = picked.isEmpty ? null : picked.first.path;
   if (path == null || !context.mounted) return;
   await _restore(context, ref, File(path), isUndo: false);
 }

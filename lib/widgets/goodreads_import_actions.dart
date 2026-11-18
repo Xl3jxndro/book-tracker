@@ -19,7 +19,7 @@ Future<void> importFromGoodreads(BuildContext context, WidgetRef ref) async {
   if (ready != true || !context.mounted) return;
 
   final picked = await FilePicker.pickFiles(dialogTitle: 'Elige el CSV de Goodreads');
-  final path = picked?.files.single.path;
+  final path = picked.isEmpty ? null : picked.first.path;
   if (path == null || !context.mounted) return;
 
   final db = ref.read(databaseProvider);

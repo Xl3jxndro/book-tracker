@@ -3,7 +3,7 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("kotlin-android")
+    // El plugin de Flutter debe aplicarse después del de Android.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -24,17 +24,21 @@ val hasReleaseKeystore = keystorePropertiesFile.exists()
 
 android {
     namespace = "com.jabc.booktracker"
-    compileSdk = flutter.compileSdkVersion
+    // Varias dependencias (notificaciones, permisos, androidx.core) exigen API 37;
+    // Flutter 3.50 trae 36 por defecto. No cambia el targetSdk.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+    // El lint de AGP 9 falla con Java 17 (usa List.removeLast(), de Java 21) al
+    // analizar plugins. Se omite en release; no afecta al APK/AAB generado.
+    lint {
+        checkReleaseBuilds = false
     }
 
     defaultConfig {
@@ -75,7 +79,13 @@ android {
 }
 
 dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
 }
 
 flutter {

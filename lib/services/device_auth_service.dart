@@ -34,7 +34,8 @@ class DeviceAuthService {
     try {
       return await _auth.authenticate(
         localizedReason: reason,
-        options: AuthenticationOptions(stickyAuth: true, biometricOnly: biometricOnly),
+        persistAcrossBackgrounding: true,
+        biometricOnly: biometricOnly,
       );
     } catch (e) {
       debugPrint('Error de autenticación del dispositivo: $e');

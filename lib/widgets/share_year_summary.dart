@@ -55,10 +55,10 @@ class _YearSummaryShareDialogState extends State<_YearSummaryShareDialog> {
       await file.writeAsBytes(bytes, flush: true);
 
       HapticFeedback.mediumImpact();
-      await Share.shareXFiles(
-        [XFile(file.path, mimeType: 'image/png')],
+      await SharePlus.instance.share(ShareParams(
+        files: [XFile(file.path, mimeType: 'image/png')],
         text: 'Mi año lector ${widget.summary.year} 📚 #BookTracker',
-      );
+      ));
       if (mounted) Navigator.pop(context);
     } catch (e) {
       debugPrint('Error compartiendo resumen: $e');

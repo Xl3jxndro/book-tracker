@@ -68,7 +68,7 @@ class NotificationService {
     );
 
     await _notificationsPlugin.initialize(
-        initializationSettings,
+        settings: initializationSettings,
         onDidReceiveNotificationResponse: (NotificationResponse response) {
           _taps.add(response.payload);
         },
@@ -152,15 +152,15 @@ class NotificationService {
   static Future<void> scheduleDailyNotification(int hour, int minute, {bool requestPermission = true}) async {
     final scheduleMode = await _scheduleMode(requestPermission: requestPermission);
 
-    await _notificationsPlugin.cancel(_dailyReminderId);
+    await _notificationsPlugin.cancel(id: _dailyReminderId);
 
     try {
       await _notificationsPlugin.zonedSchedule(
-        _dailyReminderId,
-        '¡Hora de leer!',
-        'Tu racha te espera. Abre un libro y relájate un momento.',
-        _nextInstanceOfTime(hour, minute),
-        const NotificationDetails(
+        id: _dailyReminderId,
+        title: '¡Hora de leer!',
+        body: 'Tu racha te espera. Abre un libro y relájate un momento.',
+        scheduledDate: _nextInstanceOfTime(hour, minute),
+        notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
             'reading_reminders',
             'Recordatorios de Lectura',
@@ -176,7 +176,6 @@ class NotificationService {
           ),
         ),
         androidScheduleMode: scheduleMode,
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
         payload: openCurrentBookPayload,
       );
@@ -186,22 +185,22 @@ class NotificationService {
   }
 
   /// Apaga solo el recordatorio diario (el aviso de racha va aparte).
-  static Future<void> cancelDailyReminder() => _notificationsPlugin.cancel(_dailyReminderId);
+  static Future<void> cancelDailyReminder() => _notificationsPlugin.cancel(id: _dailyReminderId);
 
   /// Programa el aviso "racha en riesgo" (reemplaza el anterior) o lo cancela
   /// si [alert] es null. No pide permisos: si no hay, no hace nada.
   static Future<void> scheduleStreakRisk(StreakRiskAlert? alert) async {
     try {
-      await _notificationsPlugin.cancel(_streakRiskId);
+      await _notificationsPlugin.cancel(id: _streakRiskId);
       if (alert == null) return;
       if (!await Permission.notification.isGranted) return;
 
       await _notificationsPlugin.zonedSchedule(
-        _streakRiskId,
-        StreakRisk.title(alert.streak),
-        StreakRisk.body,
-        tz.TZDateTime.from(alert.at, tz.local),
-        const NotificationDetails(
+        id: _streakRiskId,
+        title: StreakRisk.title(alert.streak),
+        body: StreakRisk.body,
+        scheduledDate: tz.TZDateTime.from(alert.at, tz.local),
+        notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
             _streakChannelId,
             _streakChannelName,
@@ -213,7 +212,6 @@ class NotificationService {
           iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
         ),
         androidScheduleMode: await _scheduleMode(requestPermission: false),
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         payload: openCurrentBookPayload,
       );
       debugPrint('🔥 Aviso de racha programado: $alert');
@@ -224,10 +222,10 @@ class NotificationService {
 
   /// Muestra ya el aviso de racha (vista previa en builds de prueba).
   static Future<void> showStreakRiskPreview(int streak) => _notificationsPlugin.show(
-        998,
-        StreakRisk.title(streak),
-        StreakRisk.body,
-        const NotificationDetails(
+        id: 998,
+        title: StreakRisk.title(streak),
+        body: StreakRisk.body,
+        notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
             _streakChannelId,
             _streakChannelName,
@@ -281,10 +279,10 @@ class NotificationService {
     );
 
     await _notificationsPlugin.show(
-      999, // ID único para la prueba
-      '¡Prueba de Lectura! 📖',
-      'Esto es una notificación instantánea para verificar que todo funciona.',
-      notificationDetails,
+      id: 999, // ID único para la prueba
+      title: '¡Prueba de Lectura! 📖',
+      body: 'Esto es una notificación instantánea para verificar que todo funciona.',
+      notificationDetails: notificationDetails,
       payload: 'test_payload',
     );
   }

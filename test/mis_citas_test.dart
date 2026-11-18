@@ -38,7 +38,7 @@ void main() {
     raw.execute("INSERT INTO books (id, title, author, total_pages) VALUES (1, 'Satanás', 'Mario Mendoza', 285)");
     raw.execute("INSERT INTO notes (book_id, content, page_number) VALUES (1, 'Una cita', 12), (1, 'Otra', NULL)");
     raw.execute('PRAGMA user_version = 8');
-    raw.dispose();
+    raw.close();
 
     final db = AppDatabase.forTesting(NativeDatabase(file));
     addTearDown(db.close);

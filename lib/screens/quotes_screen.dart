@@ -118,7 +118,7 @@ class _QuotesScreenState extends ConsumerState<QuotesScreen> {
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                         itemCount: visible.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
                         itemBuilder: (context, i) => _QuoteCard(
                           key: ValueKey(visible[i].note.id),
                           quote: visible[i],

@@ -7,10 +7,10 @@ import android.widget.ImageView
 import android.widget.TextView
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdView
-// ESTA ES LA RUTA CORRECTA:
-import io.flutter.plugins.googlemobileads.GoogleMobileAdsPlugin
+// Desde google_mobile_ads 8 la interfaz es independiente (antes GoogleMobileAdsPlugin.NativeAdFactory)
+import io.flutter.plugins.googlemobileads.NativeAdFactory
 
-class ListTileNativeAdFactory(private val context: Context) : GoogleMobileAdsPlugin.NativeAdFactory {
+class ListTileNativeAdFactory(private val context: Context) : NativeAdFactory {
 
     override fun createNativeAd(
         nativeAd: NativeAd,

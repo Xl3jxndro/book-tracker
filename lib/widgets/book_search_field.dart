@@ -218,7 +218,7 @@ class _BookSearchFieldState extends State<BookSearchField> {
                     : Image.network(
                         book.thumbnail!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _coverPlaceholder(muted),
+                        errorBuilder: (_, _, _) => _coverPlaceholder(muted),
                       ),
               ),
             ),

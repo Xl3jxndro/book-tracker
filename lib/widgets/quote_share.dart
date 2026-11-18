@@ -37,10 +37,10 @@ Future<void> shareQuoteAsImage(BuildContext context, Book book, Note note) async
     final file = File('${directory.path}/quote_${note.id}.png');
     await file.writeAsBytes(bytes, flush: true);
 
-    await Share.shareXFiles(
-      [XFile(file.path, mimeType: 'image/png')],
+    await SharePlus.instance.share(ShareParams(
+      files: [XFile(file.path, mimeType: 'image/png')],
       text: '📖 ${book.title}\n✨ Compartido desde Book Tracker',
-    );
+    ));
     HapticFeedback.heavyImpact();
   } catch (e) {
     debugPrint('Error compartiendo cita: $e');

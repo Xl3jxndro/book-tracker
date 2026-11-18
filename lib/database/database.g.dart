@@ -1530,7 +1530,7 @@ final class $$BooksTableReferences
     _$AppDatabase db,
   ) => MultiTypedResultKey.fromTable(
     db.notes,
-    aliasName: $_aliasNameGenerator(db.books.id, db.notes.bookId),
+    aliasName: 'books__id__notes__book_id',
   );
 
   $$NotesTableProcessedTableManager get notesRefs {
@@ -1548,7 +1548,7 @@ final class $$BooksTableReferences
   static MultiTypedResultKey<$ReadingSessionsTable, List<ReadingSession>>
   _readingSessionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.readingSessions,
-    aliasName: $_aliasNameGenerator(db.books.id, db.readingSessions.bookId),
+    aliasName: 'books__id__reading_sessions__book_id',
   );
 
   $$ReadingSessionsTableProcessedTableManager get readingSessionsRefs {
@@ -1941,8 +1941,10 @@ class $$BooksTableTableManager
               ),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) =>
-                    (e.readTable(table), $$BooksTableReferences(db, table, e)),
+                (e) => (
+                  e.readTable<$BooksTable, Book>(table),
+                  $$BooksTableReferences(db, table, e),
+                ),
               )
               .toList(),
           prefetchHooksCallback:
@@ -1957,23 +1959,27 @@ class $$BooksTableTableManager
                   getPrefetchedDataCallback: (items) async {
                     return [
                       if (notesRefs)
-                        await $_getPrefetchedData<Book, $BooksTable, Note>(
+                        await $_getPrefetchedDataByColumns<
+                          Book,
+                          $BooksTable,
+                          Note,
+                          $NotesTable
+                        >(
                           currentTable: table,
                           referencedTable: $$BooksTableReferences
                               ._notesRefsTable(db),
                           managerFromTypedResult: (p0) =>
                               $$BooksTableReferences(db, table, p0).notesRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.bookId == item.id,
-                              ),
+                          currentColumn: 'id',
+                          referencedColumn: 'book_id',
                           typedResults: items,
                         ),
                       if (readingSessionsRefs)
-                        await $_getPrefetchedData<
+                        await $_getPrefetchedDataByColumns<
                           Book,
                           $BooksTable,
-                          ReadingSession
+                          ReadingSession,
+                          $ReadingSessionsTable
                         >(
                           currentTable: table,
                           referencedTable: $$BooksTableReferences
@@ -1984,10 +1990,8 @@ class $$BooksTableTableManager
                                 table,
                                 p0,
                               ).readingSessionsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.bookId == item.id,
-                              ),
+                          currentColumn: 'id',
+                          referencedColumn: 'book_id',
                           typedResults: items,
                         ),
                     ];
@@ -2036,7 +2040,7 @@ final class $$NotesTableReferences
   $$NotesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $BooksTable _bookIdTable(_$AppDatabase db) =>
-      db.books.createAlias($_aliasNameGenerator(db.notes.bookId, db.books.id));
+      db.books.createAlias('notes__book_id__books__id');
 
   $$BooksTableProcessedTableManager get bookId {
     final $_column = $_itemColumn<int>('book_id')!;
@@ -2280,8 +2284,10 @@ class $$NotesTableTableManager
               ),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) =>
-                    (e.readTable(table), $$NotesTableReferences(db, table, e)),
+                (e) => (
+                  e.readTable<$NotesTable, Note>(table),
+                  $$NotesTableReferences(db, table, e),
+                ),
               )
               .toList(),
           prefetchHooksCallback: ({bookId = false}) {
@@ -2369,9 +2375,8 @@ final class $$ReadingSessionsTableReferences
     super.$_typedResult,
   );
 
-  static $BooksTable _bookIdTable(_$AppDatabase db) => db.books.createAlias(
-    $_aliasNameGenerator(db.readingSessions.bookId, db.books.id),
-  );
+  static $BooksTable _bookIdTable(_$AppDatabase db) =>
+      db.books.createAlias('reading_sessions__book_id__books__id');
 
   $$BooksTableProcessedTableManager get bookId {
     final $_column = $_itemColumn<int>('book_id')!;
@@ -2598,7 +2603,7 @@ class $$ReadingSessionsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$ReadingSessionsTable, ReadingSession>(table),
                   $$ReadingSessionsTableReferences(db, table, e),
                 ),
               )
