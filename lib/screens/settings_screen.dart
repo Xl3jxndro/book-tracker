@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +8,7 @@ import '../providers/streak_risk_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/app_info_provider.dart';
 import '../providers/database_provider.dart';
+import '../services/notification_service.dart';
 import '../services/library_export_service.dart';
 import '../widgets/backup_actions.dart';
 import '../widgets/secret_dialogs.dart';
@@ -106,6 +108,8 @@ class SettingsScreen extends ConsumerWidget {
     final currentMode = ref.watch(themeProvider);
     final notifSettings = ref.watch(notificationsProvider);
     final streakRisk = ref.watch(streakRiskProvider);
+    // Activado pero sin permiso: el aviso no podría sonar
+    final streakRiskBlocked = streakRisk.enabled && ref.watch(notificationPermissionProvider).valueOrNull == false;
     final auth = ref.watch(authProvider);
     final appVersion = ref.watch(appVersionProvider).valueOrNull ?? '…';
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -202,17 +206,29 @@ class SettingsScreen extends ConsumerWidget {
             _settingsTile(
               context,
               title: 'Aviso de racha en riesgo',
-              subtitle: streakRisk.enabled
-                  ? 'Si llevas racha y hoy no has leído, te aviso a las ${streakRisk.formattedTime}'
-                  : 'Desactivado',
+              subtitle: !streakRisk.enabled
+                  ? 'Desactivado'
+                  : streakRiskBlocked
+                      ? '⚠️ Falta el permiso de notificaciones. Toca para activarlo.'
+                      : 'Si llevas racha y hoy no has leído, te aviso a las ${streakRisk.formattedTime}',
               leadingIcon: Icons.local_fire_department_rounded,
               iconColor: Colors.deepOrange,
-              onTap: streakRisk.enabled ? () => _selectStreakRiskTime(context, ref, streakRisk) : null,
+              onTap: !streakRisk.enabled
+                  ? null
+                  : streakRiskBlocked
+                      ? () async {
+                          await ref.read(streakRiskProvider.notifier).setEnabled(true);
+                          ref.invalidate(notificationPermissionProvider);
+                        }
+                      : () => _selectStreakRiskTime(context, ref, streakRisk),
+              // Solo en builds de prueba: ver el aviso sin esperar a la noche
+              onLongPress: kDebugMode ? () => NotificationService.showStreakRiskPreview(5) : null,
               trailing: Switch.adaptive(
                 value: streakRisk.enabled,
                 activeThumbColor: Colors.deepOrange,
                 onChanged: (value) async {
                   final result = await ref.read(streakRiskProvider.notifier).setEnabled(value);
+                  ref.invalidate(notificationPermissionProvider);
                   if (value && !result && context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                       content: Text('Activa las notificaciones de Book Tracker para recibir el aviso.'),
@@ -581,11 +597,13 @@ class SettingsScreen extends ConsumerWidget {
     required IconData leadingIcon, 
     required Color iconColor,
     Widget? trailing,
-    VoidCallback? onTap
+    VoidCallback? onTap,
+    VoidCallback? onLongPress,
   }) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       onTap: onTap,
+      onLongPress: onLongPress,
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(

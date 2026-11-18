@@ -222,6 +222,24 @@ class NotificationService {
     }
   }
 
+  /// Muestra ya el aviso de racha (vista previa en builds de prueba).
+  static Future<void> showStreakRiskPreview(int streak) => _notificationsPlugin.show(
+        998,
+        StreakRisk.title(streak),
+        StreakRisk.body,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            _streakChannelId,
+            _streakChannelName,
+            channelDescription: _streakChannelDescription,
+            importance: Importance.high,
+            priority: Priority.high,
+            styleInformation: BigTextStyleInformation(StreakRisk.body),
+          ),
+        ),
+        payload: openCurrentBookPayload,
+      );
+
   static Future<void> cancelAll() async {
     await _notificationsPlugin.cancelAll();
   }

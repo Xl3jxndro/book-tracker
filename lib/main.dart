@@ -141,6 +141,7 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
         // "Bloquear al salir" y, además, el widget pudo pausar o cambió el día
         auth.appResumed();
         HomeWidgetSync.refresh();
+        ref.invalidate(notificationPermissionProvider);
         StreakRiskSync.sync(ref.read);
       default:
         break;

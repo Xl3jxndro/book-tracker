@@ -22,6 +22,10 @@ class StreakRiskSettings {
       StreakRiskSettings(enabled: enabled ?? this.enabled, hour: hour ?? this.hour, minute: minute ?? this.minute);
 }
 
+/// ¿La app puede mostrar notificaciones? Se vuelve a consultar al volver a
+/// la app (el usuario pudo cambiarlo en los ajustes de Android).
+final notificationPermissionProvider = FutureProvider.autoDispose<bool>((ref) => Permission.notification.isGranted);
+
 final streakRiskProvider = StateNotifierProvider<StreakRiskNotifier, StreakRiskSettings>((ref) => StreakRiskNotifier());
 
 /// Aviso "racha en riesgo": activado por defecto a las 21:00. Solo suena si
