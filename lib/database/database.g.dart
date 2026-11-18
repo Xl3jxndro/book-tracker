@@ -774,6 +774,21 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _isFavoriteMeta = const VerificationMeta(
+    'isFavorite',
+  );
+  @override
+  late final GeneratedColumn<bool> isFavorite = GeneratedColumn<bool>(
+    'is_favorite',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_favorite" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -781,6 +796,7 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     content,
     pageNumber,
     createdAt,
+    isFavorite,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -825,6 +841,12 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('is_favorite')) {
+      context.handle(
+        _isFavoriteMeta,
+        isFavorite.isAcceptableOrUnknown(data['is_favorite']!, _isFavoriteMeta),
+      );
+    }
     return context;
   }
 
@@ -854,6 +876,10 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      isFavorite: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_favorite'],
+      )!,
     );
   }
 
@@ -869,12 +895,14 @@ class Note extends DataClass implements Insertable<Note> {
   final String content;
   final int? pageNumber;
   final DateTime createdAt;
+  final bool isFavorite;
   const Note({
     required this.id,
     required this.bookId,
     required this.content,
     this.pageNumber,
     required this.createdAt,
+    required this.isFavorite,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -886,6 +914,7 @@ class Note extends DataClass implements Insertable<Note> {
       map['page_number'] = Variable<int>(pageNumber);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    map['is_favorite'] = Variable<bool>(isFavorite);
     return map;
   }
 
@@ -898,6 +927,7 @@ class Note extends DataClass implements Insertable<Note> {
           ? const Value.absent()
           : Value(pageNumber),
       createdAt: Value(createdAt),
+      isFavorite: Value(isFavorite),
     );
   }
 
@@ -912,6 +942,7 @@ class Note extends DataClass implements Insertable<Note> {
       content: serializer.fromJson<String>(json['content']),
       pageNumber: serializer.fromJson<int?>(json['pageNumber']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      isFavorite: serializer.fromJson<bool>(json['isFavorite']),
     );
   }
   @override
@@ -923,6 +954,7 @@ class Note extends DataClass implements Insertable<Note> {
       'content': serializer.toJson<String>(content),
       'pageNumber': serializer.toJson<int?>(pageNumber),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'isFavorite': serializer.toJson<bool>(isFavorite),
     };
   }
 
@@ -932,12 +964,14 @@ class Note extends DataClass implements Insertable<Note> {
     String? content,
     Value<int?> pageNumber = const Value.absent(),
     DateTime? createdAt,
+    bool? isFavorite,
   }) => Note(
     id: id ?? this.id,
     bookId: bookId ?? this.bookId,
     content: content ?? this.content,
     pageNumber: pageNumber.present ? pageNumber.value : this.pageNumber,
     createdAt: createdAt ?? this.createdAt,
+    isFavorite: isFavorite ?? this.isFavorite,
   );
   Note copyWithCompanion(NotesCompanion data) {
     return Note(
@@ -948,6 +982,9 @@ class Note extends DataClass implements Insertable<Note> {
           ? data.pageNumber.value
           : this.pageNumber,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      isFavorite: data.isFavorite.present
+          ? data.isFavorite.value
+          : this.isFavorite,
     );
   }
 
@@ -958,13 +995,15 @@ class Note extends DataClass implements Insertable<Note> {
           ..write('bookId: $bookId, ')
           ..write('content: $content, ')
           ..write('pageNumber: $pageNumber, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('isFavorite: $isFavorite')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, bookId, content, pageNumber, createdAt);
+  int get hashCode =>
+      Object.hash(id, bookId, content, pageNumber, createdAt, isFavorite);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -973,7 +1012,8 @@ class Note extends DataClass implements Insertable<Note> {
           other.bookId == this.bookId &&
           other.content == this.content &&
           other.pageNumber == this.pageNumber &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.isFavorite == this.isFavorite);
 }
 
 class NotesCompanion extends UpdateCompanion<Note> {
@@ -982,12 +1022,14 @@ class NotesCompanion extends UpdateCompanion<Note> {
   final Value<String> content;
   final Value<int?> pageNumber;
   final Value<DateTime> createdAt;
+  final Value<bool> isFavorite;
   const NotesCompanion({
     this.id = const Value.absent(),
     this.bookId = const Value.absent(),
     this.content = const Value.absent(),
     this.pageNumber = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.isFavorite = const Value.absent(),
   });
   NotesCompanion.insert({
     this.id = const Value.absent(),
@@ -995,6 +1037,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     required String content,
     this.pageNumber = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.isFavorite = const Value.absent(),
   }) : bookId = Value(bookId),
        content = Value(content);
   static Insertable<Note> custom({
@@ -1003,6 +1046,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Expression<String>? content,
     Expression<int>? pageNumber,
     Expression<DateTime>? createdAt,
+    Expression<bool>? isFavorite,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1010,6 +1054,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
       if (content != null) 'content': content,
       if (pageNumber != null) 'page_number': pageNumber,
       if (createdAt != null) 'created_at': createdAt,
+      if (isFavorite != null) 'is_favorite': isFavorite,
     });
   }
 
@@ -1019,6 +1064,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Value<String>? content,
     Value<int?>? pageNumber,
     Value<DateTime>? createdAt,
+    Value<bool>? isFavorite,
   }) {
     return NotesCompanion(
       id: id ?? this.id,
@@ -1026,6 +1072,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
       content: content ?? this.content,
       pageNumber: pageNumber ?? this.pageNumber,
       createdAt: createdAt ?? this.createdAt,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 
@@ -1047,6 +1094,9 @@ class NotesCompanion extends UpdateCompanion<Note> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (isFavorite.present) {
+      map['is_favorite'] = Variable<bool>(isFavorite.value);
+    }
     return map;
   }
 
@@ -1057,7 +1107,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
           ..write('bookId: $bookId, ')
           ..write('content: $content, ')
           ..write('pageNumber: $pageNumber, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('isFavorite: $isFavorite')
           ..write(')'))
         .toString();
   }
@@ -1968,6 +2019,7 @@ typedef $$NotesTableCreateCompanionBuilder =
       required String content,
       Value<int?> pageNumber,
       Value<DateTime> createdAt,
+      Value<bool> isFavorite,
     });
 typedef $$NotesTableUpdateCompanionBuilder =
     NotesCompanion Function({
@@ -1976,6 +2028,7 @@ typedef $$NotesTableUpdateCompanionBuilder =
       Value<String> content,
       Value<int?> pageNumber,
       Value<DateTime> createdAt,
+      Value<bool> isFavorite,
     });
 
 final class $$NotesTableReferences
@@ -2025,6 +2078,11 @@ class $$NotesTableFilterComposer extends Composer<_$AppDatabase, $NotesTable> {
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2081,6 +2139,11 @@ class $$NotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$BooksTableOrderingComposer get bookId {
     final $$BooksTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -2127,6 +2190,11 @@ class $$NotesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
+    builder: (column) => column,
+  );
 
   $$BooksTableAnnotationComposer get bookId {
     final $$BooksTableAnnotationComposer composer = $composerBuilder(
@@ -2185,12 +2253,14 @@ class $$NotesTableTableManager
                 Value<String> content = const Value.absent(),
                 Value<int?> pageNumber = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> isFavorite = const Value.absent(),
               }) => NotesCompanion(
                 id: id,
                 bookId: bookId,
                 content: content,
                 pageNumber: pageNumber,
                 createdAt: createdAt,
+                isFavorite: isFavorite,
               ),
           createCompanionCallback:
               ({
@@ -2199,12 +2269,14 @@ class $$NotesTableTableManager
                 required String content,
                 Value<int?> pageNumber = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> isFavorite = const Value.absent(),
               }) => NotesCompanion.insert(
                 id: id,
                 bookId: bookId,
                 content: content,
                 pageNumber: pageNumber,
                 createdAt: createdAt,
+                isFavorite: isFavorite,
               ),
           withReferenceMapper: (p0) => p0
               .map(

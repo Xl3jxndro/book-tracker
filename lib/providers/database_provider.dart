@@ -34,3 +34,8 @@ final totalTimeTodayProvider = StreamProvider<int>((ref) {
   final today = ref.watch(todayProvider);
   return db.watchTotalTimeOn(today);
 });
+// Todas las notas con su libro ("Mis citas"), la más reciente primero.
+final notesWithBooksProvider = StreamProvider<List<NoteWithBook>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.watchAllNotesWithBooks();
+});

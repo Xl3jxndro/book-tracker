@@ -41,7 +41,7 @@ void main() {
     test('incluye cabecera, conteos y todos los datos', () {
       final json = LibraryExportService.buildJson(
         books: [_book(coverUrl: '/data/user/0/com.jabc.booktracker/app_flutter/cover_1.jpg')],
-        notes: [Note(id: 7, bookId: 1, content: 'Muchos años después…', pageNumber: 1, createdAt: DateTime.utc(2026, 1, 2))],
+        notes: [Note(id: 7, bookId: 1, content: 'Muchos años después…', pageNumber: 1, createdAt: DateTime.utc(2026, 1, 2), isFavorite: true)],
         sessions: [ReadingSession(id: 3, bookId: 1, seconds: 1800, pagesRead: 20, date: DateTime.utc(2026, 1, 2))],
         schemaVersion: 7,
         exportedAt: exportedAt,
@@ -65,6 +65,7 @@ void main() {
       expect(note['book_id'], 1);
       expect(note['content'], 'Muchos años después…');
       expect(note['created_at'], '2026-01-02T00:00:00.000Z');
+      expect(note['is_favorite'], isTrue);
 
       final session = (data['sessions'] as List).single as Map<String, dynamic>;
       expect(session['seconds'], 1800);
@@ -93,8 +94,8 @@ void main() {
           _book(id: 2, title: 'El Principito', status: 2, readPages: 96, totalPages: 96, rating: 5, totalReadTime: 125, startedAt: DateTime(2026, 3, 1), finishedAt: DateTime(2026, 3, 9)),
         ],
         notes: [
-          Note(id: 1, bookId: 1, content: 'a', createdAt: DateTime(2026)),
-          Note(id: 2, bookId: 1, content: 'b', createdAt: DateTime(2026)),
+          Note(id: 1, bookId: 1, content: 'a', createdAt: DateTime(2026), isFavorite: false),
+          Note(id: 2, bookId: 1, content: 'b', createdAt: DateTime(2026), isFavorite: false),
         ],
       );
       final rows = lines(csv);
@@ -135,7 +136,7 @@ void main() {
       exportedAt: exportedAt,
     )) as Map<String, dynamic>;
 
-    expect(data['schema_version'], 8);
+    expect(data['schema_version'], 9);
     expect(data['counts'], {'books': 1, 'notes': 1, 'sessions': 1});
     final book = (data['books'] as List).single as Map<String, dynamic>;
     expect(book['read_pages'], 50);

@@ -77,7 +77,7 @@ void main() {
     await addBook(dbA, 'Sin portada');
     await dbA.insertNote(NotesCompanion.insert(
       bookId: dune, content: 'El miedo mata la mente', pageNumber: const Value(8),
-      createdAt: Value(DateTime(2026, 1, 2, 3, 4, 5)),
+      createdAt: Value(DateTime(2026, 1, 2, 3, 4, 5)), isFavorite: const Value(true),
     ));
     await dbA.insertSession(ReadingSessionsCompanion.insert(
       bookId: dune, seconds: 1800, pagesRead: const Value(40), date: Value(DateTime(2026, 1, 2)),
@@ -116,6 +116,7 @@ void main() {
     expect(note.bookId, dune);
     expect(note.content, 'El miedo mata la mente');
     expect(note.createdAt, DateTime(2026, 1, 2, 3, 4, 5));
+    expect(note.isFavorite, isTrue, reason: 'la cita favorita sigue siéndolo');
 
     final session = (await dbB.select(dbB.readingSessions).get()).single;
     expect(session.seconds, 1800);

@@ -250,6 +250,8 @@ class BackupService {
         content: content,
         pageNumber: Value(_int(n['page_number'])),
         createdAt: Value(_date(n['created_at']) ?? DateTime.now()),
+        // Opcional: los respaldos anteriores no lo tienen
+        isFavorite: Value(n['is_favorite'] == true),
       ));
     }
 

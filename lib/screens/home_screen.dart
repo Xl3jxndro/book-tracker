@@ -16,6 +16,7 @@ import '../widgets/empty_state_widget.dart';
 import '../widgets/skeleton_loader.dart';
 import '../services/ad_helper.dart';
 import 'book_details_screen.dart';
+import 'quotes_screen.dart';
 import '../database/database.dart';
 
 // --- PROVIDERS DE FILTRADO Y ORDENAMIENTO ---
@@ -258,6 +259,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
       actions: [
+        if (!isSearching) _buildQuotesButton(context),
         if (!isSearching) _buildSortButton(context, ref, theme),
         _buildSearchButton(ref, isSearching),
       ],
@@ -372,6 +374,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           HapticFeedback.selectionClick();
           ref.read(isSearchingProvider.notifier).state = !isSearching;
           if (isSearching) ref.read(searchQueryProvider.notifier).state = '';
+        },
+      ),
+    );
+  }
+
+  Widget _buildQuotesButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: IconButton(
+        tooltip: 'Mis citas',
+        icon: const Icon(Icons.format_quote_rounded),
+        onPressed: () {
+          HapticFeedback.selectionClick();
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const QuotesScreen()));
         },
       ),
     );

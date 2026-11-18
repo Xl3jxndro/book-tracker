@@ -70,6 +70,8 @@ class LibraryExportService {
             'content': n.content,
             'page_number': n.pageNumber,
             'created_at': iso(n.createdAt),
+            // Opcional (desde la versión 9 de la base de datos)
+            'is_favorite': n.isFavorite,
           },
       ],
       'sessions': [

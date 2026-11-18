@@ -9,21 +9,20 @@ import 'package:confetti/confetti.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:share_plus/share_plus.dart';
-import 'package:screenshot/screenshot.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../database/database.dart';
 import '../providers/database_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/timer_widget.dart';
 import '../widgets/add_note_sheet.dart';
+import '../widgets/quote_share.dart';
 import '../widgets/empty_state_widget.dart';
 import '../providers/tutorial_provider.dart';
 import '../providers/daily_goal_provider.dart';
 import '../services/voice_service.dart';
 
-enum NoteFilter { recent, page, length }
+enum NoteFilter { recent, page, length, favorites }
 
 class BookDetailsScreen extends ConsumerStatefulWidget {
   final Book book;
@@ -40,7 +39,6 @@ class BookDetailsScreen extends ConsumerStatefulWidget {
 class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
   bool _isTutorialShowing = false;
   final ScrollController _scrollController = ScrollController();
-  final ScreenshotController _screenshotController = ScreenshotController();
   late ConfettiController _confettiController;
   final VoiceService _voiceService = VoiceService();
   final String appName = "Book Tracker";
@@ -77,134 +75,6 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     Share.share(text);
   }
 
-  void _shareNoteAsImage(Book book, Note note, ColorScheme scheme) async {
-    _showFeedback("Generando tarjeta...", scheme.primary);
-    
-    final uint8list = await _screenshotController.captureFromWidget(
-      _buildShareCard(book, note, scheme),
-      delay: const Duration(milliseconds: 200),
-      context: context,
-    );
-
-    final directory = await getTemporaryDirectory();
-    final imagePath = await File('${directory.path}/quote_${note.id}.png').create();
-    await imagePath.writeAsBytes(uint8list);
-
-    final String caption = "📖 ${book.title}\n✨ Compartido desde $appName";
-    
-    await Share.shareXFiles([XFile(imagePath.path)], text: caption);
-    HapticFeedback.heavyImpact();
-  }
-
-  Widget _buildShareCard(Book book, Note note, ColorScheme scheme) {
-    return Container(
-      width: 400,
-      height: 500,
-      color: Colors.black,
-      child: Stack(
-        children: [
-          if (book.coverUrl != null)
-            Positioned.fill(
-              child: ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: Image.file(
-                  File(book.coverUrl!),
-                  fit: BoxFit.cover,
-                  color: Colors.black.withValues(alpha: 0.4),
-                  colorBlendMode: BlendMode.darken,
-                ),
-              ),
-            ),
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.black12, Colors.black.withValues(alpha: 0.7)],
-                ),
-              ),
-            ),
-          ),
-          Center(
-            child: Container(
-              width: 320,
-              padding: const EdgeInsets.all(30),
-              decoration: BoxDecoration(
-                color: Colors.black87,
-                borderRadius: BorderRadius.circular(32),
-                border: Border.all(color: Colors.white10, width: 1),
-                boxShadow: [
-                  BoxShadow(color: Colors.black54, blurRadius: 20, offset: const Offset(0, 10))
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Icon(Icons.format_quote_rounded, color: Colors.white30, size: 40),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    note.content,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      fontStyle: FontStyle.italic,
-                      fontFamily: 'Georgia',
-                      height: 1.3,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  const Align(
-                    alignment: Alignment.centerRight,
-                    child: Icon(Icons.format_quote_rounded, color: Colors.white30, size: 40),
-                  ),
-                  const SizedBox(height: 30),
-                  const Divider(color: Colors.white12),
-                  const SizedBox(height: 20),
-                  Text(
-                    book.title,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    book.author,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                  if (note.pageNumber != null) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        "Página ${note.pageNumber}",
-                        style: TextStyle(color: scheme.primary, fontSize: 11, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 30),
-                  Text(
-                    "Leído en $appName",
-                    style: const TextStyle(color: Colors.white38, fontSize: 10, letterSpacing: 1.2),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // --- LÓGICA DE FILTRADO Y TIEMPO ---
   List<Note> _getSortedNotes(List<Note> notes) {
     List<Note> sorted = List.from(notes);
@@ -212,6 +82,9 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       case NoteFilter.recent: sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt)); break;
       case NoteFilter.page: sorted.sort((a, b) => (a.pageNumber ?? 0).compareTo(b.pageNumber ?? 0)); break;
       case NoteFilter.length: sorted.sort((a, b) => b.content.length.compareTo(a.content.length)); break;
+      case NoteFilter.favorites:
+        sorted = sorted.where((n) => n.isFavorite).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        break;
     }
     return sorted;
   }
@@ -363,6 +236,12 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
           children: [
             _buildFilterChips(scheme),
             const SizedBox(height: 8),
+            if (sortedNotes.isEmpty && _selectedFilter == NoteFilter.favorites)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Text('Toca la ☆ de una nota para guardarla en tus citas favoritas.',
+                    textAlign: TextAlign.center, style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
+              ),
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -406,7 +285,13 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                                   _buildActionIcon(
                                     icon: Icons.image_outlined,
                                     color: scheme.secondary, 
-                                    onTap: () => _shareNoteAsImage(currentBook, note, scheme),
+                                    onTap: () => shareQuoteAsImage(context, currentBook, note),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _buildActionIcon(
+                                    icon: note.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
+                                    color: Colors.amber.shade700,
+                                    onTap: () => _toggleFavorite(note),
                                   ),
                                   const SizedBox(width: 8),
                                   _buildActionIcon(
@@ -539,6 +424,8 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
           _filterChip('Página', NoteFilter.page, scheme),
           const SizedBox(width: 8),
           _filterChip('Longitud', NoteFilter.length, scheme),
+          const SizedBox(width: 8),
+          _filterChip('★ Favoritas', NoteFilter.favorites, scheme),
         ],
       ),
     );
@@ -728,6 +615,11 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => AddNoteSheet(bookId: bookId, voiceService: _voiceService, noteToEdit: noteToEdit),
     );
+  }
+
+  void _toggleFavorite(Note note) {
+    ref.read(databaseProvider).setNoteFavorite(note.id, !note.isFavorite);
+    _showFeedback(note.isFavorite ? 'Quitada de favoritas' : 'Guardada en favoritas ★', Colors.amber.shade800);
   }
 
   /// Borra la nota y ofrece deshacerlo durante unos segundos.

@@ -33,6 +33,16 @@ class Notes extends Table {
   TextColumn get content => text().withLength(min: 1, max: 1000)();
   IntColumn get pageNumber => integer().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // Versión 9: citas favoritas ("Mis citas")
+  BoolColumn get isFavorite => boolean().withDefault(const Constant(false))();
+}
+
+/// Una nota junto con el libro al que pertenece (para "Mis citas").
+class NoteWithBook {
+  final Note note;
+  final Book book;
+  const NoteWithBook(this.note, this.book);
 }
 
 class ReadingSessions extends Table {
@@ -51,7 +61,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -80,6 +90,8 @@ class AppDatabase extends _$AppDatabase {
           'WHERE status = 2',
         );
       }
+      // MIGRACIÓN A VERSIÓN 9: marcar notas como favoritas
+      if (from < 9) await m.addColumn(notes, notes.isFavorite);
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -128,6 +140,19 @@ class AppDatabase extends _$AppDatabase {
     return (select(notes)..where((t) => t.bookId.equals(bookId))).watch();
   }
   Future<int> insertNote(NotesCompanion note) => into(notes).insert(note);
+
+  /// Todas las notas con su libro, la más reciente primero ("Mis citas").
+  Stream<List<NoteWithBook>> watchAllNotesWithBooks() {
+    final query = select(notes).join([innerJoin(books, books.id.equalsExp(notes.bookId))])
+      ..orderBy([OrderingTerm.desc(notes.createdAt), OrderingTerm.desc(notes.id)]);
+    return query.watch().map((rows) => [
+          for (final row in rows) NoteWithBook(row.readTable(notes), row.readTable(books)),
+        ]);
+  }
+
+  /// Marca o desmarca una nota como cita favorita.
+  Future<void> setNoteFavorite(int noteId, bool favorite) =>
+      (update(notes)..where((t) => t.id.equals(noteId))).write(NotesCompanion(isFavorite: Value(favorite)));
   Future deleteNote(Note note) => delete(notes).delete(note);
 
   /// Cambia el texto y la página de una nota (conserva su fecha).
