@@ -73,6 +73,14 @@ class BookTrackerWidgetProvider : HomeWidgetProvider() {
         val sessionBookId = data.getString("sessionBookId", null)
         val hasSession = sessionState != "none" && sessionBookId == bookId
 
+        // Con sesión el widget se compacta (cronómetro y botones en una fila)
+        // para que los botones quepan en un widget de 2 filas de alto
+        val detail = if (hasSession) View.GONE else View.VISIBLE
+        views.setViewVisibility(R.id.widget_book_author, detail)
+        views.setViewVisibility(R.id.widget_pages_row, detail)
+        views.setViewVisibility(R.id.widget_today_row, detail)
+        views.setInt(R.id.widget_book_title, "setMaxLines", if (hasSession) 1 else 2)
+
         if (hasSession) {
             val isRunning = sessionState == "running"
             val accumulatedMs = data.getString("sessionAccumulatedMs", "0")?.toLongOrNull() ?: 0L
@@ -86,7 +94,7 @@ class BookTrackerWidgetProvider : HomeWidgetProvider() {
             views.setViewVisibility(R.id.widget_no_session_section, View.GONE)
             views.setChronometer(R.id.widget_chronometer, base, null, isRunning)
             views.setTextViewText(R.id.widget_session_label, if (isRunning) "LEYENDO…" else "EN PAUSA")
-            views.setTextViewText(R.id.widget_pause_button, if (isRunning) "⏸ PAUSAR" else "▶ REANUDAR")
+            views.setTextViewText(R.id.widget_pause_button, if (isRunning) "⏸" else "▶")
 
             // Pausar/reanudar sin abrir la app (callback de Dart en segundo plano)
             views.setOnClickPendingIntent(
