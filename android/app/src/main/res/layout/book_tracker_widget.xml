@@ -1,87 +1,125 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/widget_main_layout"
+<!-- Widget de Book Tracker: portada + fondo ambiental (colores de la portada
+     difuminados), progreso fino y, durante una sesión, cronómetro con botones
+     tipo píldora. Pensado para 4×2 (cabe en ~110 dp de alto). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
-    android:orientation="vertical"
-    android:padding="14dp">
+    android:clipToOutline="true"
+    android:forceDarkAllowed="false">
 
-    <!-- No Book Section -->
-    <LinearLayout
-        android:id="@+id/widget_no_book_section"
+    <!-- Fondo ambiental: la portada reducida y difuminada (la genera Kotlin) -->
+    <ImageView
+        android:id="@+id/widget_ambient"
+        android:forceDarkAllowed="false"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:visibility="gone">
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Sin libro activo"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Selecciona un libro para comenzar"
-            android:textColor="#B3FFFFFF"
-            android:textSize="12sp" />
-    </LinearLayout>
-
-    <!-- Content Section -->
-    <LinearLayout
-        android:id="@+id/widget_content_section"
+    <ImageView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:src="@drawable/widget_scrim"
+        android:scaleType="fitXY" />
 
-        <!-- Book Info -->
-        <TextView
-            android:id="@+id/widget_book_title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="2"
-            android:text="Book Title"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+    <!-- Toda la superficie abre el libro -->
+    <LinearLayout
+        android:id="@+id/widget_main_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="14dp">
 
-        <TextView
-            android:id="@+id/widget_book_author"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:text="Author Name"
-            android:textColor="#B3FFFFFF"
-            android:textSize="12sp" />
-
-        <!-- Progress Section -->
+        <!-- Sin libros -->
         <LinearLayout
-            android:id="@+id/widget_progress_section"
+            android:id="@+id/widget_no_book_section"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Book Tracker"
+                android:textColor="#B3FFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Añade tu primer libro"
+                android:textColor="#FFFFFF"
+                android:textSize="17sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Toca para empezar"
+                android:textColor="#B3FFFFFF"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Portada -->
+        <ImageView
+            android:id="@+id/widget_cover"
+            android:forceDarkAllowed="false"
+            android:layout_width="60dp"
+            android:layout_height="90dp"
+            android:contentDescription="Portada"
+            android:scaleType="centerCrop"
+            android:src="@drawable/widget_cover_placeholder" />
+
+        <LinearLayout
+            android:id="@+id/widget_content_section"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_weight="1"
             android:orientation="vertical">
 
-            <!-- Progress Bar -->
+            <TextView
+                android:id="@+id/widget_book_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="2"
+                android:text="Tu libro actual"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/widget_book_author"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Autor"
+                android:textColor="#B3FFFFFF"
+                android:textSize="12sp" />
+
             <ProgressBar
                 android:id="@+id/widget_progress_bar"
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="match_parent"
-                android:layout_height="6dp"
+                android:layout_height="4dp"
+                android:layout_marginTop="10dp"
                 android:max="100"
-                android:progress="0"
+                android:progress="35"
                 android:progressDrawable="@drawable/widget_progress_bar_bg" />
 
-            <!-- Progress Info (se oculta durante una sesión) -->
+            <!-- 35% · 120/340 pág.                Hoy 15/30 min -->
             <LinearLayout
                 android:id="@+id/widget_pages_row"
                 android:layout_width="match_parent"
@@ -94,152 +132,85 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="0/100 pág."
-                    android:textColor="#B3FFFFFF"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="35% · 120/340 pág."
+                    android:textColor="#D9FFFFFF"
                     android:textSize="11sp" />
-
-                <TextView
-                    android:id="@+id/widget_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Estado"
-                    android:textColor="#B3FFFFFF"
-                    android:textSize="11sp" />
-
-                <TextView
-                    android:id="@+id/widget_progress_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="0%"
-                    android:textColor="#FFFFFF"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- Today Session Info (se oculta durante una sesión) -->
-            <LinearLayout
-                android:id="@+id/widget_today_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Hoy:"
-                    android:textColor="#B3FFFFFF"
-                    android:textSize="10sp" />
 
                 <TextView
                     android:id="@+id/widget_today_session"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0min"
-                    android:textColor="#FFFFFF"
-                    android:textSize="10sp"
-                    android:textStyle="bold" />
+                    android:layout_marginStart="8dp"
+                    android:maxLines="1"
+                    android:text="Hoy 15/30 min"
+                    android:textColor="#D9FFFFFF"
+                    android:textSize="11sp" />
             </LinearLayout>
-        </LinearLayout>
 
-        <!-- Session Section: una sola fila (cronómetro + botones) para que quepa
-             en un widget de 2 filas de alto -->
-        <LinearLayout
-            android:id="@+id/widget_session_section"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="#1AFFFFFF"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingStart="10dp"
-            android:paddingTop="6dp"
-            android:paddingEnd="6dp"
-            android:paddingBottom="6dp"
-            android:visibility="gone">
-
+            <!-- Sesión: cronómetro + píldoras -->
             <LinearLayout
-                android:layout_width="0dp"
+                android:id="@+id/widget_session_section"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
 
-                <TextView
-                    android:id="@+id/widget_session_label"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="LEYENDO…"
-                    android:textColor="#818CF8"
-                    android:textSize="10sp"
-                    android:textStyle="bold" />
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                <!-- Avanza solo (sin actualizaciones periódicas desde la app) -->
-                <Chronometer
-                    android:id="@+id/widget_chronometer"
+                    <TextView
+                        android:id="@+id/widget_session_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:letterSpacing="0.08"
+                        android:text="LEYENDO"
+                        android:textColor="#B3FFFFFF"
+                        android:textSize="9sp"
+                        android:textStyle="bold" />
+
+                    <!-- Avanza solo (sin actualizaciones periódicas desde la app) -->
+                    <Chronometer
+                        android:id="@+id/widget_chronometer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp" />
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/widget_pause_button"
+                    android:layout_width="40dp"
+                    android:layout_height="36dp"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/widget_btn_bg"
+                    android:contentDescription="Pausar o reanudar"
+                    android:padding="8dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/widget_ic_pause" />
+
+                <Button
+                    android:id="@+id/widget_finish_button"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:layout_height="36dp"
+                    android:background="@drawable/widget_btn_finish_bg"
+                    android:contentDescription="Finalizar la sesión"
+                    android:fontFamily="sans-serif-medium"
+                    android:minWidth="0dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:text="Finalizar"
+                    android:textAllCaps="false"
+                    android:textColor="#111827"
+                    android:textSize="12sp" />
             </LinearLayout>
-
-            <Button
-                android:id="@+id/widget_pause_button"
-                android:layout_width="44dp"
-                android:layout_height="36dp"
-                android:layout_marginEnd="6dp"
-                android:background="@drawable/widget_btn_bg"
-                android:contentDescription="Pausar o reanudar"
-                android:padding="0dp"
-                android:text="⏸"
-                android:textColor="#FFFFFF"
-                android:textSize="15sp" />
-
-            <Button
-                android:id="@+id/widget_finish_button"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:minWidth="0dp"
-                android:background="@drawable/widget_btn_finish_bg"
-                android:contentDescription="Finalizar la sesión"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:text="✓ Finalizar"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <!-- No Session Section -->
-        <LinearLayout
-            android:id="@+id/widget_no_session_section"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:background="#1AFFFFFF"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="8dp"
-            android:visibility="visible">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Sin sesión activa"
-                android:textColor="#6366F1"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="Toca para empezar a leer"
-                android:textColor="#B3FFFFFF"
-                android:textSize="10sp" />
         </LinearLayout>
     </LinearLayout>
-</LinearLayout>
+</FrameLayout>

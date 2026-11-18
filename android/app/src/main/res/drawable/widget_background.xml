@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Fondo del widget: degradado de la app (se ve si no hay portada) con las
+     esquinas del sistema (values-v31) o 24dp en versiones anteriores. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#1A1A1A" />
-    <corners android:radius="24dp" />
-    <stroke android:width="1dp" android:color="#333333" />
+    <gradient
+        android:angle="315"
+        android:endColor="#1E1B4B"
+        android:startColor="#4338CA" />
+    <corners android:radius="@dimen/widget_corner_radius" />
 </shape>

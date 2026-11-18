@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
@@ -107,6 +108,10 @@ class HomeWidgetSync {
     await _save('bookId', book.id);
     await _save('bookTitle', book.title);
     await _save('bookAuthor', book.author);
+    // Ruta de la portada (archivo de la app): el widget la usa para la
+    // miniatura y el fondo con sus colores
+    final cover = book.coverUrl;
+    await _save('bookCover', (cover != null && cover.isNotEmpty && File(cover).existsSync()) ? cover : null);
     await _save('bookProgress', progress);
     await _save('pagesInfo', '${book.readPages}/${book.totalPages} pág.');
     await _save('bookStatus', _statusLabel(book.status));
