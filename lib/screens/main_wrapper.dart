@@ -17,6 +17,10 @@ import 'onboarding_screen.dart';
 import '../widgets/add_book_sheet.dart';
 import '../widgets/goodreads_import_actions.dart';
 import '../widgets/whats_new_sheet.dart';
+import '../widgets/streak_save_sheet.dart';
+import '../providers/streak_save_provider.dart';
+import '../services/ads_consent.dart';
+import '../services/streak_save.dart';
 import 'package:flutter/services.dart';
 
 class MainWrapper extends ConsumerStatefulWidget {
@@ -70,11 +74,38 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
       if (_whatsNewChecked) return;
       if (state.stage == TutorialStage.bookDetails || state.stage == TutorialStage.completed) {
         _whatsNewChecked = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) WhatsNew.showIfNeeded(context);
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (!mounted) return;
+          await WhatsNew.showIfNeeded(context);
+          // Después de las novedades (para no encimarse): ¿salvar la racha?
+          await _maybeOfferStreakSave();
         });
       }
     }, fireImmediately: true);
+  }
+
+  /// Si ayer se rompió una racha, ofrece recuperarla con un anuncio recompensado.
+  Future<void> _maybeOfferStreakSave() async {
+    try {
+      final sessions = await ref.read(sessionsStreamProvider.future);
+      await ref.read(streakSaveProvider.notifier).ready;
+      // Al abrir en frío, el permiso de anuncios tarda un momento en confirmarse
+      for (var i = 0; i < 16 && !AdsConsent.canRequestAds.value; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      }
+      if (!mounted || !AdsConsent.canRequestAds.value) return;
+      final saves = ref.read(streakSaveProvider);
+      final offer = StreakSave.offer(
+        readingDates: sessions.map((s) => s.date),
+        savedDays: saves.savedDays,
+        now: DateTime.now(),
+        lastSaveAt: saves.lastSaveAt,
+        dismissedOn: saves.dismissedOn,
+      );
+      if (offer != null && mounted) await showStreakSaveSheet(context, offer);
+    } catch (e) {
+      debugPrint('Oferta de salvar racha: $e');
+    }
   }
 
   /// Fin de la bienvenida: hace lo elegido y después siguen los tooltips.

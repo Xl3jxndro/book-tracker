@@ -14,6 +14,7 @@ import 'providers/current_book_provider.dart';
 import 'providers/daily_goal_provider.dart';
 import 'providers/widget_action_provider.dart';
 import 'providers/streak_risk_provider.dart';
+import 'providers/streak_save_provider.dart';
 import 'providers/today_provider.dart';
 import 'services/notification_service.dart';
 import 'services/ads_consent.dart';
@@ -78,6 +79,7 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
     void sync(_, _) => StreakRiskSync.sync(ref.read);
     ref.listenManual(sessionsStreamProvider, sync);
     ref.listenManual(streakRiskProvider, sync);
+    ref.listenManual(streakSaveProvider, sync); // al salvar una racha
     ref.listenManual(todayProvider, sync);
   }
 

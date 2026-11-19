@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/notification_service.dart';
 import '../services/streak.dart';
+import '../services/streak_save.dart';
+import 'streak_save_provider.dart';
 import 'database_provider.dart';
 
 class StreakRiskSettings {
@@ -88,7 +90,8 @@ class StreakRiskSync {
 
     final alert = settings.enabled
         ? StreakRisk.next(
-            readingDates: sessions.map((s) => s.date),
+            // Un día salvado con un anuncio cuenta para la racha
+            readingDates: StreakSave.withSavedDays(sessions.map((s) => s.date), read(streakSaveProvider).savedDays),
             now: DateTime.now(),
             hour: settings.hour,
             minute: settings.minute,

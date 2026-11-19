@@ -45,6 +45,7 @@ class YearSummary {
     required List<ReadingSession> sessions,
     int? goal,
     int maxCovers = 3,
+    Set<DateTime> savedDays = const {},
   }) {
     final yearSessions = sessions.where((s) => s.date.year == year).toList();
     final finished = ReadingChallenge.finishedIn(books, year);
@@ -55,9 +56,18 @@ class YearSummary {
         .toList()
       ..sort();
 
+    // La racha cuenta también los días salvados con un anuncio (no así los
+    // días con lectura, el tiempo ni las páginas)
+    final streakDays = {
+      ...days,
+      for (final d in savedDays)
+        if (d.year == year) DateTime(d.year, d.month, d.day),
+    }.toList()
+      ..sort();
+
     var longest = 0, current = 0;
     DateTime? previous;
-    for (final day in days) {
+    for (final day in streakDays) {
       current = (previous != null && day.difference(previous).inDays == 1) ? current + 1 : 1;
       if (current > longest) longest = current;
       previous = day;

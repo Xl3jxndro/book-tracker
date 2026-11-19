@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +8,10 @@ import '../providers/database_provider.dart';
 import '../providers/today_provider.dart';
 import '../widgets/reading_challenge_card.dart';
 import '../widgets/share_year_summary.dart';
+import '../widgets/streak_save_sheet.dart';
 import '../services/streak.dart';
+import '../services/streak_save.dart';
+import '../providers/streak_save_provider.dart';
 import '../services/year_summary.dart';
 import '../providers/yearly_goal_provider.dart';
 import '../database/database.dart';
@@ -49,6 +53,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
       books: books,
       sessions: sessions,
       goal: ref.read(yearlyGoalProvider(year)),
+      savedDays: ref.read(streakSaveProvider).savedDays,
     );
     if (summary.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -60,8 +65,11 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
     showYearSummaryShare(context, summary);
   }
 
-  int _calculateStreak(List<ReadingSession> sessions) =>
-      ReadingStreak.current(sessions.map((s) => s.date), DateTime.now());
+  /// Racha actual, contando los días salvados con un anuncio.
+  int _calculateStreak(List<ReadingSession> sessions) => ReadingStreak.current(
+        StreakSave.withSavedDays(sessions.map((s) => s.date), ref.watch(streakSaveProvider).savedDays),
+        DateTime.now(),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +150,16 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          _miniStatCard("Racha", "$streak días", Icons.local_fire_department_rounded, Colors.orangeAccent, isDark),
+          GestureDetector(
+            // Solo en versiones de prueba: ver la oferta de "salvar racha"
+            onLongPress: kDebugMode
+                ? () {
+                    final now = DateTime.now();
+                    showStreakSaveSheet(context, StreakSaveOffer(5, DateTime(now.year, now.month, now.day - 1)));
+                  }
+                : null,
+            child: _miniStatCard("Racha", "$streak días", Icons.local_fire_department_rounded, Colors.orangeAccent, isDark),
+          ),
           _miniStatCard("Leídos", completed.toString(), Icons.check_circle_rounded, Colors.indigoAccent, isDark),
           _miniStatCard("Páginas", pages.toString(), Icons.auto_stories_rounded, Colors.blueAccent, isDark),
           _miniStatCard("Tiempo", _formatReadingTime(seconds), Icons.timer_rounded, Colors.teal, isDark),

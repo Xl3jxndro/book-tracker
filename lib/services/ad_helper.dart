@@ -8,6 +8,17 @@ class AdHelper {
   /// tráfico inválido y puede limitar la cuenta).
   static const _testNativeAndroid = 'ca-app-pub-3940256099942544/2247696110';
 
+  static const _testRewardedAndroid = 'ca-app-pub-3940256099942544/5224354917';
+
+  /// Unidad "Salvar racha" (recompensado). Vacío = aún sin crear en AdMob:
+  /// se usa el de prueba también en release.
+  static const _rewardedStreakRelease = '';
+
+  static String get rewardedStreakAdUnitId {
+    if (!Platform.isAndroid) throw UnsupportedError('Plataforma no soportada');
+    return (kReleaseMode && _rewardedStreakRelease.isNotEmpty) ? _rewardedStreakRelease : _testRewardedAndroid;
+  }
+
   static String get nativeAdUnitId {
     if (Platform.isAndroid) {
       return kReleaseMode ? 'ca-app-pub-1355991417734091/9995189601' : _testNativeAndroid;
