@@ -18,6 +18,8 @@ import 'providers/streak_save_provider.dart';
 import 'providers/today_provider.dart';
 import 'services/notification_service.dart';
 import 'services/ads_consent.dart';
+import 'services/ads_gate.dart';
+import 'services/remove_ads.dart';
 import 'services/home_widget_sync.dart';
 import 'services/session_goal_alarm.dart';
 import 'widgets/app_lock_overlay.dart';
@@ -37,6 +39,9 @@ void main() async {
     debugPrint("Error durante el arranque: $e");
   }
 
+  // Anuncios visibles = consentimiento y sin la compra "Quitar anuncios"
+  AdsGate.init();
+
   runApp(
     const ProviderScope(
       child: BookTrackerApp(),
@@ -46,6 +51,8 @@ void main() async {
   // Consentimiento de anuncios (formulario de Google solo donde se exige) y,
   // después, AdMob. No retrasa el arranque.
   unawaited(AdsConsent.initialize());
+  // Compra "Quitar anuncios": estado guardado y restauración silenciosa
+  unawaited(RemoveAds.instance.initialize());
 }
 
 class BookTrackerApp extends ConsumerStatefulWidget {

@@ -15,7 +15,7 @@ import '../widgets/add_book_sheet.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/skeleton_loader.dart';
 import '../services/ad_helper.dart';
-import '../services/ads_consent.dart';
+import '../services/ads_gate.dart';
 import '../services/library_ad_layout.dart';
 import 'book_details_screen.dart';
 import 'quotes_screen.dart';
@@ -98,12 +98,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    AdsConsent.canRequestAds.addListener(_loadAdsIfNeeded);
+    AdsGate.showAds.addListener(_onAdsGateChanged);
   }
 
   @override
   void dispose() {
-    AdsConsent.canRequestAds.removeListener(_loadAdsIfNeeded);
+    AdsGate.showAds.removeListener(_onAdsGateChanged);
     for (final ad in _ads) {
       ad.dispose();
     }
@@ -112,8 +112,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   /// Carga de uno en uno los anuncios que pide la lista (según cuántos libros
   /// hay), solo si hay consentimiento o no hace falta.
+  /// Llegó el consentimiento o se compró "Quitar anuncios".
+  void _onAdsGateChanged() {
+    if (!mounted) return;
+    setState(() {});
+    _loadAdsIfNeeded();
+  }
+
   void _loadAdsIfNeeded() {
-    if (!mounted || _loadingAd || _ads.length >= _adsNeeded || !AdsConsent.canRequestAds.value) return;
+    if (!mounted || _loadingAd || _ads.length >= _adsNeeded || !AdsGate.showAds.value) return;
     _loadingAd = true;
     NativeAd(
       adUnitId: AdHelper.nativeAdUnitId,
@@ -328,7 +335,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _adsNeeded = needed;
       WidgetsBinding.instance.addPostFrameCallback((_) => _loadAdsIfNeeded());
     }
-    final entries = libraryLayout(books: filteredBooks.length, adsReady: _ads.length);
+    final entries = libraryLayout(books: filteredBooks.length, adsReady: AdsGate.showAds.value ? _ads.length : 0);
 
     return SliverPadding(
       padding: EdgeInsets.fromLTRB(16, 10, 16, 180 + MediaQuery.of(context).padding.bottom), 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-import '../services/ads_consent.dart';
+import '../services/ads_gate.dart';
 
 /// Anuncio nativo con el mismo estilo de tarjeta de la app. Carga su propio
 /// anuncio (cada tarjeta muestra uno distinto) cuando hay permiso para pedir
@@ -27,12 +27,18 @@ class _NativeAdCardState extends State<NativeAdCard> with AutomaticKeepAliveClie
   @override
   void initState() {
     super.initState();
-    AdsConsent.canRequestAds.addListener(_load);
+    AdsGate.showAds.addListener(_onGateChanged);
+    _load();
+  }
+
+  void _onGateChanged() {
+    if (!mounted) return;
+    setState(() {}); // p. ej. se compró "Quitar anuncios": se oculta
     _load();
   }
 
   void _load() {
-    if (_requested || !AdsConsent.canRequestAds.value) return;
+    if (_requested || !AdsGate.showAds.value) return;
     _requested = true;
     _ad = NativeAd(
       adUnitId: widget.adUnitId,
@@ -55,7 +61,7 @@ class _NativeAdCardState extends State<NativeAdCard> with AutomaticKeepAliveClie
 
   @override
   void dispose() {
-    AdsConsent.canRequestAds.removeListener(_load);
+    AdsGate.showAds.removeListener(_onGateChanged);
     _ad?.dispose();
     super.dispose();
   }
@@ -64,7 +70,7 @@ class _NativeAdCardState extends State<NativeAdCard> with AutomaticKeepAliveClie
   Widget build(BuildContext context) {
     super.build(context);
     final ad = _ad;
-    if (!_loaded || ad == null) return const SizedBox.shrink();
+    if (!_loaded || ad == null || !AdsGate.showAds.value) return const SizedBox.shrink();
     final theme = Theme.of(context);
     return Container(
       margin: widget.margin,

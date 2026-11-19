@@ -5,7 +5,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ad_helper.dart';
-import 'ads_consent.dart';
+import 'ads_gate.dart';
 
 /// Cuándo puede salir el intersticial tras guardar una sesión.
 class InterstitialPolicy {
@@ -60,7 +60,7 @@ class InterstitialAds {
 
   /// Al empezar una sesión: deja el anuncio cargado si podría mostrarse.
   static Future<void> preloadIfEligible() async {
-    if (_ready != null || _loading || !AdsConsent.canRequestAds.value) return;
+    if (_ready != null || _loading || !AdsGate.showAds.value) return;
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
     final lastMs = prefs.getInt(_lastShownKey);
@@ -107,7 +107,7 @@ class InterstitialAds {
       relaxed: kDebugMode,
     );
     final ad = _ready;
-    if (!allowed || ad == null) return false;
+    if (!allowed || ad == null || !AdsGate.showAds.value) return false;
 
     _ready = null;
     final closed = Completer<void>();

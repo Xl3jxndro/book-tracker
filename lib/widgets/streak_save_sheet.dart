@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/streak_save_provider.dart';
+import '../services/ads_gate.dart';
 import '../services/rewarded_ads.dart';
 import '../services/streak_save.dart';
 
@@ -10,20 +11,28 @@ import '../services/streak_save.dart';
 Future<void> showStreakSaveSheet(
   BuildContext context,
   StreakSaveOffer offer, {
-  Future<RewardedResult> Function() showAd = RewardedAds.showStreakSave,
+  Future<RewardedResult> Function()? showAd,
 }) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => StreakSaveSheet(offer: offer, showAd: showAd),
+    // Con "Quitar anuncios" se salva sin ver nada
+    builder: (_) => StreakSaveSheet(
+      offer: offer,
+      showAd: showAd ?? (AdsGate.adsRemoved ? () async => RewardedResult.rewarded : RewardedAds.showStreakSave),
+      free: showAd == null && AdsGate.adsRemoved,
+    ),
   );
 }
 
 class StreakSaveSheet extends ConsumerStatefulWidget {
   final StreakSaveOffer offer;
   final Future<RewardedResult> Function() showAd;
-  const StreakSaveSheet({super.key, required this.offer, required this.showAd});
+
+  /// Usuario sin anuncios: se salva sin ver nada.
+  final bool free;
+  const StreakSaveSheet({super.key, required this.offer, required this.showAd, this.free = false});
 
   @override
   ConsumerState<StreakSaveSheet> createState() => _StreakSaveSheetState();
@@ -105,7 +114,9 @@ class _StreakSaveSheetState extends ConsumerState<StreakSaveSheet> {
                   style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
               Text(
-                'Ayer no registraste lectura. Mira un anuncio corto y la recuperamos: ayer contará para tu racha.',
+                widget.free
+                    ? 'Ayer no registraste lectura. Como usuario sin anuncios, puedes recuperarla gratis: ayer contará para tu racha.'
+                    : 'Ayer no registraste lectura. Mira un anuncio corto y la recuperamos: ayer contará para tu racha.',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.4),
               ),
@@ -123,8 +134,10 @@ class _StreakSaveSheetState extends ConsumerState<StreakSaveSheet> {
                   onPressed: _loading ? null : _watch,
                   icon: _loading
                       ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.play_circle_fill_rounded),
-                  label: Text(_loading ? 'Cargando anuncio…' : 'Ver anuncio y salvar mi racha'),
+                      : Icon(widget.free ? Icons.local_fire_department_rounded : Icons.play_circle_fill_rounded),
+                  label: Text(_loading
+                      ? 'Cargando anuncio…'
+                      : (widget.free ? 'Salvar mi racha' : 'Ver anuncio y salvar mi racha')),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
                     backgroundColor: Colors.deepOrange,

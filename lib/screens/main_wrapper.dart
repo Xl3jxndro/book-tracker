@@ -20,6 +20,7 @@ import '../widgets/whats_new_sheet.dart';
 import '../widgets/streak_save_sheet.dart';
 import '../providers/streak_save_provider.dart';
 import '../services/ads_consent.dart';
+import '../services/ads_gate.dart';
 import '../services/streak_save.dart';
 import 'package:flutter/services.dart';
 
@@ -90,10 +91,11 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
       final sessions = await ref.read(sessionsStreamProvider.future);
       await ref.read(streakSaveProvider.notifier).ready;
       // Al abrir en frío, el permiso de anuncios tarda un momento en confirmarse
-      for (var i = 0; i < 16 && !AdsConsent.canRequestAds.value; i++) {
+      // (con "Quitar anuncios" no hace falta: se salva sin anuncio)
+      for (var i = 0; i < 16 && !AdsConsent.canRequestAds.value && !AdsGate.adsRemoved; i++) {
         await Future<void>.delayed(const Duration(milliseconds: 500));
       }
-      if (!mounted || !AdsConsent.canRequestAds.value) return;
+      if (!mounted || (!AdsConsent.canRequestAds.value && !AdsGate.adsRemoved)) return;
       final saves = ref.read(streakSaveProvider);
       final offer = StreakSave.offer(
         readingDates: sessions.map((s) => s.date),

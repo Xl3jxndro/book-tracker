@@ -13,6 +13,7 @@ import '../services/notification_service.dart';
 import '../services/ads_consent.dart';
 import '../services/library_export_service.dart';
 import '../widgets/backup_actions.dart';
+import '../widgets/remove_ads_card.dart';
 import '../widgets/goodreads_import_actions.dart';
 import '../widgets/secret_dialogs.dart';
 
@@ -328,6 +329,11 @@ class SettingsScreen extends ConsumerWidget {
                 onTap: () => undoLastRestore(context, ref),
               ),
           ], isDark),
+
+          const SizedBox(height: 25),
+
+          _sectionHeader("SIN ANUNCIOS", isDark),
+          const RemoveAdsCard(),
 
           const SizedBox(height: 25),
 
