@@ -7,6 +7,7 @@ import '../providers/notifications_provider.dart';
 import '../providers/streak_risk_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/app_info_provider.dart';
+import '../providers/tutorial_provider.dart';
 import '../providers/database_provider.dart';
 import '../services/notification_service.dart';
 import '../services/library_export_service.dart';
@@ -331,6 +332,14 @@ class SettingsScreen extends ConsumerWidget {
 
           _sectionHeader("SOPORTE", isDark),
           _settingsGroup([
+            _settingsTile(
+              context,
+              title: 'Ver la bienvenida de nuevo',
+              subtitle: 'Repasa lo que puedes hacer en Book Tracker',
+              leadingIcon: Icons.waving_hand_rounded,
+              iconColor: Colors.amber.shade700,
+              onTap: () => ref.read(tutorialProvider.notifier).resetTutorials(),
+            ),
             _settingsTile(
               context,
               title: 'Acerca de la App',

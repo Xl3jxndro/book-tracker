@@ -13,6 +13,10 @@ import 'home_screen.dart';
 import 'stats_screen.dart';
 import 'settings_screen.dart';
 import 'book_details_screen.dart';
+import 'onboarding_screen.dart';
+import '../widgets/add_book_sheet.dart';
+import '../widgets/goodreads_import_actions.dart';
+import '../widgets/whats_new_sheet.dart';
 import 'package:flutter/services.dart';
 
 class MainWrapper extends ConsumerStatefulWidget {
@@ -25,6 +29,10 @@ class MainWrapper extends ConsumerStatefulWidget {
 class _MainWrapperState extends ConsumerState<MainWrapper> {
   int _currentIndex = 0;
   bool _isTutorialProcessing = false; 
+
+  /// La bienvenida ya se cerró (mientras corre la acción elegida al final).
+  bool _onboardingHidden = false;
+  bool _whatsNewChecked = false;
   
   final GlobalKey _statsKey = GlobalKey(debugLabel: 'stats_nav_item');
   final GlobalKey _settingsKey = GlobalKey(debugLabel: 'settings_nav_item');
@@ -55,6 +63,47 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
         _checkAndTriggerTutorial(tutorialState.stage);
       }
     });
+
+    // Novedades de la versión para quien actualiza (ya vio los tooltips de la
+    // biblioteca y la barra); los usuarios nuevos ven la bienvenida
+    ref.listenManual<TutorialState>(tutorialProvider, (_, state) {
+      if (_whatsNewChecked) return;
+      if (state.stage == TutorialStage.bookDetails || state.stage == TutorialStage.completed) {
+        _whatsNewChecked = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) WhatsNew.showIfNeeded(context);
+        });
+      }
+    }, fireImmediately: true);
+  }
+
+  /// Fin de la bienvenida: hace lo elegido y después siguen los tooltips.
+  Future<void> _onOnboardingFinish(OnboardingChoice choice) async {
+    // A la biblioteca: ahí empiezan los tooltips
+    setState(() {
+      _onboardingHidden = true;
+      _currentIndex = 0;
+    });
+    _whatsNewChecked = true;
+    await WhatsNew.markSeen(); // las novedades ya las contó la bienvenida
+
+    if (!mounted) return;
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    if (!mounted) return;
+    switch (choice) {
+      case OnboardingChoice.addBook:
+        await showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => const AddBookSheet(),
+        );
+      case OnboardingChoice.importGoodreads:
+        await importFromGoodreads(context, ref);
+      case OnboardingChoice.explore:
+        break;
+    }
+    await ref.read(tutorialProvider.notifier).completeOnboarding();
   }
 
   /// Abre el libro pedido desde el widget; con `finishSession` muestra además
@@ -110,12 +159,19 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
     final double systemBottomPadding = MediaQuery.of(context).padding.bottom;
 
     ref.listen<TutorialState>(tutorialProvider, (previous, next) {
+      // "Ver la bienvenida de nuevo" (Ajustes): se vuelve a mostrar
+      if (next.stage == TutorialStage.onboarding && previous?.stage != TutorialStage.onboarding) {
+        setState(() => _onboardingHidden = false);
+      }
       if (next.stage == TutorialStage.navigation) {
         _checkAndTriggerTutorial(next.stage);
       }
     });
 
     final tutorialData = ref.watch(tutorialProvider);
+    if (tutorialData.stage == TutorialStage.onboarding && !_onboardingHidden) {
+      return OnboardingScreen(onFinish: _onOnboardingFinish);
+    }
     final bool isNavTutorialPhase = tutorialData.stage == TutorialStage.navigation;
     final isVisible = ref.watch(navBarVisibleProvider) || isNavTutorialPhase;
 

@@ -82,6 +82,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final GlobalKey _addBookKey = GlobalKey();
+  final GlobalKey _quotesButtonKey = GlobalKey();
   final GlobalKey _sortButtonKey = GlobalKey();
   final GlobalKey _searchButtonKey = GlobalKey();
 
@@ -383,6 +384,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: IconButton(
+        key: _quotesButtonKey,
         tooltip: 'Mis citas',
         icon: const Icon(Icons.format_quote_rounded),
         onPressed: () {
@@ -672,6 +674,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               theme: theme, 
               title: "🔍 Encuentra tus libros", 
               description: "Busca rápidamente cualquier título o autor en tu colección."
+            )
+          ),
+        ]
+      ),
+      TargetFocus(
+        identify: "quotes_button",
+        keyTarget: _quotesButtonKey,
+        paddingFocus: 5,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) => _buildTutorialBalloon(
+              theme: theme,
+              title: "❝ Mis citas",
+              description: "Todas las frases y notas de tus libros en un solo lugar: búscalas, marca favoritas y compártelas."
             )
           ),
         ]

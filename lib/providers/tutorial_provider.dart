@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum TutorialStage { loading, home, navigation, bookDetails, completed }
+enum TutorialStage { loading, onboarding, home, navigation, bookDetails, completed }
 
 class TutorialState {
   final TutorialStage stage;
@@ -33,6 +33,15 @@ class TutorialNotifier extends StateNotifier<TutorialState> {
     _updateStateFromPrefs(prefs);
   }
 
+  static const onboardingKey = 'hasSeenOnboarding';
+
+  /// Fin de la bienvenida: después vienen los tooltips de la biblioteca.
+  Future<void> completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(onboardingKey, true);
+    _updateStateFromPrefs(prefs);
+  }
+
   Future<void> completeHome() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('hasSeenHomeScreenTutorial', true);
@@ -56,11 +65,16 @@ class TutorialNotifier extends StateNotifier<TutorialState> {
     final homeSeen = prefs.getBool('hasSeenHomeScreenTutorial') ?? false;
     final navSeen = prefs.getBool('hasSeenNavTutorial') ?? false;
     final detailsSeen = prefs.getBool('hasSeenDetailsTutorial') ?? false;
+    // Quien ya vio los tooltips (versiones anteriores) no ve la bienvenida:
+    // a esos usuarios se les muestran las novedades
+    final onboardingSeen = prefs.getBool(onboardingKey) ?? homeSeen;
 
     TutorialStage currentStage;
     
     // Máquina de estados: El orden importa
-    if (!homeSeen) {
+    if (!onboardingSeen) {
+      currentStage = TutorialStage.onboarding;
+    } else if (!homeSeen) {
       currentStage = TutorialStage.home;
     } else if (!navSeen) {
       currentStage = TutorialStage.navigation;
@@ -83,6 +97,7 @@ class TutorialNotifier extends StateNotifier<TutorialState> {
     await prefs.remove('hasSeenHomeScreenTutorial');
     await prefs.remove('hasSeenNavTutorial');
     await prefs.remove('hasSeenDetailsTutorial');
+    await prefs.setBool(onboardingKey, false);
     _updateStateFromPrefs(prefs);
   }
 }
