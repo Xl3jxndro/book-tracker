@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'screens/main_wrapper.dart';
 import 'screens/login_screen.dart';
@@ -17,6 +16,7 @@ import 'providers/widget_action_provider.dart';
 import 'providers/streak_risk_provider.dart';
 import 'providers/today_provider.dart';
 import 'services/notification_service.dart';
+import 'services/ads_consent.dart';
 import 'services/home_widget_sync.dart';
 import 'services/session_goal_alarm.dart';
 import 'widgets/app_lock_overlay.dart';
@@ -25,15 +25,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    MobileAds.instance.initialize().then((status) {
-       debugPrint("AdMob Inicializado: ${status.adapterStatuses}");
-    });
-
-    RequestConfiguration configuration = RequestConfiguration(
-      testDeviceIds: ["D2D801BFADE21CEF306FB5FA0E21324F"],
-    );
-    MobileAds.instance.updateRequestConfiguration(configuration);
-
     await NotificationService.init();
     // Corrige recordatorios ya programados (antes se programaban en UTC)
     await NotificationService.rescheduleIfEnabled();
@@ -50,6 +41,10 @@ void main() async {
       child: BookTrackerApp(),
     ),
   );
+
+  // Consentimiento de anuncios (formulario de Google solo donde se exige) y,
+  // después, AdMob. No retrasa el arranque.
+  unawaited(AdsConsent.initialize());
 }
 
 class BookTrackerApp extends ConsumerStatefulWidget {

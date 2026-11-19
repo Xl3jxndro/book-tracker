@@ -15,6 +15,8 @@ import '../widgets/add_book_sheet.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/skeleton_loader.dart';
 import '../services/ad_helper.dart';
+import '../services/ads_consent.dart';
+import '../services/library_ad_layout.dart';
 import 'book_details_screen.dart';
 import 'quotes_screen.dart';
 import '../database/database.dart';
@@ -86,35 +88,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final GlobalKey _sortButtonKey = GlobalKey();
   final GlobalKey _searchButtonKey = GlobalKey();
 
-  NativeAd? _nativeAd;
-  bool _isAdLoaded = false;
+  /// Anuncios nativos ya cargados: uno por hueco de la lista (un mismo
+  /// anuncio no puede mostrarse en dos sitios a la vez).
+  final List<NativeAd> _ads = [];
+  bool _loadingAd = false;
+  int _adsNeeded = 0;
   bool _isTutorialShowing = false;
 
   @override
   void initState() {
     super.initState();
-    _loadNativeAd();
+    AdsConsent.canRequestAds.addListener(_loadAdsIfNeeded);
   }
 
   @override
   void dispose() {
-    _nativeAd?.dispose();
+    AdsConsent.canRequestAds.removeListener(_loadAdsIfNeeded);
+    for (final ad in _ads) {
+      ad.dispose();
+    }
     super.dispose();
   }
 
-  void _loadNativeAd() {
-    _nativeAd = NativeAd(
+  /// Carga de uno en uno los anuncios que pide la lista (según cuántos libros
+  /// hay), solo si hay consentimiento o no hace falta.
+  void _loadAdsIfNeeded() {
+    if (!mounted || _loadingAd || _ads.length >= _adsNeeded || !AdsConsent.canRequestAds.value) return;
+    _loadingAd = true;
+    NativeAd(
       adUnitId: AdHelper.nativeAdUnitId,
-      factoryId: 'listTile', 
+      factoryId: 'listTile',
       request: const AdRequest(),
       listener: NativeAdListener(
         onAdLoaded: (ad) {
-          if (!mounted) { ad.dispose(); return; }
-          setState(() => _isAdLoaded = true);
+          _loadingAd = false;
+          if (!mounted) {
+            ad.dispose();
+            return;
+          }
+          setState(() => _ads.add(ad as NativeAd));
+          _loadAdsIfNeeded();
         },
-        onAdFailedToLoad: (ad, error) => ad.dispose(),
+        onAdFailedToLoad: (ad, error) {
+          _loadingAd = false;
+          ad.dispose();
+          debugPrint('Anuncio nativo no disponible: ${error.message}');
+        },
       ),
-    )..load();
+    ).load();
   }
 
   // Lógica de tutorial mejorada
@@ -301,37 +322,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
-    const int adInterval = 4;
-    int totalItems = filteredBooks.length;
-    if (_isAdLoaded) {
-      totalItems += (filteredBooks.length / adInterval).floor();
+    // Cuántos anuncios pide esta lista y cuáles caben con los ya cargados
+    final needed = libraryLayout(books: filteredBooks.length, adsReady: 99).whereType<AdEntry>().length;
+    if (needed != _adsNeeded) {
+      _adsNeeded = needed;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadAdsIfNeeded());
     }
+    final entries = libraryLayout(books: filteredBooks.length, adsReady: _ads.length);
 
     return SliverPadding(
       padding: EdgeInsets.fromLTRB(16, 10, 16, 180 + MediaQuery.of(context).padding.bottom), 
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            if (_isAdLoaded && index > 0 && (index + 1) % (adInterval + 1) == 0) {
-              return _buildAdWrapper(theme);
-            }
-
-            final int adCount = _isAdLoaded ? (index / (adInterval + 1)).floor() : 0;
-            final int bookIndex = index - adCount;
-
-            if (bookIndex >= filteredBooks.length) return null;
-
-            final book = filteredBooks[bookIndex];
-            return _buildDismissibleCard(context, ref, book, theme);
+          (context, index) => switch (entries[index]) {
+            AdEntry(:final slot) => _buildAdWrapper(theme, _ads[slot], slot),
+            BookEntry(index: final i) => _buildDismissibleCard(context, ref, filteredBooks[i], theme),
           },
-          childCount: totalItems,
+          childCount: entries.length,
         ),
       ),
     );
   }
 
-  Widget _buildAdWrapper(ThemeData theme) {
+  Widget _buildAdWrapper(ThemeData theme, NativeAd ad, int slot) {
     return Container(
+      key: ValueKey('library_ad_$slot'),
       margin: const EdgeInsets.only(bottom: 12, left: 4, right: 4),
       height: 90, 
       decoration: BoxDecoration(
@@ -341,7 +356,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: AdWidget(ad: _nativeAd!),
+        child: AdWidget(ad: ad),
       ),
     );
   }

@@ -10,6 +10,7 @@ import '../providers/app_info_provider.dart';
 import '../providers/tutorial_provider.dart';
 import '../providers/database_provider.dart';
 import '../services/notification_service.dart';
+import '../services/ads_consent.dart';
 import '../services/library_export_service.dart';
 import '../widgets/backup_actions.dart';
 import '../widgets/goodreads_import_actions.dart';
@@ -332,6 +333,20 @@ class SettingsScreen extends ConsumerWidget {
 
           _sectionHeader("SOPORTE", isDark),
           _settingsGroup([
+            // Solo donde Google lo exige (p. ej. UE): cambiar el consentimiento de anuncios
+            ValueListenableBuilder<bool>(
+              valueListenable: AdsConsent.privacyOptionsRequired,
+              builder: (context, required, _) => required
+                  ? _settingsTile(
+                      context,
+                      title: 'Opciones de privacidad de anuncios',
+                      subtitle: 'Cambia tu consentimiento para anuncios personalizados',
+                      leadingIcon: Icons.privacy_tip_outlined,
+                      iconColor: Colors.teal,
+                      onTap: AdsConsent.showPrivacyOptions,
+                    )
+                  : const SizedBox.shrink(),
+            ),
             _settingsTile(
               context,
               title: 'Ver la bienvenida de nuevo',
