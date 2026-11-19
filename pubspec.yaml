@@ -2,7 +2,7 @@ name: book_tracker
 description: "Una aplicación moderna para seguimiento de lectura."
 publish_to: 'none'
 
-version: 1.1.0+10
+version: 1.2.0+11
 
 environment:
   sdk: ^3.9.0
