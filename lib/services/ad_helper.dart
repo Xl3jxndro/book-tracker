@@ -10,9 +10,8 @@ class AdHelper {
 
   static const _testRewardedAndroid = 'ca-app-pub-3940256099942544/5224354917';
 
-  /// Unidad "Salvar racha" (recompensado). Vacío = aún sin crear en AdMob:
-  /// se usa el de prueba también en release.
-  static const _rewardedStreakRelease = '';
+  /// Unidad "Salvar racha" (recompensado) de AdMob.
+  static const _rewardedStreakRelease = 'ca-app-pub-1355991417734091/4819620281';
 
   static String get rewardedStreakAdUnitId {
     if (!Platform.isAndroid) throw UnsupportedError('Plataforma no soportada');
