@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../database/database.dart';
 import '../providers/database_provider.dart';
 import '../services/text_normalize.dart';
+import '../services/ad_helper.dart';
+import '../services/library_ad_layout.dart';
+import '../widgets/native_ad_card.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/quote_share.dart';
 import 'book_details_screen.dart';
@@ -115,17 +118,27 @@ class _QuotesScreenState extends ConsumerState<QuotesScreen> {
               Expanded(
                 child: visible.isEmpty
                     ? _EmptyFilter(favoritesOnly: _favoritesOnly && _query.isEmpty)
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                        itemCount: visible.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 12),
-                        itemBuilder: (context, i) => _QuoteCard(
-                          key: ValueKey(visible[i].note.id),
-                          quote: visible[i],
-                          scheme: scheme,
-                          theme: theme,
-                        ),
-                      ),
+                    : Builder(builder: (context) {
+                        // Anuncio tras 3 citas y luego cada 8 (máximo 2)
+                        final entries = libraryLayout(books: visible.length, adsReady: 2, firstAfter: 3, every: 8, maxAds: 2);
+                        return ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                          itemCount: entries.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: 12),
+                          itemBuilder: (context, i) => switch (entries[i]) {
+                            AdEntry(:final slot) => NativeAdCard(
+                                key: ValueKey('quotes_ad_$slot'),
+                                adUnitId: AdHelper.quotesNativeAdUnitId,
+                              ),
+                            BookEntry(index: final q) => _QuoteCard(
+                                key: ValueKey(visible[q].note.id),
+                                quote: visible[q],
+                                scheme: scheme,
+                                theme: theme,
+                              ),
+                          },
+                        );
+                      }),
               ),
             ],
           );

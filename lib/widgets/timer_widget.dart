@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../database/database.dart';
 import '../providers/database_provider.dart';
+import '../services/interstitial_ads.dart';
 import '../services/notification_service.dart';
 import '../services/session_goal.dart';
 import '../services/timer_persistence.dart';
@@ -230,6 +231,8 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
 
   void _startTimer() async {
     HapticFeedback.lightImpact();
+    // Deja listo el intersticial por si toca al guardar esta sesión
+    InterstitialAds.preloadIfEligible();
 
     _accumulatedSeconds = _seconds;
     _startTicking(since: DateTime.now());
@@ -547,6 +550,11 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
                   // Cerramos el diálogo usando el navigator capturado,
                   // independiente de si el TimerWidget fue desmontado
                   navigator.pop();
+
+                  // Pausa natural: quizá un intersticial (como mucho 1 cada 3
+                  // sesiones y 1 al día; nunca al terminar el libro)
+                  final total = widget.book.totalPages;
+                  InterstitialAds.onSessionSaved(finishedBook: total > 0 && newPages >= total);
                 },
                 child: const Text('GUARDAR'),
               ),

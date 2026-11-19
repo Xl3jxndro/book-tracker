@@ -9,6 +9,8 @@ import '../providers/today_provider.dart';
 import '../widgets/reading_challenge_card.dart';
 import '../widgets/share_year_summary.dart';
 import '../widgets/streak_save_sheet.dart';
+import '../widgets/native_ad_card.dart';
+import '../services/ad_helper.dart';
 import '../services/streak.dart';
 import '../services/streak_save.dart';
 import '../providers/streak_save_provider.dart';
@@ -232,6 +234,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
           ReadingChallengeCard(books: books),
           const SizedBox(height: 32),
           ReadingHeatMap(sessions: sessions),
+          NativeAdCard(adUnitId: AdHelper.statsNativeAdUnitId, margin: const EdgeInsets.only(top: 32)),
           const SizedBox(height: 40),
           _sectionHeader("Rendimiento Mensual", isDark),
           const SizedBox(height: 20),
@@ -251,6 +254,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
           _sectionHeader("Géneros Favoritos", isDark),
           const SizedBox(height: 20),
           _buildGenreSection(books, isDark),
+          NativeAdCard(adUnitId: AdHelper.statsNativeAdUnitId, margin: const EdgeInsets.only(top: 32)),
           const SizedBox(height: 40),
           _sectionHeader("Logros y Desafíos", isDark),
           const SizedBox(height: 20),
