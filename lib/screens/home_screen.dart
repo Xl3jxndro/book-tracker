@@ -120,6 +120,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // Lógica de tutorial mejorada
   void _execTutorialFlow() {
     if (_isTutorialShowing || !mounted) return;
+
+    // Los botones que señalan los tooltips deben estar a la vista: la barra
+    // y el botón + se ocultan al hacer scroll, y el buscador tapa los demás.
+    // Si no, el tooltip se calcula sobre un botón fuera de pantalla y se corta.
+    ref.read(navBarVisibleProvider.notifier).state = true;
+    if (ref.read(isSearchingProvider)) {
+      ref.read(isSearchingProvider.notifier).state = false;
+      ref.read(searchQueryProvider.notifier).state = '';
+    }
     
     // Un pequeño delay para que el árbol de widgets esté listo
     Future.delayed(const Duration(milliseconds: 800), () {

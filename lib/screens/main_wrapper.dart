@@ -172,7 +172,9 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
     if (tutorialData.stage == TutorialStage.onboarding && !_onboardingHidden) {
       return OnboardingScreen(onFinish: _onOnboardingFinish);
     }
-    final bool isNavTutorialPhase = tutorialData.stage == TutorialStage.navigation;
+    // Durante los tooltips de la biblioteca y de la barra, la barra se ve siempre
+    final bool isNavTutorialPhase =
+        tutorialData.stage == TutorialStage.navigation || tutorialData.stage == TutorialStage.home;
     final isVisible = ref.watch(navBarVisibleProvider) || isNavTutorialPhase;
 
     // 2. ALTURA DINÁMICA: 68 (nav) + 25 (margen) + espacio del sistema
