@@ -41,7 +41,7 @@ final bookColorSchemeProvider = FutureProvider.family<ColorScheme, String?>((ref
   // Mismos fondos que el resto de la app (paleta propia o Material You)
   final palette = ref.watch(colorSourceProvider) == ColorSource.system ? await ref.watch(systemPaletteProvider.future) : null;
   final base = palette != null
-      ? ColorScheme.fromSeed(seedColor: Color(palette.primary.get(40)), brightness: brightness)
+      ? ColorScheme.fromSeed(seedColor: palette, brightness: brightness)
       : (isDark ? AppSchemes.dark : AppSchemes.light);
 
   if (coverPath == null || !File(coverPath).existsSync()) return base;

@@ -1,6 +1,5 @@
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:material_color_utilities/material_color_utilities.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'app_colors.dart';
@@ -13,8 +12,8 @@ abstract final class AppTheme {
   static final ThemeData dark = build(AppSchemes.dark, AppColors.dark);
 
   /// Material You: esquema a partir de la paleta del fondo de pantalla.
-  static ThemeData fromSystem(CorePalette palette, Brightness brightness) {
-    final scheme = ColorScheme.fromSeed(seedColor: Color(palette.primary.get(40)), brightness: brightness);
+  static ThemeData fromSystem(Color seed, Brightness brightness) {
+    final scheme = ColorScheme.fromSeed(seedColor: seed, brightness: brightness);
     final base = brightness == Brightness.dark ? AppColors.dark : AppColors.light;
     return build(scheme, AppColors.fromScheme(scheme, base));
   }

@@ -59,3 +59,25 @@ List<LibraryEntry> libraryLayout({
   }
   return entries;
 }
+
+/// Para la vista de cuadrícula: agrupa los libros seguidos en filas de
+/// [columns]; cada anuncio ocupa una fila entera.
+List<List<LibraryEntry>> gridRows(List<LibraryEntry> entries, {int columns = 3}) {
+  final rows = <List<LibraryEntry>>[];
+  var current = <LibraryEntry>[];
+  for (final e in entries) {
+    if (e is AdEntry) {
+      if (current.isNotEmpty) rows.add(current);
+      current = [];
+      rows.add([e]);
+    } else {
+      current.add(e);
+      if (current.length == columns) {
+        rows.add(current);
+        current = [];
+      }
+    }
+  }
+  if (current.isNotEmpty) rows.add(current);
+  return rows;
+}

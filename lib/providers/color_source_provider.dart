@@ -1,7 +1,7 @@
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_color_utilities/material_color_utilities.dart';
+import 'package:material_ui/material_ui.dart' show Color;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// De dónde salen los colores de la app.
@@ -38,11 +38,13 @@ class ColorSourceNotifier extends Notifier<ColorSource> {
   }
 }
 
-/// Paleta del fondo de pantalla, o null si el teléfono no la ofrece
+/// Color semilla del fondo de pantalla, o null si el teléfono no lo ofrece
 /// (Android 11 o anterior).
-final systemPaletteProvider = FutureProvider<CorePalette?>((ref) async {
+final systemPaletteProvider = FutureProvider<Color?>((ref) async {
   try {
-    return await DynamicColorPlugin.getCorePalette();
+    // ignore: deprecated_member_use
+    final palette = await DynamicColorPlugin.getCorePalette();
+    return palette == null ? null : Color(palette.primary.get(40));
   } catch (e) {
     debugPrint('Sin colores del sistema: $e');
     return null;

@@ -1,310 +1,297 @@
 import 'dart:io';
-import 'package:material_ui/material_ui.dart';
-import 'package:flutter/services.dart';
-import '../database/database.dart';
-import 'add_book_sheet.dart';
-import '../theme/app_colors.dart';
 
+import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
+
+import '../database/database.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_tokens.dart';
+import 'add_book_sheet.dart';
+
+/// Texto de estado de un libro ("Leyendo · 11%", "Pendiente · 394 p."...).
+String bookStatusLine(Book book) {
+  final pct = book.totalPages > 0 ? (book.readPages / book.totalPages * 100).clamp(0, 100).toInt() : 0;
+  return switch (book.status) {
+    1 => 'Leyendo · $pct%',
+    2 => 'Terminado',
+    3 => 'Abandonado · ${book.readPages}/${book.totalPages} p.',
+    _ => 'Pendiente · ${book.totalPages} p.',
+  };
+}
+
+double _progress(Book b) => b.totalPages > 0 ? (b.readPages / b.totalPages).clamp(0.0, 1.0) : 0.0;
+
+void _openEditSheet(BuildContext context, Book book) {
+  HapticFeedback.mediumImpact();
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => AddBookSheet(bookToEdit: book),
+  );
+}
+
+/// Libro en la vista de lista: portada, título, autor, estado y, si se está
+/// leyendo, una barra de progreso fina. Mantener pulsado (o el lápiz) edita.
 class BookCard extends StatelessWidget {
   final Book book;
   final VoidCallback onTap;
-  final String searchQuery; // Añadido para el resaltado
+  final String searchQuery;
 
-  const BookCard({
-    super.key,
-    required this.book,
-    required this.onTap,
-    this.searchQuery = '', // Por defecto vacío
-  });
+  const BookCard({super.key, required this.book, required this.onTap, this.searchQuery = ''});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final cs = context.cs;
+    final app = context.app;
     final isDNF = book.status == 3;
     final isFinished = book.status == 2;
+    final statusColor = book.status == 1 ? app.accentText : app.forStatus(book.status);
 
-    final double progress = book.totalPages > 0
-        ? (book.readPages / book.totalPages).clamp(0.0, 1.0)
-        : 0.0;
-    final int percentage = (progress * 100).toInt();
-
-    final Color accentColor = isDNF 
-        ? context.app.statusAbandoned
-        : (isFinished ? context.app.statusFinished : context.app.accent);
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: isDNF 
-            ? context.app.statusAbandoned.withValues(alpha: 0.06)
-            : context.cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isDNF 
-              ? context.app.statusAbandoned.withValues(alpha: 0.2)
-              : context.cs.outlineVariant,
-          width: 1,
-        ),
-        boxShadow: [
-          if (!isDNF)
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: InkWell(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            onTap();
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(14.0),
-            child: Row(
-              children: [
-                _buildCoverImage(context, book.coverUrl, isDark, isDNF, accentColor),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildStatusBadge(book.status, accentColor),
-                          if (isFinished && (book.rating ?? 0) > 0)
-                            _buildRatingStars(context, book.rating!)
-                          else
-                            IconButton(
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              icon: Icon(Icons.edit_note_rounded, 
-                                size: 20, 
-                                color: isDNF ? context.cs.onSurfaceVariant : theme.colorScheme.primary.withValues(alpha: 0.7)),
-                              onPressed: () {
-                                HapticFeedback.mediumImpact();
-                                _showEditSheet(context);
-                              },
-                            ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: AppRadius.lgAll,
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        onLongPress: () => _openEditSheet(context, book),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.xs, vertical: AppSpace.xs),
+          child: Row(
+            children: [
+              BookCover(path: book.coverUrl, width: 60, height: 90, dimmed: isDNF),
+              const SizedBox(width: AppSpace.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    HighlightedText(
+                      text: book.title,
+                      query: searchQuery,
+                      maxLines: 2,
+                      style: theme.textTheme.titleMedium!.copyWith(
+                        color: isDNF ? cs.onSurfaceVariant : cs.onSurface,
+                        decoration: isDNF ? TextDecoration.lineThrough : null,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    HighlightedText(
+                      text: book.author,
+                      query: searchQuery,
+                      style: theme.textTheme.bodyMedium!.copyWith(color: cs.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: AppSpace.xs),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            bookStatusLine(book),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelMedium?.copyWith(color: statusColor),
+                          ),
+                        ),
+                        if (isFinished && (book.rating ?? 0) > 0) ...[
+                          const SizedBox(width: AppSpace.xs),
+                          RatingStars(rating: book.rating!, size: 14),
                         ],
+                      ],
+                    ),
+                    if (book.status == 1) ...[
+                      const SizedBox(height: AppSpace.xs),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: LinearProgressIndicator(
+                          value: _progress(book),
+                          minHeight: 4,
+                          color: app.accent,
+                          backgroundColor: cs.surfaceContainerHighest,
+                        ),
                       ),
-                      const SizedBox(height: 6),
-                      // TÍTULO RESALTADO
-                      _buildHighlightedText(
-                        book.title, 
-                        searchQuery, 
-                        theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: isDNF ? context.cs.onSurfaceVariant : (context.cs.onSurface),
-                          decoration: isDNF ? TextDecoration.lineThrough : null,
-                        ) ?? const TextStyle(),
-                        theme.colorScheme.primary,
-                      ),
-                      // AUTOR RESALTADO
-                      _buildHighlightedText(
-                        book.author, 
-                        searchQuery, 
-                        theme.textTheme.bodySmall?.copyWith(
-                          color: isDNF ? context.cs.onSurfaceVariant.withValues(alpha: 0.6) : context.cs.onSurfaceVariant,
-                        ) ?? const TextStyle(),
-                        theme.colorScheme.primary.withValues(alpha: 0.8),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildProgressInfo(context, progress, percentage, isDNF, accentColor, isDark),
                     ],
-                  ),
+                  ],
                 ),
+              ),
+              IconButton(
+                tooltip: 'Editar',
+                icon: const Icon(Icons.edit_outlined, size: 20),
+                color: cs.onSurfaceVariant,
+                onPressed: () => _openEditSheet(context, book),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Libro en la vista de cuadrícula: la portada protagoniza; debajo, título y
+/// estado. Mantener pulsado edita.
+class BookGridTile extends StatelessWidget {
+  final Book book;
+  final VoidCallback onTap;
+  final String searchQuery;
+
+  const BookGridTile({super.key, required this.book, required this.onTap, this.searchQuery = ''});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = context.cs;
+    final app = context.app;
+    final isDNF = book.status == 3;
+    final statusColor = book.status == 1 ? app.accentText : app.forStatus(book.status);
+
+    return InkWell(
+      borderRadius: AppRadius.mdAll,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      onLongPress: () => _openEditSheet(context, book),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AspectRatio(
+            aspectRatio: 2 / 3,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                BookCover(path: book.coverUrl, dimmed: isDNF, radius: 12),
+                if (book.status == 1)
+                  Positioned(
+                    left: 8,
+                    right: 8,
+                    bottom: 8,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(2),
+                      child: LinearProgressIndicator(
+                        value: _progress(book),
+                        minHeight: 4,
+                        color: app.accent,
+                        backgroundColor: Colors.black.withValues(alpha: 0.35),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
-        ),
+          const SizedBox(height: AppSpace.xs),
+          HighlightedText(
+            text: book.title,
+            query: searchQuery,
+            maxLines: 2,
+            style: theme.textTheme.titleSmall!.copyWith(
+              height: 1.25,
+              color: isDNF ? cs.onSurfaceVariant : cs.onSurface,
+              decoration: isDNF ? TextDecoration.lineThrough : null,
+            ),
+          ),
+          const SizedBox(height: 2),
+          if (book.status == 2 && (book.rating ?? 0) > 0)
+            RatingStars(rating: book.rating!, size: 12)
+          else
+            Text(
+              switch (book.status) { 1 => bookStatusLine(book), 2 => 'Terminado', 3 => 'Abandonado', _ => 'Pendiente' },
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(color: statusColor, letterSpacing: 0.2),
+            ),
+        ],
       ),
     );
   }
+}
 
-  // NUEVA FUNCIÓN: Resaltado de texto
-  Widget _buildHighlightedText(String text, String query, TextStyle baseStyle, Color highlightColor) {
-    if (query.isEmpty || !text.toLowerCase().contains(query.toLowerCase())) {
-      return Text(text, style: baseStyle, maxLines: 1, overflow: TextOverflow.ellipsis);
-    }
+/// Portada del libro (o un marcador con icono si no tiene).
+class BookCover extends StatelessWidget {
+  final String? path;
+  final double? width;
+  final double? height;
+  final double radius;
+  final bool dimmed;
 
-    final String lowercaseText = text.toLowerCase();
-    final String lowercaseQuery = query.toLowerCase();
-    
-    List<TextSpan> spans = [];
-    int start = 0;
-    int indexOfMatch;
+  const BookCover({super.key, required this.path, this.width, this.height, this.radius = 8, this.dimmed = false});
 
-    while ((indexOfMatch = lowercaseText.indexOf(lowercaseQuery, start)) != -1) {
-      if (indexOfMatch > start) {
-        spans.add(TextSpan(text: text.substring(start, indexOfMatch)));
-      }
-      spans.add(TextSpan(
-        text: text.substring(indexOfMatch, indexOfMatch + query.length),
-        style: TextStyle(
-          color: highlightColor, 
-          fontWeight: FontWeight.w900, // <--- Cambiado de .black a .w900
-          backgroundColor: highlightColor.withValues(alpha: 0.15)
-        ),
-      ));
-      start = indexOfMatch + query.length;
-    }
-
-    if (start < text.length) {
-      spans.add(TextSpan(text: text.substring(start)));
-    }
-
-    return Text.rich(
-      TextSpan(children: spans),
-      style: baseStyle,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-    );
-  }
-
-  Widget _buildProgressInfo(BuildContext context, double progress, int percentage, bool isDNF, Color accentColor, bool isDark) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              isDNF ? 'ABANDONADO' : '$percentage%',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-                color: accentColor.withValues(alpha: 0.8),
-                letterSpacing: 0.5,
-              ),
-            ),
-            Text(
-              '${book.readPages}/${book.totalPages} p.',
-              style: TextStyle(fontSize: 10, color: context.cs.onSurfaceVariant, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: LinearProgressIndicator(
-            value: progress,
-            minHeight: 6,
-            backgroundColor: accentColor.withValues(alpha: 0.1),
-            color: accentColor.withValues(alpha: isDNF ? 0.4 : 1.0),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRatingStars(BuildContext context, int rating) {
-    return Row(
-      children: List.generate(5, (index) => Icon(
-        index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
-        color: context.app.rating,
-        size: 14,
-      )),
-    );
-  }
-
-  Widget _buildCoverImage(BuildContext context, String? url, bool isDark, bool isDNF, Color accentColor) {
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.cs;
+    final hasFile = path != null && path!.isNotEmpty && File(path!).existsSync();
     return Container(
-      width: 80,
-      height: 115,
+      width: width,
+      height: height,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(radius),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 8,
-            offset: const Offset(2, 4),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Opacity(
-                opacity: isDNF ? 0.3 : 1.0,
-                child: url != null && url.isNotEmpty && File(url).existsSync()
-                    ? Image.file(File(url), fit: BoxFit.cover)
-                    : Container(
-                        color: context.cs.surfaceContainerHighest,
-                        child: Icon(Icons.book_rounded, color: context.cs.onSurfaceVariant),
-                      ),
-              ),
-            ),
-          ),
-          if (isDNF)
-            Center(
-              child: Icon(Icons.close_rounded, color: context.app.statusAbandoned, size: 30),
-            ),
-        ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: Opacity(
+          opacity: dimmed ? 0.4 : 1,
+          child: hasFile
+              ? Image.file(File(path!), fit: BoxFit.cover, width: width, height: height)
+              : ColoredBox(
+                  color: cs.surfaceContainerHighest,
+                  child: Center(child: Icon(Icons.menu_book_rounded, color: cs.onSurfaceVariant)),
+                ),
+        ),
       ),
     );
   }
+}
 
-  Widget _buildStatusBadge(int status, Color color) {
-    String text;
-    IconData icon;
+/// Estrellas de valoración.
+class RatingStars extends StatelessWidget {
+  final int rating;
+  final double size;
+  const RatingStars({super.key, required this.rating, this.size = 14});
 
-    switch (status) {
-      case 2:
-        text = 'TERMINADO';
-        icon = Icons.check_circle_outline_rounded;
-        break;
-      case 1:
-        text = 'LEYENDO';
-        icon = Icons.import_contacts_rounded;
-        break;
-      case 3:
-        text = 'DNF';
-        icon = Icons.heart_broken_rounded;
-        break;
-      default:
-        text = 'PENDIENTE';
-        icon = Icons.schedule_rounded;
-        color = Colors.blueGrey;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
+  @override
+  Widget build(BuildContext context) => Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 10, color: color),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              color: color,
-              fontSize: 9,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        children: List.generate(
+          5,
+          (i) => Icon(i < rating ? Icons.star_rounded : Icons.star_outline_rounded, color: context.app.rating, size: size),
+        ),
+      );
+}
 
-  void _showEditSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => AddBookSheet(bookToEdit: book),
+/// Texto con las coincidencias de la búsqueda resaltadas.
+class HighlightedText extends StatelessWidget {
+  final String text;
+  final String query;
+  final TextStyle style;
+  final int maxLines;
+
+  const HighlightedText({super.key, required this.text, required this.query, required this.style, this.maxLines = 1});
+
+  @override
+  Widget build(BuildContext context) {
+    final lower = text.toLowerCase();
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty || !lower.contains(q)) {
+      return Text(text, style: style, maxLines: maxLines, overflow: TextOverflow.ellipsis);
+    }
+    final highlight = TextStyle(
+      fontWeight: FontWeight.w800,
+      color: context.app.accentText,
+      backgroundColor: context.app.accentSoft,
     );
+    final spans = <TextSpan>[];
+    var start = 0;
+    int match;
+    while ((match = lower.indexOf(q, start)) != -1) {
+      if (match > start) spans.add(TextSpan(text: text.substring(start, match)));
+      spans.add(TextSpan(text: text.substring(match, match + q.length), style: highlight));
+      start = match + q.length;
+    }
+    if (start < text.length) spans.add(TextSpan(text: text.substring(start)));
+    return Text.rich(TextSpan(children: spans), style: style, maxLines: maxLines, overflow: TextOverflow.ellipsis);
   }
 }

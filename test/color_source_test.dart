@@ -3,7 +3,6 @@ import 'package:book_tracker/theme/app_colors.dart';
 import 'package:book_tracker/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_color_utilities/material_color_utilities.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,7 +25,7 @@ void main() {
   });
 
   test('tema de Material You: acento del sistema y estados armonizados', () {
-    final palette = CorePalette.of(const Color(0xFF3366CC).toARGB32());
+    const palette = Color(0xFF3366CC);
     for (final b in Brightness.values) {
       final theme = AppTheme.fromSystem(palette, b);
       final app = theme.extension<AppColors>()!;

@@ -1,10 +1,11 @@
-import 'dart:ui';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../providers/database_provider.dart';
 import '../providers/ui_provider.dart';
@@ -21,6 +22,7 @@ import 'book_details_screen.dart';
 import 'quotes_screen.dart';
 import '../database/database.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_tokens.dart';
 
 // --- PROVIDERS DE FILTRADO Y ORDENAMIENTO ---
 enum BookSortOption { recentlyAdded, mostProgress, longest, alphabetical }
@@ -29,6 +31,31 @@ final searchQueryProvider = NotifierProvider<SimpleState<String>, String>(() => 
 final isSearchingProvider = NotifierProvider<SimpleState<bool>, bool>(() => SimpleState(false));
 final selectedFilterProvider = NotifierProvider<SimpleState<String?>, String?>(() => SimpleState(null));
 final sortOptionProvider = NotifierProvider<SimpleState<BookSortOption>, BookSortOption>(() => SimpleState(BookSortOption.recentlyAdded));
+
+/// Vista de la biblioteca: lista (false) o cuadrícula (true). Se recuerda.
+final libraryGridViewProvider = NotifierProvider<LibraryViewNotifier, bool>(LibraryViewNotifier.new);
+
+class LibraryViewNotifier extends Notifier<bool> {
+  static const prefsKey = 'library_grid_view';
+
+  @override
+  bool build() {
+    _load();
+    return false;
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getBool(prefsKey);
+    if (saved != null && ref.mounted) state = saved;
+  }
+
+  Future<void> set(bool grid) async {
+    state = grid;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(prefsKey, grid);
+  }
+}
 
 /// ¿El libro es de la categoría [tag]? Sin distinguir mayúsculas ni espacios
 /// en los bordes (los chips muestran la categoría normalizada).
@@ -199,12 +226,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final filteredBooksAsync = ref.watch(filteredBooksProvider);
-    final allBooksAsync = ref.watch(booksStreamProvider); 
+    final allBooksAsync = ref.watch(booksStreamProvider);
     final isSearching = ref.watch(isSearchingProvider);
     final selectedFilter = ref.watch(selectedFilterProvider);
     final isNavVisible = ref.watch(navBarVisibleProvider);
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     // ESCUCHA DEL TUTORIAL: Se dispara cuando el estado cambia a 'home' y no se ha visto.
     ref.listen(tutorialProvider, (prev, next) {
@@ -215,11 +241,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      resizeToAvoidBottomInset: false, 
+      resizeToAvoidBottomInset: false,
       body: filteredBooksAsync.when(
         data: (filteredBooks) {
           final allBooks = allBooksAsync.value ?? [];
-          
+
           final tags = allBooks
               .map((b) => (b.category ?? 'General').trim())
               .where((t) => t.isNotEmpty)
@@ -244,16 +270,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               } else if (notification.direction == ScrollDirection.forward && !isNavVisible) {
                 ref.read(navBarVisibleProvider.notifier).set(true);
               }
-              return false; 
+              return false;
             },
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
               slivers: [
-                _buildSliverAppBar(context, ref, isSearching, isDark, theme),
+                _buildHeader(context, ref, isSearching, theme),
                 if (allBooks.isNotEmpty && !isSearching)
-                  SliverToBoxAdapter(
-                    child: _buildFilterSection(ref, selectedFilter, tags, theme, counts),
-                  ),
+                  SliverToBoxAdapter(child: _buildFilterSection(ref, selectedFilter, tags, theme, counts)),
+                if (allBooks.isNotEmpty && filteredBooks.isNotEmpty)
+                  SliverToBoxAdapter(child: _buildCountRow(ref, filteredBooks.length, theme)),
                 _buildMainContent(context, ref, allBooks, filteredBooks, theme),
               ],
             ),
@@ -269,39 +295,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   // --- WIDGETS DE SOPORTE (SECCIONES) ---
 
-  Widget _buildSliverAppBar(BuildContext context, WidgetRef ref, bool isSearching, bool isDark, ThemeData theme) {
-    return SliverAppBar(
-      expandedHeight: 120.0,
-      floating: true,
-      pinned: true,
-      elevation: 0,
-      stretch: true,
-      backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.8),
-      flexibleSpace: ClipRRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: FlexibleSpaceBar(
-            titlePadding: const EdgeInsetsDirectional.only(start: 20, bottom: 14),
-            title: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: !isSearching 
-                ? Text('Mi Biblioteca', 
-                    key: const ValueKey('title'),
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontSize: 20, fontWeight: FontWeight.bold,
-                      color: context.cs.onSurface,
-                      letterSpacing: -0.5,
-                    ))
-                : _buildSearchField(ref, theme),
-            ),
-          ),
+  /// Cabecera: fecha y "Mi biblioteca" con sus acciones, o el buscador.
+  Widget _buildHeader(BuildContext context, WidgetRef ref, bool isSearching, ThemeData theme) {
+    final today = DateFormat("EEEE, d 'de' MMMM", 'es').format(DateTime.now());
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(AppSpace.screen + 4, MediaQuery.of(context).padding.top + AppSpace.md, AppSpace.screen, AppSpace.xs),
+        child: AnimatedSwitcher(
+          duration: AppMotion.fast,
+          child: isSearching
+              ? Row(
+                  key: const ValueKey('search'),
+                  children: [
+                    Expanded(child: _buildSearchField(ref, theme)),
+                    const SizedBox(width: AppSpace.xs),
+                    _buildSearchButton(ref, isSearching),
+                  ],
+                )
+              : Row(
+                  key: const ValueKey('title'),
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            today[0].toUpperCase() + today.substring(1),
+                            style: theme.textTheme.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant),
+                          ),
+                          const SizedBox(height: 2),
+                          Text('Mi biblioteca', style: theme.textTheme.headlineLarge),
+                        ],
+                      ),
+                    ),
+                    _buildQuotesButton(context),
+                    const SizedBox(width: AppSpace.xs),
+                    _buildSortButton(context, ref, theme),
+                    const SizedBox(width: AppSpace.xs),
+                    _buildSearchButton(ref, isSearching),
+                  ],
+                ),
         ),
       ),
-      actions: [
-        if (!isSearching) _buildQuotesButton(context),
-        if (!isSearching) _buildSortButton(context, ref, theme),
-        _buildSearchButton(ref, isSearching),
-      ],
     );
   }
 
@@ -318,7 +354,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       );
     }
-    
+
     if (filteredBooks.isEmpty) {
       return SliverFillRemaining(
         hasScrollBody: false,
@@ -342,14 +378,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) => _loadAdsIfNeeded());
     }
     final entries = libraryLayout(books: filteredBooks.length, adsReady: AdsGate.showAds.value ? _ads.length : 0);
+    final query = ref.watch(searchQueryProvider);
+    final padding = EdgeInsets.fromLTRB(AppSpace.screen - AppSpace.xs, AppSpace.xs, AppSpace.screen - AppSpace.xs, 180 + MediaQuery.of(context).padding.bottom);
+
+    if (ref.watch(libraryGridViewProvider)) {
+      final rows = gridRows(entries);
+      return SliverPadding(
+        padding: padding.copyWith(left: AppSpace.screen, right: AppSpace.screen),
+        sliver: SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, r) {
+              final row = rows[r];
+              if (row.first case AdEntry(:final slot)) return _buildAdWrapper(theme, _ads[slot], slot);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppSpace.lg),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (var c = 0; c < 3; c++) ...[
+                      if (c > 0) const SizedBox(width: AppSpace.sm),
+                      Expanded(
+                        child: c < row.length
+                            ? BookGridTile(
+                                key: ValueKey('grid_${filteredBooks[(row[c] as BookEntry).index].id}'),
+                                book: filteredBooks[(row[c] as BookEntry).index],
+                                searchQuery: query,
+                                onTap: () => _openBook(filteredBooks[(row[c] as BookEntry).index]),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            },
+            childCount: rows.length,
+          ),
+        ),
+      );
+    }
 
     return SliverPadding(
-      padding: EdgeInsets.fromLTRB(16, 10, 16, 180 + MediaQuery.of(context).padding.bottom), 
+      padding: padding,
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) => switch (entries[index]) {
             AdEntry(:final slot) => _buildAdWrapper(theme, _ads[slot], slot),
-            BookEntry(index: final i) => _buildDismissibleCard(context, ref, filteredBooks[i], theme),
+            BookEntry(index: final i) => _buildDismissibleCard(context, ref, filteredBooks[i], query),
           },
           childCount: entries.length,
         ),
@@ -360,125 +435,120 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildAdWrapper(ThemeData theme, NativeAd ad, int slot) {
     return Container(
       key: ValueKey('library_ad_$slot'),
-      margin: const EdgeInsets.only(bottom: 12, left: 4, right: 4),
-      height: 90, 
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.1)),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: AdWidget(ad: ad),
-      ),
+      margin: const EdgeInsets.symmetric(vertical: AppSpace.xs),
+      height: 90,
+      decoration: BoxDecoration(color: context.cs.surfaceContainerLow, borderRadius: AppRadius.lgAll),
+      child: ClipRRect(borderRadius: AppRadius.lgAll, child: AdWidget(ad: ad)),
     );
   }
 
   Widget _buildSearchField(WidgetRef ref, ThemeData theme) {
-    return Container(
+    return TextField(
       key: const ValueKey('search_field'),
-      height: 40,
-      margin: const EdgeInsets.only(right: 60),
-      alignment: Alignment.centerLeft,
-      child: TextField(
-        autofocus: true,
-        cursorColor: theme.colorScheme.primary,
-        style: theme.textTheme.bodyLarge?.copyWith(fontSize: 18, fontWeight: FontWeight.w500),
-        decoration: InputDecoration(
-          hintText: 'Título o autor...',
-          hintStyle: TextStyle(
-            color: context.cs.onSurfaceVariant, 
-            fontSize: 18,
-          ),
-          border: InputBorder.none,
-          isDense: true,
-          contentPadding: EdgeInsets.zero,
+      autofocus: true,
+      textInputAction: TextInputAction.search,
+      style: theme.textTheme.bodyLarge,
+      decoration: InputDecoration(
+        hintText: 'Título o autor…',
+        prefixIcon: const Icon(Icons.search_rounded),
+        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppRadius.pill)), borderSide: BorderSide.none),
+        enabledBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppRadius.pill)), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(AppRadius.pill)),
+          borderSide: BorderSide(color: context.cs.primary, width: 1.5),
         ),
-        onChanged: (value) => ref.read(searchQueryProvider.notifier).set(value),
+      ),
+      onChanged: (value) => ref.read(searchQueryProvider.notifier).set(value),
+    );
+  }
+
+  /// Botón redondo de la cabecera.
+  Widget _headerButton({Key? key, required IconData icon, required String tooltip, required VoidCallback onPressed}) {
+    return IconButton(
+      key: key,
+      tooltip: tooltip,
+      onPressed: onPressed,
+      icon: Icon(icon, size: 22),
+      style: IconButton.styleFrom(
+        fixedSize: const Size(44, 44),
+        backgroundColor: context.cs.surfaceContainerHigh,
+        foregroundColor: context.cs.onSurface,
       ),
     );
   }
 
   Widget _buildSearchButton(WidgetRef ref, bool isSearching) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 12, top: 4), 
-      child: IconButton.filledTonal(
-        key: _searchButtonKey,
-        style: IconButton.styleFrom(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        icon: Icon(isSearching ? Icons.close_rounded : Icons.search_rounded, size: 22),
-        onPressed: () {
-          HapticFeedback.selectionClick();
-          ref.read(isSearchingProvider.notifier).set(!isSearching);
-          if (isSearching) ref.read(searchQueryProvider.notifier).set('');
-        },
-      ),
+    return _headerButton(
+      key: _searchButtonKey,
+      icon: isSearching ? Icons.close_rounded : Icons.search_rounded,
+      tooltip: isSearching ? 'Cerrar búsqueda' : 'Buscar',
+      onPressed: () {
+        HapticFeedback.selectionClick();
+        ref.read(isSearchingProvider.notifier).set(!isSearching);
+        if (isSearching) ref.read(searchQueryProvider.notifier).set('');
+      },
     );
   }
 
   Widget _buildQuotesButton(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: IconButton(
-        key: _quotesButtonKey,
-        tooltip: 'Mis citas',
-        icon: const Icon(Icons.format_quote_rounded),
-        onPressed: () {
-          HapticFeedback.selectionClick();
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const QuotesScreen()));
-        },
-      ),
+    return _headerButton(
+      key: _quotesButtonKey,
+      icon: Icons.format_quote_rounded,
+      tooltip: 'Mis citas',
+      onPressed: () {
+        HapticFeedback.selectionClick();
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const QuotesScreen()));
+      },
     );
   }
 
   Widget _buildSortButton(BuildContext context, WidgetRef ref, ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 4, right: 4),
-      child: IconButton(
-        key: _sortButtonKey, 
-        icon: const Icon(Icons.sort_rounded),
-        onPressed: () => _showSortSheet(context, ref, theme),
-      ),
+    return _headerButton(
+      key: _sortButtonKey,
+      icon: Icons.sort_rounded,
+      tooltip: 'Ordenar',
+      onPressed: () => _showSortSheet(context, ref, theme),
     );
   }
+
+  static const _sortLabels = {
+    BookSortOption.recentlyAdded: 'Recientes',
+    BookSortOption.mostProgress: 'Mayor progreso',
+    BookSortOption.longest: 'Más largos',
+    BookSortOption.alphabetical: 'A–Z',
+  };
 
   void _showSortSheet(BuildContext context, WidgetRef ref, ThemeData theme) {
     final currentSort = ref.read(sortOptionProvider);
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 20),
-            Text("Ordenar libros", style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
-            _sortTile(ref, context, "Añadido recientemente", BookSortOption.recentlyAdded, Icons.history_rounded, currentSort),
-            _sortTile(ref, context, "Mayor progreso", BookSortOption.mostProgress, Icons.auto_graph_rounded, currentSort),
-            _sortTile(ref, context, "Libros más largos", BookSortOption.longest, Icons.format_list_numbered_rounded, currentSort),
-            _sortTile(ref, context, "Orden alfabético", BookSortOption.alphabetical, Icons.sort_by_alpha_rounded, currentSort),
-            const SizedBox(height: 12),
-          ],
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpace.md, AppSpace.lg, AppSpace.md, AppSpace.sm),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: AppSpace.lg),
+              Text('Ordenar libros', style: theme.textTheme.headlineSmall),
+              const SizedBox(height: AppSpace.md),
+              _sortTile(ref, context, 'Añadido recientemente', BookSortOption.recentlyAdded, Icons.history_rounded, currentSort),
+              _sortTile(ref, context, 'Mayor progreso', BookSortOption.mostProgress, Icons.auto_graph_rounded, currentSort),
+              _sortTile(ref, context, 'Libros más largos', BookSortOption.longest, Icons.format_list_numbered_rounded, currentSort),
+              _sortTile(ref, context, 'Orden alfabético', BookSortOption.alphabetical, Icons.sort_by_alpha_rounded, currentSort),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _sortTile(WidgetRef ref, BuildContext context, String title, BookSortOption option, IconData icon, BookSortOption current) {
-    final theme = Theme.of(context);
     final isSelected = current == option;
     return ListTile(
-      leading: Icon(icon, color: isSelected ? theme.colorScheme.primary : theme.iconTheme.color?.withValues(alpha: 0.6)),
-      title: Text(title, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-      trailing: isSelected ? Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary) : null,
+      leading: Icon(icon, color: isSelected ? context.app.accentText : context.cs.onSurfaceVariant),
+      title: Text(title, style: TextStyle(fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500)),
+      trailing: isSelected ? Icon(Icons.check_circle_rounded, color: context.app.accent) : null,
       onTap: () {
         HapticFeedback.lightImpact();
         ref.read(sortOptionProvider.notifier).set(option);
@@ -488,125 +558,164 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildFilterSection(WidgetRef ref, String? selectedFilter, List<String> tags, ThemeData theme, Map<String?, int> counts) {
-    return Column(
-      children: [
-        _modernChipRow(ref, 'ESTADOS', ['Todos', 'Pendientes', 'Leyendo', 'Terminados', 'Abandonados'], [null, 'status_0', 'status_1', 'status_2', 'status_3'], selectedFilter, theme, counts),
-        if (tags.isNotEmpty) _modernChipRow(ref, 'CATEGORÍAS', tags, tags, selectedFilter, theme, counts),
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _chipRow(ref, ['Todos', 'Pendientes', 'Leyendo', 'Terminados', 'Abandonados'],
+              [null, 'status_0', 'status_1', 'status_2', 'status_3'], selectedFilter, theme, counts),
+          // Categorías: solo si hay más de una (con una sola no filtran nada)
+          if (tags.length > 1) ...[
+            const SizedBox(height: AppSpace.xs),
+            _chipRow(ref, tags, tags, selectedFilter, theme, counts, small: true),
+          ],
+        ],
+      ),
     );
   }
 
-  Widget _modernChipRow(WidgetRef ref, String title, List<String> labels, List<String?> values, String? selected, ThemeData theme, Map<String?, int> counts) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(22, 18, 22, 10),
-          child: Text(title, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5, color: theme.colorScheme.primary.withValues(alpha: 0.5))),
-        ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 18),
-          child: Row(
-            children: List.generate(labels.length, (i) {
-              final val = values[i];
-              final isSelected = selected == val;
-              final count = counts[val] ?? 0;
-              final activeColor = _getStatusColor(val, theme);
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: InkWell(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(selectedFilterProvider.notifier).set(isSelected ? null : val);
-                  },
-                  borderRadius: BorderRadius.circular(14),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? activeColor : activeColor.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      children: [
-                        Text(labels[i], style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isSelected ? context.cs.surface : activeColor)),
-                        const SizedBox(width: 6),
-                        Text('$count', style: TextStyle(fontSize: 10, color: isSelected ? Colors.white70 : activeColor.withValues(alpha: 0.6))),
+  /// Fila de filtros: el seleccionado en tono invertido; los estados llevan
+  /// un punto con su color.
+  Widget _chipRow(WidgetRef ref, List<String> labels, List<String?> values, String? selected, ThemeData theme,
+      Map<String?, int> counts, {bool small = false}) {
+    final cs = context.cs;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
+      child: Row(
+        children: List.generate(labels.length, (i) {
+          final val = values[i];
+          final isSelected = selected == val;
+          final count = counts[val] ?? 0;
+          final isStatus = val != null && val.startsWith('status_');
+          final fg = isSelected ? cs.onInverseSurface : cs.onSurface;
+          return Padding(
+            padding: const EdgeInsets.only(right: AppSpace.xs),
+            child: Material(
+              color: isSelected ? cs.inverseSurface : (small ? Colors.transparent : cs.surfaceContainerHigh),
+              shape: StadiumBorder(side: small && !isSelected ? BorderSide(color: cs.outlineVariant) : BorderSide.none),
+              child: InkWell(
+                customBorder: const StadiumBorder(),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  ref.read(selectedFilterProvider.notifier).set(isSelected ? null : val);
+                },
+                child: AnimatedContainer(
+                  duration: AppMotion.fast,
+                  height: small ? 34 : 40,
+                  padding: EdgeInsets.symmetric(horizontal: small ? 12 : 14),
+                  child: Row(
+                    children: [
+                      if (isStatus) ...[
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(color: _getStatusColor(val, theme), shape: BoxShape.circle),
+                        ),
+                        const SizedBox(width: 8),
                       ],
-                    ),
+                      Text(labels[i], style: theme.textTheme.labelLarge?.copyWith(color: fg, fontSize: small ? 13 : 14)),
+                      const SizedBox(width: 6),
+                      Text('$count', style: theme.textTheme.labelMedium?.copyWith(color: fg.withValues(alpha: 0.6))),
+                    ],
                   ),
                 ),
-              );
-            }),
-          ),
-        ),
-      ],
+              ),
+            ),
+          );
+        }),
+      ),
     );
   }
 
-  Widget _buildDismissibleCard(BuildContext context, WidgetRef ref, Book book, ThemeData theme) {
-    final statusColor = _getStatusColor(book.status, theme);
-    final query = ref.watch(searchQueryProvider);
+  /// "N libros · orden" y el cambio entre lista y cuadrícula.
+  Widget _buildCountRow(WidgetRef ref, int count, ThemeData theme) {
+    final grid = ref.watch(libraryGridViewProvider);
+    final cs = context.cs;
+    Widget toggle(bool forGrid, IconData icon, String tooltip) {
+      final selected = grid == forGrid;
+      return IconButton(
+        tooltip: tooltip,
+        isSelected: selected,
+        onPressed: () {
+          HapticFeedback.selectionClick();
+          ref.read(libraryGridViewProvider.notifier).set(forGrid);
+        },
+        icon: Icon(icon, size: 20),
+        style: IconButton.styleFrom(
+          fixedSize: const Size(40, 40),
+          backgroundColor: selected ? cs.surfaceContainerHighest : Colors.transparent,
+          foregroundColor: selected ? cs.onSurface : cs.onSurfaceVariant,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(AppSpace.screen + 4, AppSpace.sm, AppSpace.screen - 4, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '$count ${count == 1 ? 'libro' : 'libros'} · ${_sortLabels[ref.watch(sortOptionProvider)]}',
+              style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+            ),
+          ),
+          toggle(false, Icons.view_agenda_outlined, 'Vista de lista'),
+          const SizedBox(width: 4),
+          toggle(true, Icons.grid_view_rounded, 'Vista de cuadrícula'),
+        ],
+      ),
+    );
+  }
+
+  void _openBook(Book book) {
+    HapticFeedback.mediumImpact();
+    // Establecer como libro actual (el widget se actualiza solo)
+    ref.read(currentBookProvider.notifier).setCurrentBook(book.id);
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 450),
+        pageBuilder: (context, animation, secondaryAnimation) => BookDetailsScreen(book: book),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
+      ),
+    );
+  }
+
+  Widget _buildDismissibleCard(BuildContext context, WidgetRef ref, Book book, String query) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Dismissible(
         key: Key('dismiss_${book.id}'),
         direction: DismissDirection.endToStart,
         background: Container(
           alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20),
-          decoration: BoxDecoration(color: context.cs.error, borderRadius: BorderRadius.circular(20)),
-          child: Icon(Icons.delete_sweep_rounded, color: context.cs.onError, size: 30),
+          padding: const EdgeInsets.only(right: AppSpace.lg),
+          decoration: BoxDecoration(color: context.cs.error, borderRadius: AppRadius.lgAll),
+          child: Icon(Icons.delete_sweep_rounded, color: context.cs.onError, size: 28),
         ),
         confirmDismiss: (direction) async {
           HapticFeedback.heavyImpact();
           return await showDialog(
             context: context,
             builder: (context) => AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
               title: const Text('¿Eliminar libro?'),
               content: Text('Esta acción borrará "${book.title}" permanentemente.'),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCELAR')),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: context.cs.error, foregroundColor: context.cs.onError),
-                  onPressed: () => Navigator.pop(context, true), 
-                  child: const Text('ELIMINAR')
+                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+                FilledButton(
+                  style: FilledButton.styleFrom(backgroundColor: context.cs.error, foregroundColor: context.cs.onError),
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Eliminar'),
                 ),
               ],
             ),
           );
         },
         onDismissed: (_) => ref.read(databaseProvider).deleteBookComplete(book),
-        child: Container(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: statusColor.withValues(alpha: 0.15))),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Stack(
-              children: [
-                Positioned(left: 0, top: 0, bottom: 0, child: Container(width: 6, color: statusColor)),
-                BookCard(book: book, searchQuery: query, onTap: () {
-                  HapticFeedback.mediumImpact();
-                  
-                  // Establecer como libro actual (el widget se actualiza solo)
-                  ref.read(currentBookProvider.notifier).setCurrentBook(book.id);
-                  
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      transitionDuration: const Duration(milliseconds: 450),
-                      pageBuilder: (context, animation, secondaryAnimation) => BookDetailsScreen(book: book),
-                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                        return FadeTransition(opacity: animation, child: child);
-                      },
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-        ),
+        child: BookCard(book: book, searchQuery: query, onTap: () => _openBook(book)),
       ),
     );
   }

@@ -41,4 +41,15 @@ void main() {
       }
     }
   });
+
+  test('cuadrícula: filas de 3 libros y cada anuncio en su propia fila', () {
+    final rows = gridRows(libraryLayout(books: 8, adsReady: 2));
+    // 3 libros, anuncio, 3 libros, 2 libros... (el anuncio rompe la fila)
+    expect(rows.first, const [BookEntry(0), BookEntry(1), BookEntry(2)]);
+    expect(rows[1], const [AdEntry(0)]);
+    final books = rows.expand((r) => r).whereType<BookEntry>().map((b) => b.index).toList();
+    expect(books, List.generate(8, (i) => i), reason: 'ningún libro se pierde ni se repite');
+    expect(rows.every((r) => r.length <= 3), isTrue);
+    expect(rows.where((r) => r.any((e) => e is AdEntry)).every((r) => r.length == 1), isTrue);
+  });
 }
