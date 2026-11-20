@@ -208,8 +208,8 @@ class _ManualIsbnDialogState extends State<_ManualIsbnDialog> {
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
-        ElevatedButton(onPressed: isbn == null ? null : () => Navigator.pop(context, isbn), child: const Text('BUSCAR')),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        ElevatedButton(onPressed: isbn == null ? null : () => Navigator.pop(context, isbn), child: const Text('Buscar')),
       ],
     );
   }

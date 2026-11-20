@@ -28,7 +28,7 @@ class SettingsScreen extends ConsumerWidget {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: settings.hour, minute: settings.minute),
-      helpText: 'SELECCIONA HORA DE LECTURA',
+      helpText: 'Hora del recordatorio',
     );
     
     if (picked != null) {
@@ -40,7 +40,7 @@ class SettingsScreen extends ConsumerWidget {
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: settings.hour, minute: settings.minute),
-      helpText: 'HORA DEL AVISO DE RACHA',
+      helpText: 'Hora del aviso de racha',
     );
     if (picked != null) {
       await ref.read(streakRiskProvider.notifier).updateTime(picked.hour, picked.minute);
@@ -122,20 +122,13 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: context.cs.surface,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        centerTitle: false,
-        title: Text('Ajustes',
-            style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 28,
-                color: context.cs.onSurface,
-                letterSpacing: -1)),
-      ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 140 + MediaQuery.of(context).padding.bottom),
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 20),
+            child: Text('Ajustes', style: Theme.of(context).textTheme.headlineLarge),
+          ),
           _sectionHeader("APARIENCIA", context),
           _settingsGroup([
             _settingsTile(
@@ -615,27 +608,24 @@ class SettingsScreen extends ConsumerWidget {
 
   Widget _sectionHeader(String title, BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 10, bottom: 10),
-      child: Text(title, 
-        style: TextStyle(
-          fontSize: 11, 
-          fontWeight: FontWeight.w900, 
-          color: context.cs.onSurfaceVariant,
-          letterSpacing: 1.5
-        )
-      ),
+      padding: const EdgeInsets.only(left: 8, bottom: 8),
+      child: Text(title,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: context.cs.onSurfaceVariant, letterSpacing: 1.4)),
     );
   }
 
   Widget _settingsGroup(List<Widget> children, BuildContext context) {
-    return Container(
+    // Grupo sin borde, con separadores finos entre filas
+    final rows = <Widget>[];
+    for (var i = 0; i < children.length; i++) {
+      if (i > 0) rows.add(Divider(height: 1, indent: 72, endIndent: 16, color: context.cs.outlineVariant.withValues(alpha: 0.6)));
+      rows.add(children[i]);
+    }
+    return Material(
+      color: context.cs.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(24),
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: context.cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: context.cs.outlineVariant),
-      ),
-      child: Column(children: children),
+      child: Column(children: rows),
     );
   }
 
@@ -648,21 +638,24 @@ class SettingsScreen extends ConsumerWidget {
     VoidCallback? onTap,
     VoidCallback? onLongPress,
   }) {
+    final theme = Theme.of(context);
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      shape: const RoundedRectangleBorder(),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       onTap: onTap,
       onLongPress: onLongPress,
       leading: Container(
-        padding: const EdgeInsets.all(8),
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
-          color: iconColor.withValues(alpha: 0.1),
+          color: iconColor.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(leadingIcon, color: iconColor, size: 22),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: context.cs.onSurfaceVariant)),
-      trailing: trailing ?? Icon(Icons.arrow_forward_ios_rounded, size: 14, color: context.cs.onSurfaceVariant),
+      title: Text(title, style: theme.textTheme.titleSmall?.copyWith(fontSize: 15)),
+      subtitle: Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: context.cs.onSurfaceVariant)),
+      trailing: trailing ?? Icon(Icons.chevron_right_rounded, color: context.cs.onSurfaceVariant),
     );
   }
 

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +14,7 @@ import 'settings_screen.dart';
 import 'book_details_screen.dart';
 import 'onboarding_screen.dart';
 import '../widgets/add_book_sheet.dart';
+import '../widgets/add_book_button.dart';
 import '../widgets/goodreads_import_actions.dart';
 import '../widgets/whats_new_sheet.dart';
 import '../widgets/streak_save_sheet.dart';
@@ -212,7 +212,7 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
     final isVisible = ref.watch(navBarVisibleProvider) || isNavTutorialPhase;
 
     // 2. ALTURA DINÁMICA: 68 (nav) + 25 (margen) + espacio del sistema
-    final double totalNavHeight = isVisible ? (68 + 25 + systemBottomPadding) : 0;
+    final double totalNavHeight = isVisible ? (64 + 24 + systemBottomPadding) : 0;
 
     return Scaffold(
       // Mantenemos extendBody para el efecto Blur detrás de la barra
@@ -250,36 +250,26 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
     );
   }
 
+  /// Barra inferior: navegación flotante en cápsula y, en la biblioteca, el
+  /// botón "+" a su derecha.
   Widget _buildModernNav(bool isDark, ThemeData theme, double systemPadding) {
-    return Container(
-      height: 68, 
-      // Aplicamos el margen inferior sumando el padding del sistema
-      margin: EdgeInsets.fromLTRB(24, 0, 24, 25 + systemPadding),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
+    final showAdd = _currentIndex == 0 && !ref.watch(isSearchingProvider);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 24 + systemPadding),
+      child: Row(
+        children: [
+          Container(
+            height: 64,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
-              color: context.cs.surfaceContainer.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: context.cs.outlineVariant,
-                width: 1.5,
-              ),
+              color: context.cs.surfaceContainer,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.10), blurRadius: 24, offset: const Offset(0, 8)),
+              ],
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 _buildNavItem(0, Icons.auto_stories_outlined, Icons.auto_stories, 'Libros', null),
                 _buildNavItem(1, Icons.insights_outlined, Icons.insights, 'Stats', _statsKey),
@@ -287,58 +277,67 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
               ],
             ),
           ),
-        ),
+          const Spacer(),
+          AnimatedScale(
+            scale: showAdd ? 1 : 0,
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutBack,
+            child: IgnorePointer(ignoring: !showAdd, child: const AddBookButton()),
+          ),
+        ],
       ),
     );
   }
 
+  /// Elemento de la barra: el elegido es una cápsula con icono y nombre; los
+  /// demás, solo el icono.
   Widget _buildNavItem(int index, IconData icon, IconData selectedIcon, String label, GlobalKey? key) {
     final isSelected = _currentIndex == index;
-    final selectedColor = context.app.accent;
-
-    return GestureDetector(
-      key: key, 
-      onTap: () {
-        if (_currentIndex != index) {
-          // AÑADIDO: Feedback táctil al cambiar de pestaña
-          HapticFeedback.selectionClick(); 
-          setState(() => _currentIndex = index);
-        }
-        ref.read(navBarVisibleProvider.notifier).set(true);
-      },
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? selectedColor.withValues(alpha: 0.12) : Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Efecto visual: el icono crece un poco cuando se selecciona
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.0, end: isSelected ? 1.0 : 0.0),
-              duration: const Duration(milliseconds: 200),
-              builder: (context, value, child) {
-                return Icon(
-                  isSelected ? selectedIcon : icon, 
-                  color: isSelected ? selectedColor : (context.cs.onSurfaceVariant), 
-                  size: 24 + (value * 2), // Crece ligeramente de 24 a 26
-                );
-              },
+    final app = context.app;
+    return Semantics(
+      key: key,
+      button: true,
+      selected: isSelected,
+      label: label,
+      excludeSemantics: true,
+      child: Tooltip(
+        message: label,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () {
+            if (_currentIndex != index) {
+              HapticFeedback.selectionClick();
+              setState(() => _currentIndex = index);
+            }
+            ref.read(navBarVisibleProvider.notifier).set(true);
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOutCubic,
+            height: 48,
+            padding: EdgeInsets.symmetric(horizontal: isSelected ? 16 : 12),
+            margin: const EdgeInsets.symmetric(horizontal: 2),
+            decoration: BoxDecoration(
+              color: isSelected ? app.accentSoft : Colors.transparent,
+              borderRadius: BorderRadius.circular(24),
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? selectedColor : (context.cs.onSurfaceVariant),
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(isSelected ? selectedIcon : icon, size: 24, color: isSelected ? app.accentText : context.cs.onSurfaceVariant),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeOutCubic,
+                  child: isSelected
+                      ? Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: app.accentText)),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

@@ -123,8 +123,8 @@ class _NewSecretDialogState extends State<_NewSecretDialog> {
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
-        ElevatedButton(onPressed: _submit, child: const Text('GUARDAR')),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        ElevatedButton(onPressed: _submit, child: const Text('Guardar')),
       ],
     );
   }
@@ -185,8 +185,8 @@ class _VerifySecretDialogState extends State<_VerifySecretDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCELAR')),
-        ElevatedButton(onPressed: _checking ? null : _check, child: const Text('CONFIRMAR')),
+        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+        ElevatedButton(onPressed: _checking ? null : _check, child: const Text('Confirmar')),
       ],
     );
   }

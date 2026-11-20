@@ -14,7 +14,7 @@ import '../providers/current_book_provider.dart';
 import '../providers/continue_reading_provider.dart';
 import '../widgets/continue_reading_card.dart';
 import '../widgets/book_card.dart';
-import '../widgets/add_book_sheet.dart';
+import '../widgets/add_book_button.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/skeleton_loader.dart';
 import '../services/ad_helper.dart';
@@ -113,7 +113,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final GlobalKey _addBookKey = GlobalKey();
   final GlobalKey _quotesButtonKey = GlobalKey();
   final GlobalKey _sortButtonKey = GlobalKey();
   final GlobalKey _searchButtonKey = GlobalKey();
@@ -190,14 +189,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     
     // Un pequeño delay para que el árbol de widgets esté listo
     Future.delayed(const Duration(milliseconds: 800), () {
-      if (!mounted || _addBookKey.currentContext == null) return;
+      if (!mounted || addBookButtonKey.currentContext == null) return;
       
       _isTutorialShowing = true;
       TutorialCoachMark(
         targets: _createTargets(),
         colorShadow: Theme.of(context).colorScheme.primary,
         hideSkip: true,
-        //textSkip: "SALTAR",
+        //textSkip: "Saltar",
         paddingFocus: 10,
         opacityShadow: 0.8,
         onFinish: () {
@@ -292,8 +291,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         loading: () => _buildLoadingSkeleton(context),
         error: (err, _) => Center(child: Text('Error: $err')),
       ),
-      floatingActionButton: _buildModernFab(context, theme, isNavVisible, isSearching),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -750,80 +747,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _showAddBook(BuildContext context) {
-    HapticFeedback.mediumImpact();
-    showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent, builder: (_) => const AddBookSheet());
-  }
-
-  Widget _buildModernFab(BuildContext context, ThemeData theme, bool isVisible, bool isSearching) {
-    final bool shouldShow = isVisible && !isSearching;
-    
-    // 1. Detectamos dimensiones y área segura
-    final double screenHeight = MediaQuery.of(context).size.height;
-    final double bottomPadding = MediaQuery.of(context).padding.bottom;
-    
-    // Definimos si la pantalla es "pequeña" (menos de 710px suele ser el límite de iPhones SE o Redmis antiguos)
-    final bool isCompact = screenHeight < 710;
-
-    return AnimatedSlide(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOutQuart,
-      // Si no debe mostrarse, se desliza hacia abajo
-      offset: shouldShow ? Offset.zero : const Offset(0, 2),
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 300),
-        opacity: shouldShow ? 1.0 : 0.0,
-        child: Padding(
-          // 2. Ajuste dinámico del Bottom Padding:
-          // 80 es el alto aproximado de tu NavBar. Sumamos el bottomPadding del sistema (Safe Area).
-          padding: EdgeInsets.only(bottom: 20 + bottomPadding), 
-          child: GestureDetector(
-            key: _addBookKey, 
-            onTap: shouldShow ? () => _showAddBook(context) : null,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              height: 56,
-              // Si es compacto, el ancho es igual al alto (círculo/cuadrado), si no, es ancho variable
-              padding: EdgeInsets.symmetric(horizontal: isCompact ? 16 : 24),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: LinearGradient(
-                  colors: [context.app.accent, context.app.accent],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: context.app.accent.withValues(alpha: 0.3),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
-                  )
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add_rounded, color: context.app.onAccent, size: 28),
-                  // 3. Lógica Dinámica de Texto:
-                  // Solo mostramos el texto y el espacio si NO es una pantalla compacta
-                  if (!isCompact) ...[
-                    const SizedBox(width: 10),
-                    Text(
-                      'Nuevo Libro',
-                      style: TextStyle(
-                        color: context.app.onAccent,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  void _showAddBook(BuildContext context) => showAddBookSheet(context);
 
   // --- DEFINICIÓN DE TARGETS PARA TUTORIAL ---
   List<TargetFocus> _createTargets() {
@@ -876,7 +800,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       TargetFocus(
         identify: "add_button", 
-        keyTarget: _addBookKey, 
+        keyTarget: addBookButtonKey, 
         shape: ShapeLightFocus.RRect,
         contents: [
           TargetContent(

@@ -506,7 +506,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Text('Tu Progreso', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900)),
-          if (isFinished) TextButton.icon(onPressed: () => _showResetConfirmation(context, ref, book), icon: Icon(Icons.replay, color: context.app.accentText), label: const Text('RELEER', style: TextStyle(color: Colors.orange)))
+          if (isFinished) TextButton.icon(onPressed: () => _showResetConfirmation(context, ref, book), icon: Icon(Icons.replay, color: context.app.accentText), label: const Text('Releer'))
           else TextButton.icon(onPressed: () => _showUpdateDialog(context, ref, book), icon: const Icon(Icons.edit), label: const Text('Actualizar')),
         ]),
         const SizedBox(height: 12),
@@ -574,7 +574,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       initialDate: current.isBefore(first) ? first : (current.isAfter(last) ? last : current),
       firstDate: first,
       lastDate: last,
-      helpText: isStart ? '¿CUÁNDO LO EMPEZASTE?' : '¿CUÁNDO LO TERMINASTE?',
+      helpText: isStart ? '¿Cuándo lo empezaste?' : '¿Cuándo lo terminaste?',
     );
     if (picked == null || !mounted) return;
 
@@ -691,7 +691,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
           OutlinedButton.icon(
             onPressed: () => showFinishReviewSheet(context, book, celebrate: false),
             icon: Icon(review == null ? Icons.rate_review_outlined : Icons.edit_note_rounded),
-            label: Text(review == null ? 'ESCRIBIR RESEÑA' : 'EDITAR RESEÑA'),
+            label: Text(review == null ? 'Escribir reseña' : 'Editar reseña'),
           ),
         ]);
       },
@@ -758,7 +758,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('CANCELAR')),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
             ElevatedButton(
               onPressed: error != null ? null : () async {
                 final navigator = Navigator.of(dialogContext);
@@ -766,7 +766,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                 await ref.read(databaseProvider).logProgress(book.id, val!);
                 navigator.pop();
               },
-              child: const Text('GUARDAR'),
+              child: const Text('Guardar'),
             ),
           ],
         );
@@ -780,11 +780,11 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       title: const Text('¿Eliminar libro?'),
       content: const Text('Se perderán todas tus notas.'),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
         ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: context.cs.error, foregroundColor: context.cs.onError), onPressed: () async {
           await db.deleteBookComplete(book);
           if (context.mounted) { Navigator.pop(context); Navigator.pop(context); }
-        }, child: const Text('ELIMINAR')),
+        }, child: const Text('Eliminar')),
       ],
     ));
   }
@@ -809,7 +809,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       title: const Text('¿Nueva lectura?'),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
         ElevatedButton(onPressed: () async {
           // Nueva lectura: empieza hoy. Se conserva la fecha de fin de la
           // anterior hasta terminar de nuevo (el reto de ese año no baja).
@@ -820,7 +820,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
             startedAt: Value(DateTime.now()),
           ));
           if (context.mounted) Navigator.pop(context);
-        }, child: const Text('¡VAMOS!')),
+        }, child: const Text('¡Vamos!')),
       ],
     ));
   }

@@ -169,14 +169,14 @@ class _FinishReviewSheetState extends ConsumerState<FinishReviewSheet> {
                     Expanded(
                       child: TextButton(
                         onPressed: _saving ? null : () => Navigator.pop(context),
-                        child: Text(widget.celebrate ? 'AHORA NO' : 'CANCELAR'),
+                        child: Text(widget.celebrate ? 'Ahora no' : 'Cancelar'),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton(
                         onPressed: _saving ? null : _save,
-                        child: const Text('GUARDAR'),
+                        child: const Text('Guardar'),
                       ),
                     ),
                   ],

@@ -24,25 +24,25 @@ void main() {
     FlutterSecureStorage.setMockInitialValues({});
     final container = await _pumpLogin(tester);
 
-    expect(find.text('CREAR PALABRA SECRETA'), findsOneWidget);
+    expect(find.text('Crear palabra secreta'), findsOneWidget);
     expect(find.text('Usar sin bloqueo'), findsOneWidget);
 
-    await tester.tap(find.text('CREAR PALABRA SECRETA'));
+    await tester.tap(find.text('Crear palabra secreta'));
     await tester.pumpAndSettle();
 
     // Las dos entradas no coinciden: muestra el error y no guarda
     await tester.enterText(find.widgetWithText(TextField, 'Palabra secreta'), 'Macondo');
     await tester.enterText(find.widgetWithText(TextField, 'Repite la palabra'), 'Comala');
-    await tester.tap(find.text('GUARDAR'));
+    await tester.tap(find.text('Guardar'));
     await tester.pumpAndSettle();
     expect(find.text('No coinciden'), findsOneWidget);
 
     await tester.enterText(find.widgetWithText(TextField, 'Repite la palabra'), 'macondo');
-    await tester.tap(find.text('GUARDAR'));
+    await tester.tap(find.text('Guardar'));
     await tester.pumpAndSettle();
 
     expect(find.text('✨ Palabra Guardada'), findsOneWidget);
-    await tester.tap(find.text('AHORA NO'));
+    await tester.tap(find.text('Ahora no'));
     await tester.pumpAndSettle();
 
     final state = container.read(authProvider);
@@ -57,7 +57,8 @@ void main() {
 
     await tester.tap(find.text('Usar sin bloqueo'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('USAR SIN BLOQUEO'));
+    // Confirmación del diálogo (el enlace de la pantalla tiene el mismo texto)
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Usar sin bloqueo'));
     await tester.pumpAndSettle();
 
     expect(container.read(authProvider).isLockEnabled, isFalse);
@@ -72,14 +73,14 @@ void main() {
 
     await tester.enterText(find.byType(TextField), 'Comala');
     await tester.pump();
-    await tester.tap(find.text('REVELAR BIBLIOTECA'));
+    await tester.tap(find.text('Revelar biblioteca'));
     await tester.pumpAndSettle();
     expect(find.text('Esa no es la palabra mágica...'), findsOneWidget);
     expect(container.read(authProvider).isAuthenticated, isFalse);
 
     await tester.enterText(find.byType(TextField), 'macondo');
     await tester.pump();
-    await tester.tap(find.text('REVELAR BIBLIOTECA'));
+    await tester.tap(find.text('Revelar biblioteca'));
     await tester.pumpAndSettle();
     expect(container.read(authProvider).isAuthenticated, isTrue);
   });

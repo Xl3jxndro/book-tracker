@@ -123,7 +123,7 @@ void main() {
 
     await tester.enterText(find.byType(TextField), 'Imprescindible.');
     await tester.runAsync(() async {
-      await tester.tap(find.text('GUARDAR'));
+      await tester.tap(find.text('Guardar'));
       await Future<void>.delayed(const Duration(milliseconds: 200));
     });
     await tester.pumpAndSettle();
@@ -164,7 +164,7 @@ void main() {
     await openSheet(tester, db, book);
     expect(find.text('Tu reseña de Dune'), findsOneWidget);
     expect(find.text('La especia debe fluir'), findsOneWidget, reason: 'texto precargado');
-    expect(find.text('CANCELAR'), findsOneWidget);
+    expect(find.text('Cancelar'), findsOneWidget);
   });
 
   testWidgets('abandonado: pregunta por qué lo dejaste', (tester) async {

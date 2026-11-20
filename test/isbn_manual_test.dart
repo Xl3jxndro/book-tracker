@@ -81,11 +81,11 @@ void main() {
     await tester.enterText(find.byType(TextField), '978-84-322-1122-6'); // dígito de control mal
     await tester.pump();
     expect(find.text('Revisa los números: el último dígito no coincide'), findsOneWidget);
-    expect(tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'BUSCAR')).onPressed, isNull);
+    expect(tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Buscar')).onPressed, isNull);
 
     await tester.enterText(find.byType(TextField), '958-42-7354-x'); // ISBN-10 con X minúscula
     await tester.pump();
-    await tester.tap(find.text('BUSCAR'));
+    await tester.tap(find.text('Buscar'));
     await tester.pumpAndSettle();
     expect(result, '9789584273543');
   });

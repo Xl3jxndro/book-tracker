@@ -121,7 +121,7 @@ void main() {
     expect(find.text('Ya vas en la pág. 40'), findsOneWidget);
     await tester.enterText(find.byType(TextField), '120');
     await tester.pump();
-    await tester.tap(find.text('LISTO'));
+    await tester.tap(find.text('Listo'));
     await tester.pumpAndSettle();
     expect(find.text('Meta: hasta la pág. 120'), findsOneWidget);
   });

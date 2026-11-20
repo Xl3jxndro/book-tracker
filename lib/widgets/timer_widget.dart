@@ -237,10 +237,10 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('CANCELAR')),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
             ElevatedButton(
               onPressed: error != null ? null : () => Navigator.pop(dialogContext, value),
-              child: const Text('LISTO'),
+              child: const Text('Listo'),
             ),
           ],
         );
@@ -417,7 +417,7 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                     ),
                     child: const Text(
-                      'FINALIZAR LECTURA',
+                      'Finalizar lectura',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
                     ),
@@ -574,7 +574,7 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
                   final total = widget.book.totalPages;
                   InterstitialAds.onSessionSaved(finishedBook: total > 0 && newPages >= total);
                 },
-                child: const Text('GUARDAR'),
+                child: const Text('Guardar'),
               ),
             ],
           );

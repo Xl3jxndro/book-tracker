@@ -112,7 +112,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ChoiceChip, '6'));
     await tester.pump();
-    await tester.tap(find.text('GUARDAR'));
+    await tester.tap(find.text('Guardar'));
     await tester.pumpAndSettle();
 
     expect(find.text('Reto $year'), findsOneWidget);

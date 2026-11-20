@@ -95,7 +95,7 @@ class _YearSummaryShareDialogState extends State<_YearSummaryShareDialog> {
                 Expanded(
                   child: TextButton(
                     onPressed: _sharing ? null : () => Navigator.pop(context),
-                    child: const Text('CERRAR'),
+                    child: const Text('Cerrar'),
                   ),
                 ),
                 Expanded(

@@ -143,8 +143,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           "¿Quieres un PIN de 4 dígitos como respaldo? Podrás configurarlo después en Ajustes.",
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("AHORA NO")),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text("CONFIGURAR PIN")),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Ahora no")),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text("Configurar PIN")),
         ],
       ),
     );
@@ -168,8 +168,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           'Puedes activar el bloqueo cuando quieras en Ajustes → Seguridad.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCELAR')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('USAR SIN BLOQUEO')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Usar sin bloqueo')),
         ],
       ),
     );
@@ -243,7 +243,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             'en los ajustes de tu teléfono y vuelve a intentarlo. Tus libros siguen a salvo.',
           ),
           actions: [
-            ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text('ENTENDIDO')),
+            ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text('Entendido')),
           ],
         ),
       );
@@ -385,7 +385,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           ElevatedButton.icon(
             onPressed: _createPassphrase,
             icon: const Icon(Icons.vpn_key_rounded),
-            label: const Text("CREAR PALABRA SECRETA"),
+            label: const Text("Crear palabra secreta"),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 56),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -433,7 +433,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             child: ElevatedButton.icon(
               onPressed: hasText ? _submitPassphrase : null,
               icon: const Icon(Icons.auto_fix_high),
-              label: const Text("REVELAR BIBLIOTECA"),
+              label: const Text("Revelar biblioteca"),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

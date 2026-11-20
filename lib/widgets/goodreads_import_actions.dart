@@ -129,8 +129,8 @@ Future<bool?> _showHowTo(BuildContext context) {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCELAR')),
-        ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('ELEGIR ARCHIVO')),
+        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+        ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Elegir archivo')),
       ],
     ),
   );
@@ -186,10 +186,10 @@ Future<_ImportOptions?> _confirm(BuildContext context, GoodreadsPreview preview)
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, _ImportOptions(fetchCovers: fetchCovers)),
-              child: const Text('IMPORTAR'),
+              child: const Text('Importar'),
             ),
           ],
         );
@@ -205,7 +205,7 @@ void _showMessage(BuildContext context, String title, String message) {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       title: Text(title),
       content: Text(message),
-      actions: [ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text('ENTENDIDO'))],
+      actions: [ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text('Entendido'))],
     ),
   );
 }

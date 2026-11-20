@@ -295,12 +295,12 @@ class _GoalDialogState extends State<_GoalDialog> {
         if (widget.current != null)
           TextButton(
             onPressed: () => Navigator.pop(context, const _GoalResult(null)),
-            child: Text('QUITAR RETO', style: TextStyle(color: context.cs.error)),
+            child: Text('Quitar reto', style: TextStyle(color: context.cs.error)),
           ),
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
         ElevatedButton(
           onPressed: value == null ? null : () => Navigator.pop(context, _GoalResult(value)),
-          child: const Text('GUARDAR'),
+          child: const Text('Guardar'),
         ),
       ],
     );

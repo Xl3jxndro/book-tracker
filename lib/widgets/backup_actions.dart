@@ -141,7 +141,7 @@ Future<bool?> _confirm(BuildContext context, BackupPreview preview, int currentB
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCELAR')),
+        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
         ElevatedButton(onPressed: () => Navigator.pop(context, true), child: Text(isUndo ? 'DESHACER' : 'RESTAURAR')),
       ],
     ),
@@ -182,7 +182,7 @@ void _showError(BuildContext context, String message) {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       title: const Text('No se pudo completar'),
       content: Text(message),
-      actions: [ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text('ENTENDIDO'))],
+      actions: [ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text('Entendido'))],
     ),
   );
 }
