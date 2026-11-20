@@ -680,14 +680,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       sliver: SliverToBoxAdapter(
         child: ContinueReadingCard(
           item: item,
-          onOpen: () => _openBook(item.book),
-          onStart: () => _openBook(item.book, startTimer: true),
+          onOpen: () => _openBook(item.book, heroTag: 'continue_cover_${item.book.id}'),
+          onStart: () => _openBook(item.book, startTimer: true, heroTag: 'continue_cover_${item.book.id}'),
         ),
       ),
     );
   }
 
-  void _openBook(Book book, {bool startTimer = false}) {
+  void _openBook(Book book, {bool startTimer = false, String? heroTag}) {
     HapticFeedback.mediumImpact();
     // Establecer como libro actual (el widget se actualiza solo)
     ref.read(currentBookProvider.notifier).setCurrentBook(book.id);
@@ -695,7 +695,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context,
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 450),
-        pageBuilder: (context, animation, secondaryAnimation) => BookDetailsScreen(book: book, autoStartTimer: startTimer),
+        pageBuilder: (context, animation, secondaryAnimation) => BookDetailsScreen(book: book, autoStartTimer: startTimer, heroTag: heroTag ?? 'cover_${book.id}'),
         transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
       ),
     ).then((_) {

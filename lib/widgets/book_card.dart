@@ -62,7 +62,7 @@ class BookCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: AppSpace.xs, vertical: AppSpace.xs),
           child: Row(
             children: [
-              BookCover(path: book.coverUrl, width: 60, height: 90, dimmed: isDNF),
+              BookCover(path: book.coverUrl, width: 60, height: 90, dimmed: isDNF, heroTag: 'cover_${book.id}'),
               const SizedBox(width: AppSpace.md),
               Expanded(
                 child: Column(
@@ -161,7 +161,7 @@ class BookGridTile extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                BookCover(path: book.coverUrl, dimmed: isDNF, radius: 12),
+                BookCover(path: book.coverUrl, dimmed: isDNF, radius: 12, heroTag: 'cover_${book.id}'),
                 if (book.status == 1)
                   Positioned(
                     left: 8,
@@ -215,13 +215,16 @@ class BookCover extends StatelessWidget {
   final double radius;
   final bool dimmed;
 
-  const BookCover({super.key, required this.path, this.width, this.height, this.radius = 8, this.dimmed = false});
+  /// Si se indica, la portada viaja a la pantalla del libro (Hero).
+  final String? heroTag;
+
+  const BookCover({super.key, required this.path, this.width, this.height, this.radius = 8, this.dimmed = false, this.heroTag});
 
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
     final hasFile = path != null && path!.isNotEmpty && File(path!).existsSync();
-    return Container(
+    final cover = Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
@@ -243,6 +246,7 @@ class BookCover extends StatelessWidget {
         ),
       ),
     );
+    return heroTag == null ? cover : Hero(tag: heroTag!, child: cover);
   }
 }
 

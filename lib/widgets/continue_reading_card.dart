@@ -40,7 +40,7 @@ class ContinueReadingCard extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpace.md),
           child: Row(
             children: [
-              BookCover(path: book.coverUrl, width: 72, height: 108, radius: 10),
+              BookCover(path: book.coverUrl, width: 72, height: 108, radius: 10, heroTag: 'continue_cover_${book.id}'),
               const SizedBox(width: AppSpace.md),
               Expanded(
                 child: Column(

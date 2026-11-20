@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'dart:ui';
 import 'dart:math';
 import 'dart:async';
 import 'package:material_ui/material_ui.dart';
@@ -10,6 +8,7 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../database/database.dart';
 import '../providers/database_provider.dart';
@@ -24,6 +23,9 @@ import '../providers/daily_goal_provider.dart';
 import '../services/voice_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/skeleton_loader.dart';
+import '../widgets/add_book_sheet.dart';
+import '../widgets/book_card.dart';
+import '../theme/app_tokens.dart';
 
 enum NoteFilter { recent, page, length, favorites }
 
@@ -36,7 +38,10 @@ class BookDetailsScreen extends ConsumerStatefulWidget {
   /// Abierto desde "Continuar leyendo": arranca (o reanuda) el cronómetro.
   final bool autoStartTimer;
 
-  const BookDetailsScreen({super.key, required this.book, this.autoFinishSession = false, this.autoStartTimer = false});
+  /// Etiqueta de la transición de la portada (la de la tarjeta que se tocó).
+  final String? heroTag;
+
+  const BookDetailsScreen({super.key, required this.book, this.autoFinishSession = false, this.autoStartTimer = false, this.heroTag});
 
   @override
   ConsumerState<BookDetailsScreen> createState() => _BookDetailsScreenState();
@@ -112,7 +117,6 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
         width: 180,
         duration: const Duration(milliseconds: 1500),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: color,
       ),
     );
   }
@@ -153,7 +157,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     ref.listen<AsyncValue<List<Book>>>(booksStreamProvider, _onBooksChanged);
     final booksAsync = ref.watch(booksStreamProvider);
     final theme = Theme.of(context);
-    
+
     return booksAsync.when(
       data: (allBooks) {
         final currentBook = allBooks.firstWhere((b) => b.id == widget.book.id, orElse: () => widget.book);
@@ -165,44 +169,41 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
           data: (dynamicScheme) {
             return Theme(
               data: theme.copyWith(colorScheme: dynamicScheme, primaryColor: dynamicScheme.primary),
-              child: Scaffold(
-                body: Stack(
-                  children: [
-                    _buildBlurredBackground(currentBook.coverUrl, dynamicScheme),
-                    CustomScrollView(
-                      controller: _scrollController,
-                      physics: const BouncingScrollPhysics(),
-                      slivers: [
-                        _buildSliverAppBar(context, ref, currentBook),
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: Column(
-                              children: [
-                                _buildFloatingCover(currentBook.coverUrl, currentBook.id),
-                                const SizedBox(height: 28),
-                                _buildTitleAndAuthor(currentBook, theme),
-                                const SizedBox(height: 20),
-                                _buildTag(currentBook.category ?? 'General', isDark: true),
-                                const SizedBox(height: 32),
-                                _buildMainContentCard(context, ref, currentBook, progress, isFinished, dynamicScheme, theme),
-                              ],
+              child: Builder(builder: (context) {
+                final tint = Color.lerp(
+                  dynamicScheme.surface,
+                  dynamicScheme.primary,
+                  theme.brightness == Brightness.dark ? 0.16 : 0.20,
+                )!;
+                return Scaffold(
+                  body: Stack(
+                    children: [
+                      CustomScrollView(
+                        controller: _scrollController,
+                        physics: const BouncingScrollPhysics(),
+                        slivers: [
+                          SliverToBoxAdapter(child: _buildHeader(context, currentBook, tint, theme)),
+                          SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(AppSpace.screen, AppSpace.xl, AppSpace.screen, 0),
+                            sliver: SliverToBoxAdapter(
+                              child: _buildMainContent(context, ref, currentBook, progress, isFinished, dynamicScheme, theme),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    Align(
-                      alignment: Alignment.topCenter,
-                      child: ConfettiWidget(
-                        confettiController: _confettiController,
-                        blastDirectionality: BlastDirectionality.explosive,
-                        createParticlePath: _drawStar, 
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
+                      _buildTopBar(context, ref, currentBook),
+                      Align(
+                        alignment: Alignment.topCenter,
+                        child: ConfettiWidget(
+                          confettiController: _confettiController,
+                          blastDirectionality: BlastDirectionality.explosive,
+                          createParticlePath: _drawStar,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
             );
           },
           loading: () => _buildElegantLoading(theme),
@@ -226,7 +227,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
         child: Column(
           children: [
             _buildFloatingCover(widget.book.coverUrl, widget.book.id),
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
             Text(widget.book.title, textAlign: TextAlign.center, style: theme.textTheme.headlineMedium),
             const SizedBox(height: 6),
             Text(widget.book.author, textAlign: TextAlign.center, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
@@ -238,28 +239,103 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     );
   }
 
-  Widget _buildSliverAppBar(BuildContext context, WidgetRef ref, Book currentBook) {
-    return SliverAppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0, pinned: true,
-      leading: _buildCircleIconButton(icon: Icons.arrow_back_ios_new_rounded, onPressed: () => Navigator.pop(context)),
-      actions: [
-        _buildCircleIconButton(icon: Icons.share_rounded, onPressed: () => _shareBook(currentBook)),
-        _buildCircleIconButton(icon: Icons.delete_outline_rounded, onPressed: () => _confirmDelete(context, ref.read(databaseProvider), currentBook)),
-        const SizedBox(width: 8),
-      ],
+  /// Botones fijos arriba: volver, compartir y más opciones (editar, eliminar).
+  Widget _buildTopBar(BuildContext context, WidgetRef ref, Book book) {
+    final cs = context.cs;
+    final style = IconButton.styleFrom(
+      fixedSize: const Size(44, 44),
+      backgroundColor: cs.surface.withValues(alpha: 0.72),
+      foregroundColor: cs.onSurface,
+    );
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + AppSpace.xs,
+      left: AppSpace.screen - 4,
+      right: AppSpace.screen - 4,
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: 'Volver',
+            style: style,
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const Spacer(),
+          IconButton(
+            tooltip: 'Compartir',
+            style: style,
+            icon: const Icon(Icons.ios_share_rounded, size: 20),
+            onPressed: () => _shareBook(book),
+          ),
+          const SizedBox(width: AppSpace.xs),
+          MenuAnchor(
+            alignmentOffset: const Offset(-120, 4),
+            builder: (context, controller, _) => IconButton(
+              tooltip: 'Más opciones',
+              style: style,
+              icon: const Icon(Icons.more_horiz_rounded),
+              onPressed: () => controller.isOpen ? controller.close() : controller.open(),
+            ),
+            menuChildren: [
+              MenuItemButton(
+                leadingIcon: const Icon(Icons.edit_outlined),
+                onPressed: () => showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => AddBookSheet(bookToEdit: book),
+                ),
+                child: const Text('Editar libro'),
+              ),
+              MenuItemButton(
+                leadingIcon: Icon(Icons.delete_outline_rounded, color: cs.error),
+                onPressed: () => _confirmDelete(context, ref.read(databaseProvider), book),
+                child: Text('Eliminar', style: TextStyle(color: cs.error)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Cabecera con el tono de la portada: portada, título, autor y categoría.
+  Widget _buildHeader(BuildContext context, Book book, Color tint, ThemeData theme) {
+    final cs = context.cs;
+    return Container(
+      decoration: BoxDecoration(
+        color: tint,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
+      ),
+      padding: EdgeInsets.fromLTRB(AppSpace.xl, MediaQuery.of(context).padding.top + 64, AppSpace.xl, AppSpace.xl),
+      child: Column(
+        children: [
+          _buildFloatingCover(book.coverUrl, book.id),
+          const SizedBox(height: AppSpace.lg),
+          Text(book.title, textAlign: TextAlign.center, style: theme.textTheme.headlineMedium),
+          const SizedBox(height: 4),
+          Text(book.author, textAlign: TextAlign.center, style: theme.textTheme.bodyLarge?.copyWith(color: cs.onSurfaceVariant)),
+          const SizedBox(height: AppSpace.sm),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(color: cs.surface.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(AppRadius.pill)),
+            child: Text(book.category ?? 'General', style: theme.textTheme.labelMedium?.copyWith(color: cs.onSurface)),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildNotesList(WidgetRef ref, Book currentBook, ColorScheme scheme, ThemeData theme) {
-    final isDark = theme.brightness == Brightness.dark;
     return StreamBuilder<List<Note>>(
       stream: ref.read(databaseProvider).watchNotesForBook(currentBook.id),
       builder: (context, snapshot) {
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return EmptyStateWidget(
-            icon: Icons.edit_note_rounded, title: 'Sin notas aún', description: 'Agrega tus pensamientos.', 
-            actionLabel: 'Nueva nota', onAction: () => _showAddNote(context, currentBook.id)
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpace.lg),
+            child: EmptyStateWidget(
+              icon: Icons.edit_note_rounded, title: 'Sin notas aún', description: 'Guarda aquí tus citas y pensamientos.',
+              actionLabel: 'Nueva nota', onAction: () => _showAddNote(context, currentBook.id),
+            ),
           );
         }
 
@@ -267,7 +343,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
         return Column(
           children: [
             _buildFilterChips(scheme),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpace.sm),
             if (sortedNotes.isEmpty && _selectedFilter == NoteFilter.favorites)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
@@ -276,9 +352,10 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
               ),
             ListView.separated(
               shrinkWrap: true,
+              padding: EdgeInsets.zero,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: sortedNotes.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 16),
+              separatorBuilder: (_, _) => const SizedBox(height: AppSpace.sm),
               itemBuilder: (context, index) {
                 final note = sortedNotes[index];
                 return _NoteEntranceAnimation(
@@ -290,59 +367,64 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                     onDismissed: (_) => _deleteNoteWithUndo(note),
                     background: Container(
                       alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 20),
-                      decoration: BoxDecoration(color: context.cs.error, borderRadius: BorderRadius.circular(24)),
-                      child: Icon(Icons.delete_forever, color: context.cs.onError)
+                      decoration: BoxDecoration(color: context.cs.error, borderRadius: AppRadius.xlAll),
+                      child: Icon(Icons.delete_forever, color: context.cs.onError),
                     ),
-                    child: GestureDetector(
-                    // Tocar la nota la abre para editarla
-                    onTap: () => _showAddNote(context, currentBook.id, noteToEdit: note),
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: scheme.surfaceContainerHighest.withValues(alpha: 0.3), 
-                        borderRadius: BorderRadius.circular(24), 
-                        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.2))
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Material(
+                      color: scheme.surfaceContainerLow,
+                      borderRadius: AppRadius.xlAll,
+                      child: InkWell(
+                        // Tocar la nota la abre para editarla
+                        borderRadius: AppRadius.xlAll,
+                        onTap: () => _showAddNote(context, currentBook.id, noteToEdit: note),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 14, 8, 18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (note.pageNumber != null) _buildTag('Pág. ${note.pageNumber}', color: scheme.primary, isDark: isDark),
                               Row(
                                 children: [
-                                  Text(_getRelativeTime(note.createdAt), style: theme.textTheme.labelSmall),
-                                  const SizedBox(width: 12),
+                                  Text('“', style: theme.textTheme.displaySmall?.copyWith(color: context.app.accent, height: 1)),
+                                  const Spacer(),
                                   _buildActionIcon(
                                     icon: Icons.image_outlined,
-                                    color: scheme.secondary, 
+                                    tooltip: 'Compartir como imagen',
+                                    color: scheme.onSurfaceVariant,
                                     onTap: () => shareQuoteAsImage(context, currentBook, note),
                                   ),
-                                  const SizedBox(width: 8),
                                   _buildActionIcon(
                                     icon: note.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
-                                    color: context.app.rating,
+                                    tooltip: note.isFavorite ? 'Quitar de favoritas' : 'Guardar en favoritas',
+                                    color: note.isFavorite ? context.app.rating : scheme.onSurfaceVariant,
                                     onTap: () => _toggleFavorite(note),
                                   ),
-                                  const SizedBox(width: 8),
                                   _buildActionIcon(
-                                    icon: Icons.copy_rounded, 
-                                    color: scheme.primary, 
+                                    icon: Icons.copy_rounded,
+                                    tooltip: 'Copiar',
+                                    color: scheme.onSurfaceVariant,
                                     onTap: () {
                                       Clipboard.setData(ClipboardData(text: note.content));
                                       _showFeedback('Copiado', scheme.primary);
-                                    }
+                                    },
                                   ),
                                 ],
-                              )
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(right: 12),
+                                child: Text(note.content, style: GoogleFonts.lora(textStyle: theme.textTheme.bodyLarge, height: 1.5)),
+                              ),
+                              const SizedBox(height: AppSpace.sm),
+                              Text(
+                                [
+                                  if (note.pageNumber != null) 'Página ${note.pageNumber}',
+                                  _getRelativeTime(note.createdAt),
+                                ].join(' · '),
+                                style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                              ),
                             ],
                           ),
-                          const SizedBox(height: 12),
-                          Text('"${note.content}"', style: theme.textTheme.bodyLarge?.copyWith(fontStyle: FontStyle.italic, height: 1.4)),
-                        ],
+                        ),
                       ),
-                    ),
                     ),
                   ),
                 );
@@ -356,70 +438,44 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
 
   // --- COMPONENTES UI AUXILIARES ---
 
-  Widget _buildCircleIconButton({required IconData icon, required VoidCallback onPressed}) {
-    return Container(
-      margin: const EdgeInsets.all(4),
-      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.24), borderRadius: BorderRadius.circular(12)),
-      child: IconButton(icon: Icon(icon, color: Colors.white, size: 18), onPressed: onPressed),
+  Widget _buildActionIcon({required IconData icon, required String tooltip, required Color color, required VoidCallback onTap}) {
+    return IconButton(
+      tooltip: tooltip,
+      visualDensity: VisualDensity.compact,
+      icon: Icon(icon, size: 20, color: color),
+      onPressed: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
     );
   }
 
-  Widget _buildActionIcon({required IconData icon, required Color color, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: () { HapticFeedback.lightImpact(); onTap(); }, 
-      child: Container(
-        padding: const EdgeInsets.all(8), 
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle), 
-        child: Icon(icon, size: 16, color: color)
-      )
-    );
-  }
-
-  Widget _buildTitleAndAuthor(Book book, ThemeData theme) {
+  Widget _buildMainContent(BuildContext context, WidgetRef ref, Book currentBook, double progress, bool isFinished, ColorScheme scheme, ThemeData theme) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(book.title, textAlign: TextAlign.center, style: theme.textTheme.headlineMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 8),
-        Text(book.author.toUpperCase(), style: const TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w700, letterSpacing: 2.0)),
-      ],
-    );
-  }
-
-  Widget _buildMainContentCard(BuildContext context, WidgetRef ref, Book currentBook, double progress, bool isFinished, ColorScheme scheme, ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(44)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 30)]
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildProgressSection(context, ref, currentBook, progress, isFinished, scheme, theme),
-          const SizedBox(height: 32),
-          if (isFinished) ...[
-            _buildFinishedBadge(currentBook, scheme, theme),
-          ] else ...[
-            if (currentBook.status == 3) ...[
-              _buildAbandonedCard(currentBook, scheme, theme),
-              const SizedBox(height: 24),
-            ],
-            _buildReadingStats(currentBook, scheme, theme),
-            const SizedBox(height: 24),
-            _buildDailyGoalSection(scheme, theme),
-            const SizedBox(height: 32),
-            _buildSectionTitle('Sesión de lectura', theme),
-            const SizedBox(height: 16),
-            TimerWidget(key: _timerKey, book: currentBook, autoFinish: widget.autoFinishSession, autoStart: widget.autoStartTimer),
+        _buildProgressSection(context, ref, currentBook, progress, isFinished, scheme, theme),
+        const SizedBox(height: AppSpace.lg),
+        if (isFinished) ...[
+          _buildFinishedBadge(currentBook, scheme, theme),
+        ] else ...[
+          if (currentBook.status == 3) ...[
+            _buildAbandonedCard(currentBook, scheme, theme),
+            const SizedBox(height: AppSpace.md),
           ],
-          const SizedBox(height: 40),
-          _buildNotesHeader(currentBook, theme, scheme),
-          const Divider(height: 32),
-          _buildNotesList(ref, currentBook, scheme, theme),
-          const SizedBox(height: 60),
+          _buildReadingStats(currentBook, scheme, theme),
+          _buildDailyGoalSection(scheme, theme),
+          const SizedBox(height: AppSpace.xl),
+          _buildSectionTitle('Sesión de lectura', theme),
+          const SizedBox(height: AppSpace.sm),
+          TimerWidget(key: _timerKey, book: currentBook, autoFinish: widget.autoFinishSession, autoStart: widget.autoStartTimer),
         ],
-      ),
+        const SizedBox(height: AppSpace.xxl),
+        _buildNotesHeader(currentBook, theme, scheme),
+        const SizedBox(height: AppSpace.sm),
+        _buildNotesList(ref, currentBook, scheme, theme),
+        SizedBox(height: 48 + MediaQuery.of(context).padding.bottom),
+      ],
     );
   }
 
@@ -429,24 +485,24 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       builder: (context, snapshot) {
         final count = snapshot.data?.length ?? 0;
         return Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _buildSectionTitle('Notas y Citas', theme),
+            _buildSectionTitle('Notas y citas', theme),
             if (count > 0) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(12)),
-                child: Text('$count', style: TextStyle(color: scheme.onPrimary, fontWeight: FontWeight.bold, fontSize: 12)),
-              ),
+              const SizedBox(width: AppSpace.xs),
+              Text('$count', style: theme.textTheme.titleMedium?.copyWith(color: scheme.onSurfaceVariant)),
             ],
             const Spacer(),
-            IconButton.filledTonal(
-              key: _notesKey, icon: const Icon(Icons.add_comment_rounded, size: 20), 
-              onPressed: () => _showAddNote(context, currentBook.id)
+            FilledButton.tonalIcon(
+              key: _notesKey,
+              style: FilledButton.styleFrom(minimumSize: const Size(0, 40), padding: const EdgeInsets.symmetric(horizontal: 14)),
+              icon: const Icon(Icons.add_rounded, size: 20),
+              label: const Text('Añadir'),
+              onPressed: () => _showAddNote(context, currentBook.id),
             ),
           ],
         );
-      }
+      },
     );
   }
 
@@ -470,49 +526,77 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
   Widget _filterChip(String label, NoteFilter filter, ColorScheme scheme) {
     final isSelected = _selectedFilter == filter;
     return ChoiceChip(
-      label: Text(label), selected: isSelected,
+      label: Text(label, style: TextStyle(color: isSelected ? scheme.onInverseSurface : scheme.onSurface)),
+      selected: isSelected,
+      showCheckmark: false,
       onSelected: (val) { if (val) setState(() => _selectedFilter = filter); },
-      selectedColor: scheme.primaryContainer,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      selectedColor: scheme.inverseSurface,
+      shape: const StadiumBorder(),
     );
   }
 
-  Widget _buildSectionTitle(String title, ThemeData theme) => Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, fontSize: 19));
+  Widget _buildSectionTitle(String title, ThemeData theme) => Text(title, style: theme.textTheme.headlineSmall);
 
-  Widget _buildTag(String label, {Color? color, bool isDark = true}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(color: (color ?? Colors.white).withValues(alpha: isDark ? 0.2 : 0.1), borderRadius: BorderRadius.circular(30)),
-      child: Text(label.toUpperCase(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.2, color: Colors.white)),
-    );
-  }
-
-  Widget _buildBlurredBackground(String? url, ColorScheme scheme) {
-    return Container(
-      height: 520, width: double.infinity,
-      decoration: BoxDecoration(color: scheme.primary, image: url != null ? DecorationImage(image: FileImage(File(url)), fit: BoxFit.cover) : null),
-      child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30), child: Container(color: Colors.black26)),
-    );
-  }
-
+  /// Portada grande; al abrir el libro viaja desde la biblioteca (Hero).
   Widget _buildFloatingCover(String? url, int bookId) {
-    return Hero(tag: 'cover_$bookId', child: Container(height: 260, width: 175, decoration: BoxDecoration(borderRadius: BorderRadius.circular(28), boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 40)]), child: ClipRRect(borderRadius: BorderRadius.circular(28), child: url != null ? Image.file(File(url), fit: BoxFit.cover) : const Icon(Icons.book, size: 60))));
+    return Hero(
+      tag: widget.heroTag ?? 'cover_$bookId',
+      child: BookCover(path: url, width: 150, height: 225, radius: 14),
+    );
   }
 
   Widget _buildProgressSection(BuildContext context, WidgetRef ref, Book book, double progress, bool isFinished, ColorScheme scheme, ThemeData theme) {
+    final cs = context.cs;
+    final barColor = isFinished ? context.app.statusFinished : context.app.accent;
     return Column(
       key: _progressKey,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('Tu Progreso', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900)),
-          if (isFinished) TextButton.icon(onPressed: () => _showResetConfirmation(context, ref, book), icon: Icon(Icons.replay, color: context.app.accentText), label: const Text('Releer'))
-          else TextButton.icon(onPressed: () => _showUpdateDialog(context, ref, book), icon: const Icon(Icons.edit), label: const Text('Actualizar')),
-        ]),
-        const SizedBox(height: 12),
-        LinearProgressIndicator(value: progress, minHeight: 14, borderRadius: BorderRadius.circular(20), color: isFinished ? context.app.statusFinished : scheme.primary),
-        const SizedBox(height: 8),
-        Text('${book.readPages} de ${book.totalPages} páginas (${(progress * 100).toInt()}%)'),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Tu progreso', style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.end,
+                    spacing: 10,
+                    children: [
+                      Text('${(progress * 100).toInt()}%',
+                          style: theme.textTheme.displaySmall?.copyWith(fontFamily: theme.textTheme.titleMedium?.fontFamily, fontWeight: FontWeight.w700, color: cs.onSurface)),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text('${book.readPages} de ${book.totalPages} páginas',
+                            style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (isFinished)
+              FilledButton.tonalIcon(
+                style: FilledButton.styleFrom(minimumSize: const Size(0, 40), padding: const EdgeInsets.symmetric(horizontal: 14)),
+                onPressed: () => _showResetConfirmation(context, ref, book),
+                icon: const Icon(Icons.replay_rounded, size: 18),
+                label: const Text('Releer'),
+              )
+            else
+              FilledButton.tonalIcon(
+                style: FilledButton.styleFrom(minimumSize: const Size(0, 40), padding: const EdgeInsets.symmetric(horizontal: 14)),
+                onPressed: () => _showUpdateDialog(context, ref, book),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Actualizar'),
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpace.sm),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(value: progress, minHeight: 8, color: barColor, backgroundColor: cs.surfaceContainerHighest),
+        ),
         _buildReadingDates(book, scheme, theme),
       ],
     );
@@ -526,10 +610,11 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
 
     final fmt = DateFormat("d MMM y", 'es');
     Widget chip({required IconData icon, required String label, required VoidCallback onTap}) => ActionChip(
-          avatar: Icon(icon, size: 16, color: scheme.primary),
-          label: Text(label, style: const TextStyle(fontSize: 12)),
+          avatar: Icon(icon, size: 16, color: context.cs.onSurfaceVariant),
+          label: Text(label, style: theme.textTheme.labelMedium),
           onPressed: onTap,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          backgroundColor: context.cs.surfaceContainerLow,
+          shape: const StadiumBorder(),
         );
 
     String? duration;
@@ -584,17 +669,37 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     HapticFeedback.selectionClick();
   }
 
+  /// Datos de la lectura en mosaico: ritmo, lo que falta y el tiempo leído.
   Widget _buildReadingStats(Book book, ColorScheme scheme, ThemeData theme) {
-    if (book.totalReadTime <= 0 || book.readPages <= 0) return const SizedBox.shrink(); 
+    if (book.totalReadTime <= 0 || book.readPages <= 0) return const SizedBox.shrink();
     final double ppm = book.readPages / (book.totalReadTime / 60);
     final int left = book.totalPages - book.readPages;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: scheme.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(20)),
+    String duration(int minutes) => minutes >= 60 ? '${minutes ~/ 60} h ${minutes % 60} min' : '$minutes min';
+    final pace = ppm >= 1 ? '${ppm.toStringAsFixed(1)} pág/min' : '${(ppm * 60).round()} pág/h';
+
+    Widget tile(String label, String value) => Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: scheme.surfaceContainerLow, borderRadius: AppRadius.lgAll),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+                const SizedBox(height: 4),
+                Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.titleMedium),
+              ],
+            ),
+          ),
+        );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpace.sm),
       child: Row(children: [
-        Icon(Icons.auto_graph, color: scheme.primary),
-        const SizedBox(width: 14),
-        Text("Ritmo: ${ppm.toStringAsFixed(1)} pág/min | Faltan: ${(left/ppm).round()} min"),
+        tile('Ritmo', pace),
+        const SizedBox(width: AppSpace.xs),
+        tile('Faltan', duration((left / ppm).round())),
+        const SizedBox(width: AppSpace.xs),
+        tile('Leído', duration((book.totalReadTime / 60).round())),
       ]),
     );
   }
@@ -607,18 +712,28 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
         final progress = (sec / 60 / goalMinutes).clamp(0.0, 1.0);
         return Container(
           key: _goalKey,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: scheme.primary.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(24), border: Border.all(color: scheme.primary.withValues(alpha: 0.1))),
+          padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
+          decoration: BoxDecoration(color: scheme.surfaceContainerLow, borderRadius: AppRadius.xxlAll),
           child: Row(children: [
-            CircularProgressIndicator(value: progress, strokeWidth: 6, color: progress >= 1 ? context.app.statusFinished : scheme.primary),
-            const SizedBox(width: 20),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                const Text("Meta Diaria", style: TextStyle(fontWeight: FontWeight.bold)),
-                IconButton(icon: const Icon(Icons.tune, size: 18), onPressed: () => _showSetGoalDialog(scheme)),
+            SizedBox(
+              width: 52,
+              height: 52,
+              child: CircularProgressIndicator(
+                value: progress,
+                strokeWidth: 7,
+                strokeCap: StrokeCap.round,
+                color: progress >= 1 ? context.app.statusFinished : context.app.accent,
+                backgroundColor: scheme.surfaceContainerHighest,
+              ),
+            ),
+            const SizedBox(width: AppSpace.md),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Meta diaria', style: theme.textTheme.titleMedium),
+                Text('${(sec / 60).toInt()} de $goalMinutes min hoy', style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
               ]),
-              Text("${(sec/60).toInt()} de $goalMinutes min hoy"),
-            ])),
+            ),
+            IconButton(tooltip: 'Cambiar meta diaria', icon: const Icon(Icons.tune_rounded), onPressed: () => _showSetGoalDialog(scheme)),
           ]),
         );
       },
@@ -629,22 +744,28 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
 
   Widget _buildFinishedBadge(Book book, ColorScheme scheme, ThemeData theme) {
     return Container(
-      width: double.infinity, padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(color: scheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(32), border: Border.all(color: scheme.primary.withValues(alpha: 0.2))),
+      width: double.infinity, padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+      decoration: BoxDecoration(color: scheme.surfaceContainerLow, borderRadius: AppRadius.xxlAll),
       child: Column(children: [
-        Icon(Icons.auto_awesome, color: context.app.rating, size: 48),
-        const SizedBox(height: 16),
-        const Text("¡LECTURA COMPLETADA!", style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2)),
-        const SizedBox(height: 12),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (i) => IconButton(
-          icon: Icon(i < (book.rating ?? 0) ? Icons.star : Icons.star_border, color: context.app.rating, size: 32),
-          onPressed: () => ref.read(databaseProvider).updateBook(book.copyWith(rating: Value(i + 1))),
-        ))),
-        const SizedBox(height: 8),
+        Icon(Icons.auto_awesome_rounded, color: context.app.rating, size: 40),
+        const SizedBox(height: AppSpace.sm),
+        Text('¡Lectura completada!', style: theme.textTheme.headlineSmall),
+        const SizedBox(height: AppSpace.xs),
+        _ratingRow(book, 34),
+        const SizedBox(height: AppSpace.xs),
         _buildReviewSection(book, scheme, theme),
       ]),
     );
   }
+
+  Widget _ratingRow(Book book, double size) => Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(5, (i) => IconButton(
+          tooltip: '${i + 1} de 5',
+          icon: Icon(i < (book.rating ?? 0) ? Icons.star_rounded : Icons.star_outline_rounded, color: context.app.rating, size: size),
+          onPressed: () => ref.read(databaseProvider).updateBook(book.copyWith(rating: Value(i + 1))),
+        )),
+      );
 
   /// Recuadro de un libro abandonado: estrellas y reseña ("¿por qué lo dejaste?").
   Widget _buildAbandonedCard(Book book, ColorScheme scheme, ThemeData theme) {
@@ -653,19 +774,15 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: context.app.statusAbandoned.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: context.app.statusAbandoned.withValues(alpha: 0.25)),
+        borderRadius: AppRadius.xxlAll,
       ),
       child: Column(children: [
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           Icon(Icons.bookmark_remove_rounded, color: context.app.statusAbandoned),
           const SizedBox(width: 8),
-          const Text('ABANDONADO', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2)),
+          Text('Abandonado', style: theme.textTheme.titleMedium?.copyWith(color: context.app.statusAbandoned)),
         ]),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (i) => IconButton(
-          icon: Icon(i < (book.rating ?? 0) ? Icons.star : Icons.star_border, color: context.app.rating, size: 28),
-          onPressed: () => ref.read(databaseProvider).updateBook(book.copyWith(rating: Value(i + 1))),
-        ))),
+        _ratingRow(book, 28),
         _buildReviewSection(book, scheme, theme),
       ]),
     );
