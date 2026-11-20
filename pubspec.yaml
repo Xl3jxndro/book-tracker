@@ -54,7 +54,7 @@ dependencies:
   local_auth: ^3.0.2                    # Para autenticación
 
   # Almacenamiento seguro
-  flutter_secure_storage: ^10.3.1        # Para almacenar datos sensibles
+  flutter_secure_storage: ^11.2.0        # Palabra secreta y PIN (v10 ya migró los datos de v9)
 
   # Permisos
   permission_handler: ^13.0.2           # Para solicitar permisos de notificación 
