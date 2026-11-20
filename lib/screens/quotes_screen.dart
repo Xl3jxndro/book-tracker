@@ -12,6 +12,7 @@ import '../widgets/empty_state_widget.dart';
 import '../widgets/quote_share.dart';
 import 'book_details_screen.dart';
 import '../theme/app_colors.dart';
+import '../widgets/skeleton_loader.dart';
 
 /// Filtra las citas por texto (en la cita, el título o el autor) y, si se
 /// pide, solo las favoritas. Conserva el orden recibido.
@@ -55,7 +56,7 @@ class _QuotesScreenState extends ConsumerState<QuotesScreen> {
         title: const Text('Mis citas', style: TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: quotesAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const SingleChildScrollView(child: QuotesSkeleton()),
         error: (e, _) => Center(child: Text('No se pudieron cargar las citas: $e')),
         data: (all) {
           if (all.isEmpty) {

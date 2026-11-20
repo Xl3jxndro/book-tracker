@@ -612,12 +612,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildLoadingSkeleton(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(20), itemCount: 6,
-      itemBuilder: (context, index) => const Padding(
-        padding: EdgeInsets.only(bottom: 16),
-        child: SkeletonLoader(height: 110, width: double.infinity, borderRadius: 20),
-      ),
+    return const SingleChildScrollView(
+      physics: NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.only(top: 120),
+      child: LibrarySkeleton(),
     );
   }
 

@@ -18,6 +18,7 @@ import '../services/year_summary.dart';
 import '../providers/yearly_goal_provider.dart';
 import '../database/database.dart';
 import '../theme/app_colors.dart';
+import '../widgets/skeleton_loader.dart';
 
 class StatsScreen extends ConsumerStatefulWidget {
   const StatsScreen({super.key});
@@ -109,10 +110,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
       body: booksAsync.when(
         data: (books) => sessionsAsync.when(
           data: (sessions) => _buildMainLayout(books, sessions, isDark),
-          loading: () => const Center(child: CircularProgressIndicator.adaptive()),
+          loading: () => const SingleChildScrollView(child: StatsSkeleton()),
           error: (e, _) => Center(child: Text('Error: $e')),
         ),
-        loading: () => const Center(child: CircularProgressIndicator.adaptive()),
+        loading: () => const SingleChildScrollView(child: StatsSkeleton()),
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
     );

@@ -23,6 +23,7 @@ import '../providers/tutorial_provider.dart';
 import '../providers/daily_goal_provider.dart';
 import '../services/voice_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/skeleton_loader.dart';
 
 enum NoteFilter { recent, page, length, favorites }
 
@@ -212,28 +213,22 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
 
   // --- CARGA ELEGANTE ---
   Widget _buildElegantLoading(ThemeData theme) {
+    // Mientras se sacan los colores de la portada: la portada y el título
+    // (ya conocidos) y una silueta del resto
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: Center(
+      body: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 72, 24, 24),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _buildFloatingCover(widget.book.coverUrl, widget.book.id),
+            const SizedBox(height: 28),
+            Text(widget.book.title, textAlign: TextAlign.center, style: theme.textTheme.headlineMedium),
+            const SizedBox(height: 6),
+            Text(widget.book.author, textAlign: TextAlign.center, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             const SizedBox(height: 40),
-            const SizedBox(
-              width: 40,
-              height: 40,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Sintonizando tu lectura...',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.primary.withValues(alpha: 0.7),
-                letterSpacing: 1.1,
-                fontStyle: FontStyle.italic
-              ),
-            )
+            const BookDetailsSkeleton(),
           ],
         ),
       ),
