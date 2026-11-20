@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
@@ -27,6 +28,8 @@ import 'widgets/app_lock_overlay.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // De borde a borde: la app dibuja detrás de las barras del sistema
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   try {
     await NotificationService.init();
@@ -195,12 +198,29 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
           // "Mi año lector") reciben el tema de la app. Quitar cuando migren.
           // ignore: deprecated_member_use
           MaterialUiCompatibilityBridge(
-        child: AppLockOverlay(
-          isLocked: isRelocked,
-          lockScreenBuilder: (_) => const LoginScreen(),
-          child: child!,
+        // Barras del sistema transparentes, con iconos según el modo
+        child: AnnotatedRegion<SystemUiOverlayStyle>(
+          value: _systemBars(Theme.of(context).brightness),
+          child: AppLockOverlay(
+            isLocked: isRelocked,
+            lockScreenBuilder: (_) => const LoginScreen(),
+            child: child!,
+          ),
         ),
       ),
     );
   }
+}
+
+SystemUiOverlayStyle _systemBars(Brightness brightness) {
+  final dark = brightness == Brightness.dark;
+  return SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarDividerColor: Colors.transparent,
+    systemNavigationBarContrastEnforced: false,
+    statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+    statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+    systemNavigationBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+  );
 }

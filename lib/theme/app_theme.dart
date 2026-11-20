@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -61,6 +62,8 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         titleTextStyle: text.titleLarge,
+        systemOverlayStyle: (scheme.brightness == Brightness.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
+            .copyWith(statusBarColor: Colors.transparent, systemNavigationBarColor: Colors.transparent),
       ),
 
       cardTheme: CardThemeData(

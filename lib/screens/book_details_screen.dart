@@ -261,7 +261,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return EmptyStateWidget(
             icon: Icons.edit_note_rounded, title: 'Sin notas aún', description: 'Agrega tus pensamientos.', 
-            actionLabel: 'NUEVA NOTA', onAction: () => _showAddNote(context, currentBook.id)
+            actionLabel: 'Nueva nota', onAction: () => _showAddNote(context, currentBook.id)
           );
         }
 

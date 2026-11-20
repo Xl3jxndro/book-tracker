@@ -90,6 +90,8 @@ dev_dependencies:
 
 # Configuración del Icono de la App
 flutter_launcher_icons:
+  # OJO: al regenerar los iconos, volver a añadir la capa <monochrome>
+  # (drawable/ic_launcher_monochrome.xml) en mipmap-anydpi-v26/launcher_icon.xml
   android: "launcher_icon"
   ios: true
   image_path: "assets/icon/app_icon.png"

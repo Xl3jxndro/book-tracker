@@ -313,7 +313,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           icon: Icons.auto_stories_rounded,
           title: 'Tu biblioteca está vacía',
           description: 'Parece un buen momento para empezar una nueva aventura.',
-          //actionLabel: 'AÑADIR LIBRO',
+          actionLabel: 'Añadir mi primer libro',
           onAction: () => _showAddBook(context),
         ),
       );
@@ -326,6 +326,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           icon: Icons.search_off_rounded,
           title: 'Sin coincidencias',
           description: 'No encontramos nada que coincida con tus filtros.',
+          actionLabel: 'Ver todos los libros',
+          onAction: () {
+            ref.read(selectedFilterProvider.notifier).set(null);
+            ref.read(searchQueryProvider.notifier).set('');
+          },
         ),
       );
     }
