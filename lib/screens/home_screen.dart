@@ -20,6 +20,7 @@ import '../widgets/skeleton_loader.dart';
 import '../services/ad_helper.dart';
 import '../services/ads_gate.dart';
 import '../services/library_ad_layout.dart';
+import '../services/quick_status.dart';
 import 'book_details_screen.dart';
 import 'quotes_screen.dart';
 import '../database/database.dart';
@@ -703,19 +704,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
+  /// Libro de la lista con gestos: a la derecha, la acción rápida de su
+  /// estado (con "Deshacer"); a la izquierda, borrar (con confirmación).
   Widget _buildDismissibleCard(BuildContext context, WidgetRef ref, Book book, String query) {
+    final quick = quickStatusAction(book);
+    final cs = context.cs;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Dismissible(
         key: Key('dismiss_${book.id}'),
-        direction: DismissDirection.endToStart,
-        background: Container(
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: AppSpace.lg),
-          decoration: BoxDecoration(color: context.cs.error, borderRadius: AppRadius.lgAll),
-          child: Icon(Icons.delete_sweep_rounded, color: context.cs.onError, size: 28),
-        ),
+        direction: quick == null ? DismissDirection.endToStart : DismissDirection.horizontal,
+        dismissThresholds: const {DismissDirection.startToEnd: 0.3, DismissDirection.endToStart: 0.4},
+        background: quick == null
+            ? const SizedBox.shrink()
+            : _swipeBackground(context, quick.icon, quick.label, context.app.accent, context.app.onAccent, Alignment.centerLeft),
+        secondaryBackground: _swipeBackground(context, Icons.delete_sweep_rounded, 'Eliminar', cs.error, cs.onError, Alignment.centerRight),
         confirmDismiss: (direction) async {
+          if (direction == DismissDirection.startToEnd) {
+            await _applyQuickStatus(ref, book, quick!);
+            return false; // la tarjeta vuelve a su sitio; la lista se actualiza sola
+          }
           HapticFeedback.heavyImpact();
           return await showDialog(
             context: context,
@@ -737,6 +745,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: BookCard(book: book, searchQuery: query, onTap: () => _openBook(book)),
       ),
     );
+  }
+
+  Widget _swipeBackground(BuildContext context, IconData icon, String label, Color bg, Color fg, Alignment align) {
+    final left = align == Alignment.centerLeft;
+    return Container(
+      alignment: align,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+      decoration: BoxDecoration(color: bg, borderRadius: AppRadius.lgAll),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!left) Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: fg)),
+          if (!left) const SizedBox(width: AppSpace.xs),
+          Icon(icon, color: fg, size: 26),
+          if (left) const SizedBox(width: AppSpace.xs),
+          if (left) Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: fg)),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _applyQuickStatus(WidgetRef ref, Book book, QuickStatusAction action) async {
+    final updated = applyQuickStatus(book, DateTime.now());
+    if (updated == null) return;
+    HapticFeedback.mediumImpact();
+    final db = ref.read(databaseProvider);
+    await db.updateBook(updated);
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(SnackBar(
+      content: Text('${action.done} "${book.title}"'),
+      duration: const Duration(seconds: 5),
+      // Por encima de la barra de navegación flotante
+      margin: EdgeInsets.fromLTRB(16, 0, 16, 64 + 24 + 12 + MediaQuery.of(context).padding.bottom),
+      action: SnackBarAction(label: 'Deshacer', onPressed: () => db.updateBook(book)),
+    ));
   }
 
   Widget _buildLoadingSkeleton(BuildContext context) {
