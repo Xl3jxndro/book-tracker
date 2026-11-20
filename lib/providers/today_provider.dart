@@ -6,21 +6,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// El día de hoy (sin hora). Cambia solo a medianoche y se revisa al volver
 /// a la app, así lo que depende de "hoy" (meta diaria, racha, gráficas) no se
 /// queda en el día anterior si la app sigue abierta.
-final todayProvider = StateNotifierProvider<TodayNotifier, DateTime>((ref) => TodayNotifier());
+final todayProvider = NotifierProvider<TodayNotifier, DateTime>(TodayNotifier.new);
 
-class TodayNotifier extends StateNotifier<DateTime> with WidgetsBindingObserver {
+class TodayNotifier extends Notifier<DateTime> with WidgetsBindingObserver {
   final DateTime Function() _now;
   final bool _autoSchedule;
   Timer? _midnightTimer;
 
   TodayNotifier({DateTime Function()? now, bool autoSchedule = true})
       : _now = now ?? DateTime.now,
-        _autoSchedule = autoSchedule,
-        super(dateOnly((now ?? DateTime.now)())) {
+        _autoSchedule = autoSchedule;
+
+  @override
+  DateTime build() {
     if (_autoSchedule) {
       WidgetsBinding.instance.addObserver(this);
       _scheduleMidnight();
     }
+    ref.onDispose(() {
+      _midnightTimer?.cancel();
+      if (_autoSchedule) WidgetsBinding.instance.removeObserver(this);
+    });
+    return dateOnly(_now());
   }
 
   static DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
@@ -52,12 +59,5 @@ class TodayNotifier extends StateNotifier<DateTime> with WidgetsBindingObserver 
       refresh();
       _scheduleMidnight();
     }
-  }
-
-  @override
-  void dispose() {
-    _midnightTimer?.cancel();
-    if (_autoSchedule) WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
   }
 }

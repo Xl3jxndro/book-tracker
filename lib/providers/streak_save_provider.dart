@@ -5,11 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/streak_save.dart';
 
 /// Días salvados de la racha (anuncio recompensado) y estado de la oferta.
-final streakSaveProvider = StateNotifierProvider<StreakSaveNotifier, StreakSaveState>((ref) => StreakSaveNotifier());
+final streakSaveProvider = NotifierProvider<StreakSaveNotifier, StreakSaveState>(StreakSaveNotifier.new);
 
-class StreakSaveNotifier extends StateNotifier<StreakSaveState> {
-  StreakSaveNotifier() : super(const StreakSaveState()) {
+class StreakSaveNotifier extends Notifier<StreakSaveState> {
+  @override
+  StreakSaveState build() {
     _load();
+    return const StreakSaveState();
   }
 
   final _ready = Completer<void>();
@@ -19,7 +21,7 @@ class StreakSaveNotifier extends StateNotifier<StreakSaveState> {
 
   Future<void> _load() async {
     final s = await StreakSave.load();
-    if (mounted) state = s;
+    if (ref.mounted) state = s;
     if (!_ready.isCompleted) _ready.complete();
   }
 

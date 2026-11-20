@@ -116,7 +116,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
   /// la hoja para calificar y reseñar.
   void _onBooksChanged(AsyncValue<List<Book>>? previous, AsyncValue<List<Book>> next) {
     Book? find(AsyncValue<List<Book>>? value) {
-      for (final b in value?.valueOrNull ?? const <Book>[]) {
+      for (final b in value?.value ?? const <Book>[]) {
         if (b.id == widget.book.id) return b;
       }
       return null;
@@ -139,7 +139,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) return;
     await Future<void>.delayed(const Duration(milliseconds: 600)); // dejar ver el confeti
     if (!mounted) return;
-    final latest = ref.read(booksStreamProvider).valueOrNull?.where((b) => b.id == book.id).firstOrNull ?? book;
+    final latest = ref.read(booksStreamProvider).value?.where((b) => b.id == book.id).firstOrNull ?? book;
     await showFinishReviewSheet(context, latest);
   }
 

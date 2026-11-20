@@ -64,7 +64,7 @@ class AuthState {
 
 /// Gestiona la palabra secreta ("Santo y Seña"), el PIN de respaldo y si el
 /// bloqueo está activo. Todo se guarda en el almacenamiento seguro.
-class AuthNotifier extends StateNotifier<AuthState> {
+class AuthNotifier extends Notifier<AuthState> {
   // Claves para el almacenamiento seguro (no cambiar: las usan instalaciones existentes)
   static const pinKey = 'user_pin_code';
   static const passphraseKey = 'user_passphrase';
@@ -95,9 +95,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   AuthNotifier({FlutterSecureStorage? storage, DateTime Function()? now})
       : _storage = storage ?? const FlutterSecureStorage(),
-        _now = now ?? DateTime.now,
-        super(const AuthState(isLoading: true)) {
+        _now = now ?? DateTime.now;
+
+  @override
+  AuthState build() {
     _checkInitialStatus();
+    return const AuthState(isLoading: true);
   }
 
   /// Espera tras el fallo número [failures]: 30 s al 5.º, y se duplica con
@@ -119,7 +122,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final lockedUntilMs = int.tryParse(await _storage.read(key: lockedUntilKey) ?? '');
       final lockedUntil = lockedUntilMs == null ? null : DateTime.fromMillisecondsSinceEpoch(lockedUntilMs);
       final autoLock = int.tryParse(await _storage.read(key: autoLockKey) ?? '');
-      if (!mounted) return;
+      if (!ref.mounted) return;
       state = AuthState(
         isPinSet: savedPin != null,
         isPassphraseSet: savedPass != null,
@@ -137,7 +140,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         await _storage.deleteAll();
       } catch (_) {}
       _failedAttempts = 0;
-      if (mounted) state = const AuthState();
+      if (ref.mounted) state = const AuthState();
     }
   }
 
@@ -278,6 +281,4 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 // El Provider global
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier();
-});
+final authProvider = NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);

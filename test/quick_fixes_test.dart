@@ -5,6 +5,7 @@ import 'package:book_tracker/providers/app_info_provider.dart';
 import 'package:book_tracker/providers/today_provider.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -25,12 +26,14 @@ void main() {
 
     test('"hoy" cambia al pasar la medianoche y solo notifica si cambió', () {
       var now = DateTime(2026, 11, 16, 23, 58);
-      final today = TodayNotifier(now: () => now, autoSchedule: false);
-      addTearDown(today.dispose);
+      final container = ProviderContainer.test(overrides: [
+        todayProvider.overrideWith(() => TodayNotifier(now: () => now, autoSchedule: false)),
+      ]);
       final changes = <DateTime>[];
-      today.addListener(changes.add, fireImmediately: false);
+      container.listen<DateTime>(todayProvider, (_, next) => changes.add(next));
+      final today = container.read(todayProvider.notifier);
 
-      expect(today.state, DateTime(2026, 11, 16));
+      expect(container.read(todayProvider), DateTime(2026, 11, 16));
 
       now = DateTime(2026, 11, 16, 23, 59);
       today.refresh();

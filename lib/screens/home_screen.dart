@@ -24,10 +24,10 @@ import '../database/database.dart';
 // --- PROVIDERS DE FILTRADO Y ORDENAMIENTO ---
 enum BookSortOption { recentlyAdded, mostProgress, longest, alphabetical }
 
-final searchQueryProvider = StateProvider<String>((ref) => '');
-final isSearchingProvider = StateProvider<bool>((ref) => false);
-final selectedFilterProvider = StateProvider<String?>((ref) => null);
-final sortOptionProvider = StateProvider<BookSortOption>((ref) => BookSortOption.recentlyAdded);
+final searchQueryProvider = NotifierProvider<SimpleState<String>, String>(() => SimpleState(''));
+final isSearchingProvider = NotifierProvider<SimpleState<bool>, bool>(() => SimpleState(false));
+final selectedFilterProvider = NotifierProvider<SimpleState<String?>, String?>(() => SimpleState(null));
+final sortOptionProvider = NotifierProvider<SimpleState<BookSortOption>, BookSortOption>(() => SimpleState(BookSortOption.recentlyAdded));
 
 /// ¿El libro es de la categoría [tag]? Sin distinguir mayúsculas ni espacios
 /// en los bordes (los chips muestran la categoría normalizada).
@@ -152,10 +152,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Los botones que señalan los tooltips deben estar a la vista: la barra
     // y el botón + se ocultan al hacer scroll, y el buscador tapa los demás.
     // Si no, el tooltip se calcula sobre un botón fuera de pantalla y se corta.
-    ref.read(navBarVisibleProvider.notifier).state = true;
+    ref.read(navBarVisibleProvider.notifier).set(true);
     if (ref.read(isSearchingProvider)) {
-      ref.read(isSearchingProvider.notifier).state = false;
-      ref.read(searchQueryProvider.notifier).state = '';
+      ref.read(isSearchingProvider.notifier).set(false);
+      ref.read(searchQueryProvider.notifier).set('');
     }
     
     // Un pequeño delay para que el árbol de widgets esté listo
@@ -239,9 +239,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           return NotificationListener<UserScrollNotification>(
             onNotification: (notification) {
               if (notification.direction == ScrollDirection.reverse && isNavVisible) {
-                ref.read(navBarVisibleProvider.notifier).state = false;
+                ref.read(navBarVisibleProvider.notifier).set(false);
               } else if (notification.direction == ScrollDirection.forward && !isNavVisible) {
-                ref.read(navBarVisibleProvider.notifier).state = true;
+                ref.read(navBarVisibleProvider.notifier).set(true);
               }
               return false; 
             },
@@ -388,7 +388,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           isDense: true,
           contentPadding: EdgeInsets.zero,
         ),
-        onChanged: (value) => ref.read(searchQueryProvider.notifier).state = value,
+        onChanged: (value) => ref.read(searchQueryProvider.notifier).set(value),
       ),
     );
   }
@@ -404,8 +404,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         icon: Icon(isSearching ? Icons.close_rounded : Icons.search_rounded, size: 22),
         onPressed: () {
           HapticFeedback.selectionClick();
-          ref.read(isSearchingProvider.notifier).state = !isSearching;
-          if (isSearching) ref.read(searchQueryProvider.notifier).state = '';
+          ref.read(isSearchingProvider.notifier).set(!isSearching);
+          if (isSearching) ref.read(searchQueryProvider.notifier).set('');
         },
       ),
     );
@@ -475,7 +475,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       trailing: isSelected ? Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary) : null,
       onTap: () {
         HapticFeedback.lightImpact();
-        ref.read(sortOptionProvider.notifier).state = option;
+        ref.read(sortOptionProvider.notifier).set(option);
         Navigator.pop(context);
       },
     );
@@ -512,7 +512,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: InkWell(
                   onTap: () {
                     HapticFeedback.lightImpact();
-                    ref.read(selectedFilterProvider.notifier).state = isSelected ? null : val;
+                    ref.read(selectedFilterProvider.notifier).set(isSelected ? null : val);
                   },
                   borderRadius: BorderRadius.circular(14),
                   child: AnimatedContainer(

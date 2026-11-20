@@ -22,13 +22,13 @@ class NotificationSettings {
   }
 }
 
-final notificationsProvider = StateNotifierProvider<NotificationsNotifier, NotificationSettings>((ref) {
-  return NotificationsNotifier();
-});
+final notificationsProvider = NotifierProvider<NotificationsNotifier, NotificationSettings>(NotificationsNotifier.new);
 
-class NotificationsNotifier extends StateNotifier<NotificationSettings> {
-  NotificationsNotifier() : super(NotificationSettings(enabled: false, hour: 20, minute: 0)) {
+class NotificationsNotifier extends Notifier<NotificationSettings> {
+  @override
+  NotificationSettings build() {
     _loadSettings();
+    return NotificationSettings(enabled: false, hour: 20, minute: 0);
   }
 
   static const _notifKey = NotificationService.prefsEnabledKey;
@@ -37,6 +37,7 @@ class NotificationsNotifier extends StateNotifier<NotificationSettings> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!ref.mounted) return;
     state = NotificationSettings(
       enabled: prefs.getBool(_notifKey) ?? false,
       hour: prefs.getInt(_hourKey) ?? 20,

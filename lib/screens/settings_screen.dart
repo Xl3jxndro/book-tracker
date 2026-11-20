@@ -113,9 +113,9 @@ class SettingsScreen extends ConsumerWidget {
     final notifSettings = ref.watch(notificationsProvider);
     final streakRisk = ref.watch(streakRiskProvider);
     // Activado pero sin permiso: el aviso no podría sonar
-    final streakRiskBlocked = streakRisk.enabled && ref.watch(notificationPermissionProvider).valueOrNull == false;
+    final streakRiskBlocked = streakRisk.enabled && ref.watch(notificationPermissionProvider).value == false;
     final auth = ref.watch(authProvider);
-    final appVersion = ref.watch(appVersionProvider).valueOrNull ?? '…';
+    final appVersion = ref.watch(appVersionProvider).value ?? '…';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -319,7 +319,7 @@ class SettingsScreen extends ConsumerWidget {
               iconColor: Colors.brown,
               onTap: () => importFromGoodreads(context, ref),
             ),
-            if (ref.watch(autoBackupExistsProvider).valueOrNull ?? false)
+            if (ref.watch(autoBackupExistsProvider).value ?? false)
               _settingsTile(
                 context,
                 title: 'Deshacer la última restauración',

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -28,13 +29,15 @@ class StreakRiskSettings {
 /// la app (el usuario pudo cambiarlo en los ajustes de Android).
 final notificationPermissionProvider = FutureProvider.autoDispose<bool>((ref) => Permission.notification.isGranted);
 
-final streakRiskProvider = StateNotifierProvider<StreakRiskNotifier, StreakRiskSettings>((ref) => StreakRiskNotifier());
+final streakRiskProvider = NotifierProvider<StreakRiskNotifier, StreakRiskSettings>(StreakRiskNotifier.new);
 
 /// Aviso "racha en riesgo": activado por defecto a las 21:00. Solo suena si
 /// la app tiene permiso de notificaciones (no lo pide al arrancar).
-class StreakRiskNotifier extends StateNotifier<StreakRiskSettings> {
-  StreakRiskNotifier() : super(const StreakRiskSettings(enabled: true, hour: defaultHour, minute: 0, loaded: false)) {
+class StreakRiskNotifier extends Notifier<StreakRiskSettings> {
+  @override
+  StreakRiskSettings build() {
     _load();
+    return const StreakRiskSettings(enabled: true, hour: defaultHour, minute: 0, loaded: false);
   }
 
   static const enabledKey = 'streak_risk_enabled';
@@ -44,7 +47,7 @@ class StreakRiskNotifier extends StateNotifier<StreakRiskSettings> {
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
+    if (!ref.mounted) return;
     state = StreakRiskSettings(
       enabled: prefs.getBool(enabledKey) ?? true,
       hour: prefs.getInt(hourKey) ?? defaultHour,
@@ -85,7 +88,7 @@ class StreakRiskSync {
   static Future<void> sync(ProviderReader read) async {
     final settings = read(streakRiskProvider);
     if (!settings.loaded) return;
-    final sessions = read(sessionsStreamProvider).valueOrNull;
+    final sessions = read(sessionsStreamProvider).value;
     if (sessions == null) return; // aún cargando: no borrar el aviso existente
 
     final alert = settings.enabled

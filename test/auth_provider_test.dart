@@ -1,4 +1,5 @@
 import 'package:book_tracker/providers/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -31,7 +32,11 @@ class _UnreadableStorage extends FlutterSecureStorage {
 }
 
 Future<AuthNotifier> _loaded({FlutterSecureStorage? storage, DateTime Function()? now}) async {
-  final notifier = AuthNotifier(storage: storage, now: now);
+  final container = ProviderContainer.test(overrides: [
+    authProvider.overrideWith(() => AuthNotifier(storage: storage, now: now)),
+  ]);
+  container.listen(authProvider, (_, _) {}); // mantenerlo vivo durante el test
+  final notifier = container.read(authProvider.notifier);
   for (var i = 0; i < 50 && notifier.state.isLoading; i++) {
     await Future<void>.delayed(Duration.zero);
   }

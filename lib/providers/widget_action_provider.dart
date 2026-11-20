@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/home_widget_sync.dart';
+import 'ui_provider.dart';
 
 /// Acción pedida desde el widget de pantalla de inicio que abre la app.
 class WidgetAction {
@@ -30,4 +31,5 @@ class WidgetAction {
 
 /// Acción pendiente: se guarda aquí hasta que el usuario pasa el login y
 /// `MainWrapper` puede navegar al libro.
-final pendingWidgetActionProvider = StateProvider<WidgetAction?>((ref) => null);
+final pendingWidgetActionProvider =
+    NotifierProvider<SimpleState<WidgetAction?>, WidgetAction?>(() => SimpleState(null));

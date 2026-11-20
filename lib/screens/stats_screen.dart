@@ -100,7 +100,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
             child: IconButton.filledTonal(
               tooltip: 'Compartir mi año lector',
               icon: const Icon(Icons.ios_share_rounded),
-              onPressed: () => _shareYear(booksAsync.valueOrNull ?? const [], sessionsAsync.valueOrNull ?? const []),
+              onPressed: () => _shareYear(booksAsync.value ?? const [], sessionsAsync.value ?? const []),
             ),
           ),
         ],

@@ -43,8 +43,10 @@ void main() async {
   AdsGate.init();
 
   runApp(
-    const ProviderScope(
-      child: BookTrackerApp(),
+    ProviderScope(
+      // Sin reintentos automáticos (Riverpod 3): los errores ya se manejan en cada provider
+      retry: (_, _) => null,
+      child: const BookTrackerApp(),
     ),
   );
 
@@ -103,8 +105,8 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
     if (!NotificationService.opensCurrentBook(payload)) return;
     final book = await HomeWidgetSync.currentBook(ref.read(databaseProvider));
     if (book == null || !mounted) return; // sin libros: solo se abre la app
-    ref.read(pendingWidgetActionProvider.notifier).state =
-        WidgetAction(bookId: book.id, finishSession: false);
+    ref.read(pendingWidgetActionProvider.notifier).set(
+        WidgetAction(bookId: book.id, finishSession: false));
   }
 
   void _initHomeWidget() {
@@ -131,7 +133,7 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
   void _handleWidgetUri(Uri? uri) {
     final action = WidgetAction.fromUri(uri);
     if (action != null && mounted) {
-      ref.read(pendingWidgetActionProvider.notifier).state = action;
+      ref.read(pendingWidgetActionProvider.notifier).set(action);
     }
   }
 

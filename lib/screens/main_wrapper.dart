@@ -143,7 +143,7 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
   /// el diálogo para terminar la sesión y guardar las páginas.
   Future<void> _handleWidgetAction(WidgetAction action) async {
     if (!mounted) return;
-    ref.read(pendingWidgetActionProvider.notifier).state = null;
+    ref.read(pendingWidgetActionProvider.notifier).set(null);
 
     final db = ref.read(databaseProvider);
     final book = await (db.select(db.books)..where((t) => t.id.equals(action.bookId))).getSingleOrNull();
@@ -220,9 +220,9 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
         onNotification: (notification) {
           if (notification is UserScrollNotification && !isNavTutorialPhase) {
             if (notification.direction == ScrollDirection.reverse) {
-              if (isVisible) ref.read(navBarVisibleProvider.notifier).state = false;
+              if (isVisible) ref.read(navBarVisibleProvider.notifier).set(false);
             } else if (notification.direction == ScrollDirection.forward) {
-              if (!isVisible) ref.read(navBarVisibleProvider.notifier).state = true;
+              if (!isVisible) ref.read(navBarVisibleProvider.notifier).set(true);
             }
           }
           return false; 
@@ -307,7 +307,7 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
           HapticFeedback.selectionClick(); 
           setState(() => _currentIndex = index);
         }
-        ref.read(navBarVisibleProvider.notifier).state = true;
+        ref.read(navBarVisibleProvider.notifier).set(true);
       },
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(

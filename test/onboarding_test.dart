@@ -2,12 +2,15 @@ import 'package:book_tracker/providers/tutorial_provider.dart';
 import 'package:book_tracker/screens/onboarding_screen.dart';
 import 'package:book_tracker/widgets/whats_new_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<TutorialNotifier> _notifier(Map<String, Object> prefs) async {
   SharedPreferences.setMockInitialValues(prefs);
-  final n = TutorialNotifier();
+  final container = ProviderContainer.test();
+  container.listen(tutorialProvider, (_, _) {});
+  final n = container.read(tutorialProvider.notifier);
   await Future<void>.delayed(Duration.zero);
   await Future<void>.delayed(Duration.zero);
   return n;

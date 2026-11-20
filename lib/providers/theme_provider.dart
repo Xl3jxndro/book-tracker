@@ -19,18 +19,20 @@ TextTheme _buildEditorialTextTheme(Brightness brightness) {
 }
 
 // --- PROVIDER DE MODO DE TEMA ---
-final themeProvider = StateNotifierProvider<ThemeNotifier, ThemeMode>((ref) {
-  return ThemeNotifier();
-});
+final themeProvider = NotifierProvider<ThemeNotifier, ThemeMode>(ThemeNotifier.new);
 
-class ThemeNotifier extends StateNotifier<ThemeMode> {
-  ThemeNotifier() : super(ThemeMode.system) { _loadTheme(); }
+class ThemeNotifier extends Notifier<ThemeMode> {
+  @override
+  ThemeMode build() {
+    _loadTheme();
+    return ThemeMode.system;
+  }
   static const _key = 'user_theme_mode';
 
   Future<void> _loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
     final themeIndex = prefs.getInt(_key);
-    if (themeIndex != null) state = ThemeMode.values[themeIndex];
+    if (themeIndex != null && ref.mounted) state = ThemeMode.values[themeIndex];
   }
 
   Future<void> setTheme(ThemeMode mode) async {

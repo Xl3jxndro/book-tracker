@@ -4,17 +4,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Meta de libros para un año (null = sin reto). Una por año, para que el
 /// historial de años anteriores conserve su propia meta.
-final yearlyGoalProvider = StateNotifierProvider.family<YearlyGoalNotifier, int?, int>(
-  (ref, year) => YearlyGoalNotifier(year),
-);
+final yearlyGoalProvider = NotifierProvider.family<YearlyGoalNotifier, int?, int>(YearlyGoalNotifier.new);
 
-class YearlyGoalNotifier extends StateNotifier<int?> {
+class YearlyGoalNotifier extends Notifier<int?> {
   final int year;
   static const suggestions = [6, 12, 24, 52];
   static const maxGoal = 999;
 
-  YearlyGoalNotifier(this.year) : super(null) {
+  YearlyGoalNotifier(this.year);
+
+  @override
+  int? build() {
     _load();
+    return null;
   }
 
   static String prefsKey(int year) => 'yearly_goal_$year';
@@ -23,7 +25,7 @@ class YearlyGoalNotifier extends StateNotifier<int?> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final saved = prefs.getInt(prefsKey(year));
-      if (mounted && saved != null && saved > 0) state = saved;
+      if (ref.mounted && saved != null && saved > 0) state = saved;
     } catch (e) {
       debugPrint('Error cargando reto anual: $e');
     }

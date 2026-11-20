@@ -17,20 +17,22 @@ class TutorialState {
   });
 }
 
-class TutorialNotifier extends StateNotifier<TutorialState> {
-  TutorialNotifier() : super(TutorialState(
-    stage: TutorialStage.loading, 
-    // Iniciamos en false para que el sistema sepa que "falta info"
-    hasSeenHome: false, 
-    hasSeenNav: false,
-    hasSeenDetails: false,
-  )) {
+class TutorialNotifier extends Notifier<TutorialState> {
+  @override
+  TutorialState build() {
     _init();
+    return TutorialState(
+      stage: TutorialStage.loading,
+      // Iniciamos en false para que el sistema sepa que "falta info"
+      hasSeenHome: false,
+      hasSeenNav: false,
+      hasSeenDetails: false,
+    );
   }
 
   Future<void> _init() async {
     final prefs = await SharedPreferences.getInstance();
-    _updateStateFromPrefs(prefs);
+    if (ref.mounted) _updateStateFromPrefs(prefs);
   }
 
   static const onboardingKey = 'hasSeenOnboarding';
@@ -102,4 +104,4 @@ class TutorialNotifier extends StateNotifier<TutorialState> {
   }
 }
 
-final tutorialProvider = StateNotifierProvider<TutorialNotifier, TutorialState>((ref) => TutorialNotifier());
+final tutorialProvider = NotifierProvider<TutorialNotifier, TutorialState>(TutorialNotifier.new);
