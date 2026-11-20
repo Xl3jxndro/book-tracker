@@ -22,6 +22,8 @@ class _FakeStore implements PurchaseStore {
   );
   final completed = <PurchaseDetails>[];
   int buys = 0, restores = 0;
+  Set<String>? owned = {};
+  final awaitingPayment = <PurchaseDetails>{};
 
   @override
   Stream<List<PurchaseDetails>> get purchaseStream => controller.stream;
@@ -39,6 +41,10 @@ class _FakeStore implements PurchaseStore {
   Future<void> restorePurchases() async => restores++;
   @override
   Future<void> completePurchase(PurchaseDetails purchase) async => completed.add(purchase);
+  @override
+  Future<Set<String>?> ownedProducts() async => owned;
+  @override
+  bool isAwaitingPayment(PurchaseDetails purchase) => awaitingPayment.contains(purchase);
 }
 
 PurchaseDetails _purchase(PurchaseStatus status, {String id = RemoveAds.productId, bool pendingComplete = true}) =>
@@ -75,7 +81,9 @@ void main() {
     expect(store.completed, hasLength(1), reason: 'sin confirmar, Play la reembolsa a los 3 días');
 
     // Otra instancia (reinicio de la app) lo recuerda
-    final again = RemoveAds(_FakeStore()..product = null);
+    final again = RemoveAds(_FakeStore()
+      ..product = null
+      ..owned = null);
     await again.initialize();
     expect(again.active.value, isTrue);
   });
@@ -94,6 +102,37 @@ void main() {
     await ads.handlePurchases([_purchase(PurchaseStatus.canceled, pendingComplete: false)]);
     expect(ads.status.value, RemoveAdsStatus.idle);
     expect(ads.active.value, isFalse);
+  });
+
+  test('pago pendiente marcado como restaurado: ni se activa ni se confirma', () async {
+    final p = _purchase(PurchaseStatus.restored);
+    store.awaitingPayment.add(p);
+    await ads.handlePurchases([p]);
+    expect(ads.active.value, isFalse);
+    expect(ads.status.value, RemoveAdsStatus.pending);
+    expect(store.completed, isEmpty);
+  });
+
+  test('reembolsada: al abrir la app vuelven los anuncios', () async {
+    await ads.handlePurchases([_purchase(PurchaseStatus.purchased)]);
+    expect(ads.active.value, isTrue);
+
+    final refunded = RemoveAds(_FakeStore()..owned = {});
+    await refunded.initialize();
+    expect(refunded.active.value, isFalse);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getBool('ads_removed'), isFalse);
+  });
+
+  test('sin poder consultar Play no se retira la compra', () async {
+    await ads.handlePurchases([_purchase(PurchaseStatus.purchased)]);
+    final offline = RemoveAds(_FakeStore()..owned = null);
+    await offline.initialize();
+    expect(offline.active.value, isTrue);
+
+    final stillOwned = RemoveAds(_FakeStore()..owned = {RemoveAds.productId});
+    await stillOwned.initialize();
+    expect(stillOwned.active.value, isTrue);
   });
 
   test('ignora compras de otros productos', () async {

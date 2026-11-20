@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Acceso a la tienda (Google Play Billing). Separado para poder probar la
@@ -13,6 +15,14 @@ abstract class PurchaseStore {
   Future<bool> buyNonConsumable(ProductDetails product);
   Future<void> restorePurchases();
   Future<void> completePurchase(PurchaseDetails purchase);
+
+  /// Productos pagados que la cuenta posee hoy (null si no se pudo consultar).
+  /// Sirve para retirar la compra tras un reembolso.
+  Future<Set<String>?> ownedProducts();
+
+  /// ¿El pago aún no se ha confirmado? (p. ej. efectivo en una tienda). Al
+  /// restaurar, el plugin marca como "restored" también las pendientes.
+  bool isAwaitingPayment(PurchaseDetails purchase);
 }
 
 class PlayPurchaseStore implements PurchaseStore {
@@ -36,6 +46,22 @@ class PlayPurchaseStore implements PurchaseStore {
   Future<void> restorePurchases() => _iap.restorePurchases();
   @override
   Future<void> completePurchase(PurchaseDetails purchase) => _iap.completePurchase(purchase);
+
+  @override
+  Future<Set<String>?> ownedProducts() async {
+    final response =
+        await _iap.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>().queryPastPurchases();
+    if (response.error != null) return null;
+    return {
+      for (final p in response.pastPurchases)
+        if (p.billingClientPurchase.purchaseState == PurchaseStateWrapper.purchased) p.productID,
+    };
+  }
+
+  @override
+  bool isAwaitingPayment(PurchaseDetails purchase) =>
+      purchase is GooglePlayPurchaseDetails &&
+      purchase.billingClientPurchase.purchaseState == PurchaseStateWrapper.pending;
 }
 
 enum RemoveAdsStatus { idle, loading, pending, error, unavailable }
@@ -78,9 +104,21 @@ class RemoveAds {
       }
       await _loadProduct();
       await _store.restorePurchases();
+      await _checkRefund();
     } catch (e) {
       debugPrint('No se pudo iniciar la tienda: $e');
     }
+  }
+
+  /// Si Google ya no la registra (reembolso), vuelven los anuncios. Solo si la
+  /// consulta funcionó: sin conexión con Play no se retira nada.
+  Future<void> _checkRefund() async {
+    if (!active.value) return;
+    final owned = await _store.ownedProducts();
+    if (owned == null || owned.contains(productId)) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefsKey, false);
+    active.value = false;
   }
 
   Future<void> _loadProduct() async {
@@ -117,6 +155,9 @@ class RemoveAds {
     status.value = RemoveAdsStatus.loading;
     try {
       await _store.restorePurchases();
+      await _checkRefund();
+    } catch (e) {
+      debugPrint('No se pudo restaurar: $e');
     } finally {
       if (status.value == RemoveAdsStatus.loading) status.value = RemoveAdsStatus.idle;
     }
@@ -126,6 +167,10 @@ class RemoveAds {
   @visibleForTesting
   Future<void> handlePurchases(List<PurchaseDetails> purchases) async {
     for (final p in purchases.where((p) => p.productID == productId)) {
+      if (_store.isAwaitingPayment(p)) {
+        status.value = RemoveAdsStatus.pending; // no se entrega ni se confirma aún
+        continue;
+      }
       switch (p.status) {
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
