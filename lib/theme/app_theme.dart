@@ -59,6 +59,11 @@ abstract final class AppTheme {
       scaffoldBackgroundColor: scheme.surface,
       canvasColor: scheme.surface,
       splashFactory: InkSparkle.splashFactory,
+      // "Atrás predictivo" de Android: al deslizar para volver, la pantalla
+      // sigue al dedo y deja ver a dónde se vuelve.
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {TargetPlatform.android: PredictiveBackPageTransitionsBuilder()},
+      ),
       dividerTheme: DividerThemeData(color: scheme.outlineVariant, thickness: 1, space: 1),
 
       appBarTheme: AppBarTheme(

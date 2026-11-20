@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 import '../providers/ui_provider.dart';
+import '../providers/auth_provider.dart';
 import '../providers/tutorial_provider.dart';
 import '../providers/database_provider.dart';
 import '../providers/current_book_provider.dart';
@@ -24,6 +25,15 @@ import '../services/ads_gate.dart';
 import '../services/streak_save.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
+
+/// Qué hace "atrás" (gesto o botón de Android) en la pantalla principal.
+enum MainBackAction { closeSearch, goToLibrary, leaveApp }
+
+MainBackAction mainBackAction({required int tabIndex, required bool isSearching}) {
+  if (isSearching) return MainBackAction.closeSearch;
+  if (tabIndex != 0) return MainBackAction.goToLibrary;
+  return MainBackAction.leaveApp;
+}
 
 class MainWrapper extends ConsumerStatefulWidget {
   const MainWrapper({super.key});
@@ -61,6 +71,17 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
         WidgetsBinding.instance.addPostFrameCallback((_) => _handleWidgetAction(action));
       },
       fireImmediately: true,
+    );
+
+    // Si llegó una acción con la app bloqueada (al volver), se atiende al desbloquear
+    ref.listenManual<bool>(
+      authProvider.select((s) => s.canEnterApp),
+      (wasAllowed, allowed) {
+        final pending = ref.read(pendingWidgetActionProvider);
+        if (allowed && wasAllowed == false && pending != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => _handleWidgetAction(pending));
+        }
+      },
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -140,10 +161,13 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
     await ref.read(tutorialProvider.notifier).completeOnboarding();
   }
 
-  /// Abre el libro pedido desde el widget; con `finishSession` muestra además
-  /// el diálogo para terminar la sesión y guardar las páginas.
+  /// Abre el libro pedido desde el widget o la notificación; con
+  /// `finishSession` muestra además el diálogo para terminar la sesión.
   Future<void> _handleWidgetAction(WidgetAction action) async {
     if (!mounted) return;
+    // Con la app bloqueada no se navega: cerraría también la pantalla de
+    // bloqueo. La acción queda pendiente hasta desbloquear.
+    if (!ref.read(authProvider).canEnterApp) return;
     ref.read(pendingWidgetActionProvider.notifier).set(null);
 
     final db = ref.read(databaseProvider);
@@ -214,7 +238,26 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
     // 2. ALTURA DINÁMICA: 68 (nav) + 25 (margen) + espacio del sistema
     final double totalNavHeight = isVisible ? (64 + 24 + systemBottomPadding) : 0;
 
-    return Scaffold(
+    // "Atrás" de Android: primero cierra el buscador, luego vuelve a Libros
+    // y, solo desde ahí, sale de la app.
+    final backAction = mainBackAction(tabIndex: _currentIndex, isSearching: ref.watch(isSearchingProvider));
+
+    return PopScope(
+      canPop: backAction == MainBackAction.leaveApp,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        switch (backAction) {
+          case MainBackAction.closeSearch:
+            ref.read(isSearchingProvider.notifier).set(false);
+            ref.read(searchQueryProvider.notifier).set('');
+          case MainBackAction.goToLibrary:
+            setState(() => _currentIndex = 0);
+          case MainBackAction.leaveApp:
+            break;
+        }
+        ref.read(navBarVisibleProvider.notifier).set(true);
+      },
+      child: Scaffold(
       // Mantenemos extendBody para el efecto Blur detrás de la barra
       extendBody: true,
       body: NotificationListener<ScrollNotification>(
@@ -246,6 +289,7 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
             child: _buildModernNav(isDark, theme, systemBottomPadding),
           ),
         ),
+      ),
       ),
     );
   }

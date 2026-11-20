@@ -25,7 +25,7 @@ import 'services/ads_gate.dart';
 import 'services/remove_ads.dart';
 import 'services/home_widget_sync.dart';
 import 'services/session_goal_alarm.dart';
-import 'widgets/app_lock_overlay.dart';
+import 'widgets/app_lock_route.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,6 +77,9 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
   /// vuelve a bloquear (por estar fuera), el login se muestra encima sin
   /// desmontar la app: al desbloquear se sigue en la misma pantalla.
   bool _hasEnteredApp = false;
+
+  final _navigatorKey = GlobalKey<NavigatorState>();
+  final _lockRoute = AppLockRouteController();
 
   @override
   void initState() {
@@ -183,7 +186,17 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
     if (auth.canEnterApp) _hasEnteredApp = true;
     final isRelocked = _hasEnteredApp && !auth.isLoading && !auth.canEnterApp;
 
+    // Bloqueo al volver a la app: el login se pone encima de donde se estaba,
+    // como una pantalla más de la navegación principal (así "atrás" de
+    // Android no cierra nada a escondidas). Se aplica tras dibujar.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _lockRoute.sync(
+          navigator: _navigatorKey.currentState,
+          locked: isRelocked,
+          lockScreenBuilder: (_) => const LoginScreen(),
+        ));
+
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'Book Tracker',
       themeMode: mode,
@@ -195,8 +208,6 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
         ? const Scaffold(body: Center(child: CircularProgressIndicator()))
         : ((auth.canEnterApp || _hasEnteredApp) ? const MainWrapper() : const LoginScreen()),
 
-      // Bloqueo al volver a la app: login por encima de todo (incluidas las
-      // pantallas abiertas), sin desmontar la app.
       builder: (context, child) =>
           // Puente temporal de material_ui: librerías que aún usan
           // package:flutter/material.dart (tooltips del tutorial, tarjeta de
@@ -206,11 +217,7 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
         // Barras del sistema transparentes, con iconos según el modo
         child: AnnotatedRegion<SystemUiOverlayStyle>(
           value: _systemBars(Theme.of(context).brightness),
-          child: AppLockOverlay(
-            isLocked: isRelocked,
-            lockScreenBuilder: (_) => const LoginScreen(),
-            child: child!,
-          ),
+          child: child!,
         ),
       ),
     );

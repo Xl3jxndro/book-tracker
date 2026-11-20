@@ -693,10 +693,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.read(currentBookProvider.notifier).setCurrentBook(book.id);
     Navigator.push(
       context,
-      PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 450),
-        pageBuilder: (context, animation, secondaryAnimation) => BookDetailsScreen(book: book, autoStartTimer: startTimer, heroTag: heroTag ?? 'cover_${book.id}'),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
+      // Transición del tema: admite el "atrás predictivo" de Android
+      MaterialPageRoute(
+        builder: (_) => BookDetailsScreen(book: book, autoStartTimer: startTimer, heroTag: heroTag ?? 'cover_${book.id}'),
       ),
     ).then((_) {
       // Al volver: la sesión pudo empezar o terminar
