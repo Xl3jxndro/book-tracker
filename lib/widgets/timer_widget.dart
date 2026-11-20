@@ -20,7 +20,11 @@ class TimerWidget extends ConsumerStatefulWidget {
   /// sesión (botón FINALIZAR del widget de pantalla de inicio).
   final bool autoFinish;
 
-  const TimerWidget({super.key, required this.book, this.autoFinish = false});
+  /// Arranca (o reanuda) el cronómetro al abrir, salvo que haya una sesión de
+  /// otro libro en curso ("Continuar leyendo" en la biblioteca).
+  final bool autoStart;
+
+  const TimerWidget({super.key, required this.book, this.autoFinish = false, this.autoStart = false});
 
   @override
   ConsumerState<TimerWidget> createState() => _TimerWidgetState();
@@ -61,7 +65,21 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
     });
 
     WidgetsBinding.instance.addObserver(this);
-    _syncFromPersistence(autoFinish: widget.autoFinish);
+    _syncFromPersistence(autoFinish: widget.autoFinish).then((_) {
+      if (widget.autoStart) _autoStart();
+    });
+  }
+
+  Future<void> _autoStart() async {
+    final session = await TimerPersistence.getActiveSession();
+    if (!mounted || _isRunning) return;
+    if (session != null && session.bookId != widget.book.id) return; // otra lectura en curso
+    _startTimer();
+    // Que se vea el cronómetro (está más abajo en la pantalla del libro)
+    await Future<void>.delayed(const Duration(milliseconds: 450));
+    if (mounted) {
+      Scrollable.ensureVisible(context, alignment: 0.3, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+    }
   }
 
   @override

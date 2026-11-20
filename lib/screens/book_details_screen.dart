@@ -33,7 +33,10 @@ class BookDetailsScreen extends ConsumerStatefulWidget {
   /// Abierto desde el botón FINALIZAR del widget: muestra el diálogo de fin de sesión.
   final bool autoFinishSession;
 
-  const BookDetailsScreen({super.key, required this.book, this.autoFinishSession = false});
+  /// Abierto desde "Continuar leyendo": arranca (o reanuda) el cronómetro.
+  final bool autoStartTimer;
+
+  const BookDetailsScreen({super.key, required this.book, this.autoFinishSession = false, this.autoStartTimer = false});
 
   @override
   ConsumerState<BookDetailsScreen> createState() => _BookDetailsScreenState();
@@ -408,7 +411,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
             const SizedBox(height: 32),
             _buildSectionTitle('Sesión de lectura', theme),
             const SizedBox(height: 16),
-            TimerWidget(key: _timerKey, book: currentBook, autoFinish: widget.autoFinishSession),
+            TimerWidget(key: _timerKey, book: currentBook, autoFinish: widget.autoFinishSession, autoStart: widget.autoStartTimer),
           ],
           const SizedBox(height: 40),
           _buildNotesHeader(currentBook, theme, scheme),
@@ -827,6 +830,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
 
     // Si viene del widget para terminar la sesión, no se interrumpe con el tutorial
     if (widget.autoFinishSession ||
+        widget.autoStartTimer ||
         tutorialState.stage != TutorialStage.bookDetails ||
         tutorialState.hasSeenDetails ||
         _isTutorialShowing) {

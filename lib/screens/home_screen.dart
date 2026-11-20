@@ -11,6 +11,8 @@ import '../providers/database_provider.dart';
 import '../providers/ui_provider.dart';
 import '../providers/tutorial_provider.dart';
 import '../providers/current_book_provider.dart';
+import '../providers/continue_reading_provider.dart';
+import '../widgets/continue_reading_card.dart';
 import '../widgets/book_card.dart';
 import '../widgets/add_book_sheet.dart';
 import '../widgets/empty_state_widget.dart';
@@ -276,6 +278,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
               slivers: [
                 _buildHeader(context, ref, isSearching, theme),
+                // "Continuar leyendo": solo en la vista normal (sin buscar ni filtrar)
+                if (!isSearching && selectedFilter == null) _buildContinueReading(ref),
                 if (allBooks.isNotEmpty && !isSearching)
                   SliverToBoxAdapter(child: _buildFilterSection(ref, selectedFilter, tags, theme, counts)),
                 if (allBooks.isNotEmpty && filteredBooks.isNotEmpty)
@@ -670,7 +674,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _openBook(Book book) {
+  Widget _buildContinueReading(WidgetRef ref) {
+    final item = ref.watch(continueReadingProvider).value;
+    if (item == null) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(AppSpace.screen, AppSpace.sm, AppSpace.screen, 0),
+      sliver: SliverToBoxAdapter(
+        child: ContinueReadingCard(
+          item: item,
+          onOpen: () => _openBook(item.book),
+          onStart: () => _openBook(item.book, startTimer: true),
+        ),
+      ),
+    );
+  }
+
+  void _openBook(Book book, {bool startTimer = false}) {
     HapticFeedback.mediumImpact();
     // Establecer como libro actual (el widget se actualiza solo)
     ref.read(currentBookProvider.notifier).setCurrentBook(book.id);
@@ -678,10 +697,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context,
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 450),
-        pageBuilder: (context, animation, secondaryAnimation) => BookDetailsScreen(book: book),
+        pageBuilder: (context, animation, secondaryAnimation) => BookDetailsScreen(book: book, autoStartTimer: startTimer),
         transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
       ),
-    );
+    ).then((_) {
+      // Al volver: la sesión pudo empezar o terminar
+      if (mounted) ref.invalidate(continueReadingProvider);
+    });
   }
 
   Widget _buildDismissibleCard(BuildContext context, WidgetRef ref, Book book, String query) {
