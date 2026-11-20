@@ -23,6 +23,8 @@ import '../providers/streak_save_provider.dart';
 import '../services/ads_consent.dart';
 import '../services/ads_gate.dart';
 import '../services/streak_save.dart';
+import '../services/app_update.dart';
+import '../widgets/app_update_actions.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 
@@ -102,9 +104,24 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
           await WhatsNew.showIfNeeded(context);
           // Después de las novedades (para no encimarse): ¿salvar la racha?
           await _maybeOfferStreakSave();
+          // Y por último: ¿hay una versión nueva en Google Play?
+          await _maybeOfferUpdate();
         });
       }
     }, fireImmediately: true);
+  }
+
+  /// Avisa (una vez por versión) si hay una versión nueva en Google Play, o
+  /// si ya se descargó y falta reiniciar.
+  Future<void> _maybeOfferUpdate() async {
+    final status = await AppUpdate.check();
+    if (!mounted) return;
+    if (status == UpdateStatus.downloaded) {
+      offerInstall(context);
+    } else if (await AppUpdate.shouldPrompt() && mounted) {
+      await AppUpdate.markPrompted();
+      if (mounted) await showUpdatePrompt(context);
+    }
   }
 
   /// Si ayer se rompió una racha, ofrece recuperarla con un anuncio recompensado.

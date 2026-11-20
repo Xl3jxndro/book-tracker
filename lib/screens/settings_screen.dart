@@ -18,6 +18,9 @@ import '../widgets/remove_ads_card.dart';
 import '../widgets/goodreads_import_actions.dart';
 import '../widgets/secret_dialogs.dart';
 import '../theme/app_colors.dart';
+import '../services/app_update.dart';
+import '../widgets/app_update_actions.dart';
+import '../widgets/whats_new_sheet.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -339,21 +342,45 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 25),
 
-          _sectionHeader("SOPORTE", context),
+          _sectionHeader("NOVEDADES", context),
           _settingsGroup([
-            // Solo donde Google lo exige (p. ej. UE): cambiar el consentimiento de anuncios
-            ValueListenableBuilder<bool>(
-              valueListenable: AdsConsent.privacyOptionsRequired,
-              builder: (context, required, _) => required
-                  ? _settingsTile(
-                      context,
-                      title: 'Opciones de privacidad de anuncios',
-                      subtitle: 'Cambia tu consentimiento para anuncios personalizados',
-                      leadingIcon: Icons.privacy_tip_outlined,
-                      iconColor: context.cs.primary,
-                      onTap: AdsConsent.showPrivacyOptions,
-                    )
-                  : const SizedBox.shrink(),
+            // Versión nueva en Google Play (solo si se instaló desde Play)
+            ValueListenableBuilder<UpdateStatus>(
+              valueListenable: AppUpdate.status,
+              builder: (context, status, _) {
+                final (title, subtitle) = switch (status) {
+                  UpdateStatus.available => ('Hay una versión nueva', 'Toca para actualizar'),
+                  UpdateStatus.downloading => ('Descargando actualización…', 'Puedes seguir usando la app'),
+                  UpdateStatus.downloaded => ('Actualización lista', 'Toca para reiniciar e instalarla'),
+                  UpdateStatus.checking => ('Buscando actualizaciones…', 'Versión $appVersion'),
+                  UpdateStatus.upToDate => ('Buscar actualizaciones', 'Versión $appVersion · Estás al día'),
+                  UpdateStatus.unknown => ('Buscar actualizaciones', 'Versión $appVersion'),
+                };
+                final highlight = status == UpdateStatus.available || status == UpdateStatus.downloaded;
+                return _settingsTile(
+                  context,
+                  title: title,
+                  subtitle: subtitle,
+                  leadingIcon: highlight ? Icons.system_update_rounded : Icons.update_rounded,
+                  iconColor: highlight ? context.app.accent : context.cs.primary,
+                  trailing: status == UpdateStatus.checking || status == UpdateStatus.downloading
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : highlight
+                          ? Container(width: 10, height: 10, decoration: BoxDecoration(color: context.app.accent, shape: BoxShape.circle))
+                          : null,
+                  onTap: status == UpdateStatus.downloaded
+                      ? AppUpdate.install
+                      : () => checkForUpdatesManually(context),
+                );
+              },
+            ),
+            _settingsTile(
+              context,
+              title: 'Notas de la versión',
+              subtitle: 'Lo nuevo en la versión ${WhatsNew.version} y anteriores',
+              leadingIcon: Icons.new_releases_outlined,
+              iconColor: context.cs.primary,
+              onTap: () => WhatsNew.showHistory(context),
             ),
             _settingsTile(
               context,
@@ -363,15 +390,34 @@ class SettingsScreen extends ConsumerWidget {
               iconColor: context.cs.primary,
               onTap: () => ref.read(tutorialProvider.notifier).resetTutorials(),
             ),
-            _settingsTile(
-              context,
-              title: 'Acerca de la App',
-              subtitle: 'Versión $appVersion',
-              leadingIcon: Icons.info_outline_rounded,
-              iconColor: context.cs.primary,
-              onTap: () => _showAboutApp(context, isDark, appVersion),
-            ),
           ], context),
+
+          const SizedBox(height: 25),
+
+          _sectionHeader("SOPORTE", context),
+          // Solo donde Google lo exige (p. ej. UE): cambiar el consentimiento de anuncios
+          ValueListenableBuilder<bool>(
+            valueListenable: AdsConsent.privacyOptionsRequired,
+            builder: (context, required, _) => _settingsGroup([
+              if (required)
+                _settingsTile(
+                  context,
+                  title: 'Opciones de privacidad de anuncios',
+                  subtitle: 'Cambia tu consentimiento para anuncios personalizados',
+                  leadingIcon: Icons.privacy_tip_outlined,
+                  iconColor: context.cs.primary,
+                  onTap: AdsConsent.showPrivacyOptions,
+                ),
+              _settingsTile(
+                context,
+                title: 'Acerca de la App',
+                subtitle: 'Versión $appVersion',
+                leadingIcon: Icons.info_outline_rounded,
+                iconColor: context.cs.primary,
+                onTap: () => _showAboutApp(context, isDark, appVersion),
+              ),
+            ], context),
+          ),
         ],
       ),
     );

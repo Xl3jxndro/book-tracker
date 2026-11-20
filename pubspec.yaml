@@ -76,6 +76,7 @@ dependencies:
   material_ui: ^1.11.1
   dynamic_color: ^2.1.0                 # Colores del sistema (Material You)
   material_color_utilities: ^0.13.0
+  in_app_update: ^5.0.0
 
 dev_dependencies:
   flutter_test:
