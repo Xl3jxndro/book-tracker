@@ -22,6 +22,7 @@ import '../widgets/empty_state_widget.dart';
 import '../providers/tutorial_provider.dart';
 import '../providers/daily_goal_provider.dart';
 import '../services/voice_service.dart';
+import '../theme/app_colors.dart';
 
 enum NoteFilter { recent, page, length, favorites }
 
@@ -291,8 +292,8 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                     onDismissed: (_) => _deleteNoteWithUndo(note),
                     background: Container(
                       alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 20),
-                      decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(24)),
-                      child: const Icon(Icons.delete_forever, color: Colors.white)
+                      decoration: BoxDecoration(color: context.cs.error, borderRadius: BorderRadius.circular(24)),
+                      child: Icon(Icons.delete_forever, color: context.cs.onError)
                     ),
                     child: GestureDetector(
                     // Tocar la nota la abre para editarla
@@ -323,7 +324,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                                   const SizedBox(width: 8),
                                   _buildActionIcon(
                                     icon: note.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
-                                    color: Colors.amber.shade700,
+                                    color: context.app.rating,
                                     onTap: () => _toggleFavorite(note),
                                   ),
                                   const SizedBox(width: 8),
@@ -437,7 +438,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(12)),
-                child: Text('$count', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                child: Text('$count', style: TextStyle(color: scheme.onPrimary, fontWeight: FontWeight.bold, fontSize: 12)),
               ),
             ],
             const Spacer(),
@@ -507,11 +508,11 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Text('Tu Progreso', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900)),
-          if (isFinished) TextButton.icon(onPressed: () => _showResetConfirmation(context, ref, book), icon: const Icon(Icons.replay, color: Colors.orange), label: const Text('RELEER', style: TextStyle(color: Colors.orange)))
+          if (isFinished) TextButton.icon(onPressed: () => _showResetConfirmation(context, ref, book), icon: Icon(Icons.replay, color: context.app.accentText), label: const Text('RELEER', style: TextStyle(color: Colors.orange)))
           else TextButton.icon(onPressed: () => _showUpdateDialog(context, ref, book), icon: const Icon(Icons.edit), label: const Text('Actualizar')),
         ]),
         const SizedBox(height: 12),
-        LinearProgressIndicator(value: progress, minHeight: 14, borderRadius: BorderRadius.circular(20), color: isFinished ? Colors.greenAccent : scheme.primary),
+        LinearProgressIndicator(value: progress, minHeight: 14, borderRadius: BorderRadius.circular(20), color: isFinished ? context.app.statusFinished : scheme.primary),
         const SizedBox(height: 8),
         Text('${book.readPages} de ${book.totalPages} páginas (${(progress * 100).toInt()}%)'),
         _buildReadingDates(book, scheme, theme),
@@ -611,7 +612,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(color: scheme.primary.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(24), border: Border.all(color: scheme.primary.withValues(alpha: 0.1))),
           child: Row(children: [
-            CircularProgressIndicator(value: progress, strokeWidth: 6, color: progress >= 1 ? Colors.greenAccent : scheme.primary),
+            CircularProgressIndicator(value: progress, strokeWidth: 6, color: progress >= 1 ? context.app.statusFinished : scheme.primary),
             const SizedBox(width: 20),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -633,12 +634,12 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       width: double.infinity, padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(color: scheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(32), border: Border.all(color: scheme.primary.withValues(alpha: 0.2))),
       child: Column(children: [
-        const Icon(Icons.auto_awesome, color: Colors.amber, size: 48),
+        Icon(Icons.auto_awesome, color: context.app.rating, size: 48),
         const SizedBox(height: 16),
         const Text("¡LECTURA COMPLETADA!", style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2)),
         const SizedBox(height: 12),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (i) => IconButton(
-          icon: Icon(i < (book.rating ?? 0) ? Icons.star : Icons.star_border, color: Colors.amber, size: 32),
+          icon: Icon(i < (book.rating ?? 0) ? Icons.star : Icons.star_border, color: context.app.rating, size: 32),
           onPressed: () => ref.read(databaseProvider).updateBook(book.copyWith(rating: Value(i + 1))),
         ))),
         const SizedBox(height: 8),
@@ -653,18 +654,18 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 0.06),
+        color: context.app.statusAbandoned.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.red.withValues(alpha: 0.18)),
+        border: Border.all(color: context.app.statusAbandoned.withValues(alpha: 0.25)),
       ),
       child: Column(children: [
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(Icons.bookmark_remove_rounded, color: Colors.red.shade400),
+          Icon(Icons.bookmark_remove_rounded, color: context.app.statusAbandoned),
           const SizedBox(width: 8),
           const Text('ABANDONADO', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2)),
         ]),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (i) => IconButton(
-          icon: Icon(i < (book.rating ?? 0) ? Icons.star : Icons.star_border, color: Colors.amber, size: 28),
+          icon: Icon(i < (book.rating ?? 0) ? Icons.star : Icons.star_border, color: context.app.rating, size: 28),
           onPressed: () => ref.read(databaseProvider).updateBook(book.copyWith(rating: Value(i + 1))),
         ))),
         _buildReviewSection(book, scheme, theme),
@@ -710,7 +711,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
 
   void _toggleFavorite(Note note) {
     ref.read(databaseProvider).setNoteFavorite(note.id, !note.isFavorite);
-    _showFeedback(note.isFavorite ? 'Quitada de favoritas' : 'Guardada en favoritas ★', Colors.amber.shade800);
+    _showFeedback(note.isFavorite ? 'Quitada de favoritas' : 'Guardada en favoritas ★', context.app.rating);
   }
 
   /// Borra la nota y ofrece deshacerlo durante unos segundos.
@@ -782,10 +783,10 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       content: const Text('Se perderán todas tus notas.'),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
-        ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.red), onPressed: () async {
+        ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: context.cs.error, foregroundColor: context.cs.onError), onPressed: () async {
           await db.deleteBookComplete(book);
           if (context.mounted) { Navigator.pop(context); Navigator.pop(context); }
-        }, child: const Text('ELIMINAR', style: TextStyle(color: Colors.white))),
+        }, child: const Text('ELIMINAR')),
       ],
     ));
   }
@@ -949,17 +950,16 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
   }
 
   Widget _buildTutorialBalloon({required String title, required String description, required ThemeData theme}) {
-    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E1E) : Colors.white, borderRadius: BorderRadius.circular(24)),
+      decoration: BoxDecoration(color: context.cs.surfaceContainerLow, borderRadius: BorderRadius.circular(24)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isDark ? Colors.white : Colors.black87)),
+          Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: context.cs.onSurface)),
           const SizedBox(height: 8),
-          Text(description, style: TextStyle(fontSize: 14, color: isDark ? Colors.white70 : Colors.black54)),
+          Text(description, style: TextStyle(fontSize: 14, color: context.cs.onSurfaceVariant)),
         ],
       ),
     );

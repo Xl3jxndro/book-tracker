@@ -8,6 +8,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'screens/main_wrapper.dart';
 import 'screens/login_screen.dart';
 import 'providers/theme_provider.dart';
+import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/database_provider.dart';
 import 'providers/current_book_provider.dart';
@@ -174,22 +175,12 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
     if (auth.canEnterApp) _hasEnteredApp = true;
     final isRelocked = _hasEnteredApp && !auth.isLoading && !auth.canEnterApp;
 
-    final lightScheme = ColorScheme.fromSeed(
-      seedColor: Colors.indigo,
-      brightness: Brightness.light,
-    );
-
-    final darkScheme = ColorScheme.fromSeed(
-      seedColor: Colors.indigo,
-      brightness: Brightness.dark,
-    );
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Book Tracker',
       themeMode: mode,
-      theme: ref.watch(appThemeProvider(lightScheme)),
-      darkTheme: ref.watch(appThemeProvider(darkScheme)),
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
 
       // Lógica de enrutamiento principal:
       home: auth.isLoading

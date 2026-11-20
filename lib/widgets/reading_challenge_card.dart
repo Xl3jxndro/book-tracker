@@ -7,6 +7,7 @@ import '../database/database.dart';
 import '../providers/today_provider.dart';
 import '../providers/yearly_goal_provider.dart';
 import '../services/reading_challenge.dart';
+import '../theme/app_colors.dart';
 
 /// Tarjeta del reto anual en Estadísticas: crear la meta, ver el progreso
 /// (adelantado/atrasado) y la lista de libros terminados por año.
@@ -19,13 +20,12 @@ class ReadingChallengeCard extends ConsumerWidget {
     final today = ref.watch(todayProvider);
     final year = today.year;
     final goal = ref.watch(yearlyGoalProvider(year));
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final finishedThisYear = ReadingChallenge.finishedIn(books, year).length;
 
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
+        color: context.cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(30),
       ),
       child: goal == null
@@ -66,13 +66,13 @@ class ReadingChallengeCard extends ConsumerWidget {
           controller: scroll,
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
           children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(10)))),
+            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(10)))),
             const SizedBox(height: 20),
             const Text('Libros terminados', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
             if (byYear.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(top: 24),
-                child: Text('Aún no hay libros terminados con fecha.', style: TextStyle(color: Colors.grey)),
+              Padding(
+                padding: const EdgeInsets.only(top: 24),
+                child: Text('Aún no hay libros terminados con fecha.', style: TextStyle(color: context.cs.onSurfaceVariant)),
               ),
             for (final entry in byYear.entries) ...[
               Padding(
@@ -84,10 +84,10 @@ class ReadingChallengeCard extends ConsumerWidget {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   dense: true,
-                  leading: const Icon(Icons.check_circle_rounded, color: Colors.green),
+                  leading: Icon(Icons.check_circle_rounded, color: context.app.statusFinished),
                   title: Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
                   subtitle: Text(book.author, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  trailing: Text(fmt.format(book.finishedAt!), style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  trailing: Text(fmt.format(book.finishedAt!), style: TextStyle(color: context.cs.onSurfaceVariant, fontSize: 12)),
                 ),
             ],
             if (withoutDate > 0)
@@ -96,7 +96,7 @@ class ReadingChallengeCard extends ConsumerWidget {
                 child: Text(
                   '$withoutDate ${withoutDate == 1 ? 'libro terminado no tiene' : 'libros terminados no tienen'} fecha de fin. '
                   'Puedes añadirla en el detalle de cada libro para que cuente en su año.',
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  style: TextStyle(color: context.cs.onSurfaceVariant, fontSize: 12),
                 ),
               ),
           ],
@@ -120,7 +120,7 @@ class _NoGoal extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Icon(Icons.emoji_events_outlined, color: Colors.amber),
+            Icon(Icons.emoji_events_outlined, color: context.app.rating),
             const SizedBox(width: 10),
             Text('Reto de lectura $year', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
           ],
@@ -130,7 +130,7 @@ class _NoGoal extends StatelessWidget {
           finished == 0
               ? 'Ponte una meta de libros para este año.'
               : 'Llevas $finished ${finished == 1 ? 'libro terminado' : 'libros terminados'} este año. ¿Te pones una meta?',
-          style: const TextStyle(color: Colors.grey, fontSize: 13),
+          style: TextStyle(color: context.cs.onSurfaceVariant, fontSize: 13),
         ),
         const SizedBox(height: 16),
         Row(
@@ -154,9 +154,9 @@ class _Progress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final done = progress.isCompleted;
-    final color = done ? Colors.amber : Colors.indigoAccent;
+    final color = done ? context.app.rating : context.app.accent;
     final ahead = progress.booksAhead;
-    final messageColor = done ? Colors.amber.shade700 : (ahead <= -1 ? Colors.orange : Colors.green);
+    final messageColor = done ? context.app.rating : (ahead <= -1 ? context.app.streak : context.app.statusFinished);
 
     return Row(
       children: [
@@ -176,12 +176,12 @@ class _Progress extends StatelessWidget {
                 ),
               ),
               done
-                  ? const Icon(Icons.emoji_events_rounded, color: Colors.amber, size: 40)
+                  ? Icon(Icons.emoji_events_rounded, color: context.app.rating, size: 40)
                   : Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text('${progress.finished}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 26)),
-                        Text('de ${progress.goal}', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                        Text('de ${progress.goal}', style: TextStyle(color: context.cs.onSurfaceVariant, fontSize: 11)),
                       ],
                     ),
             ],
@@ -205,7 +205,7 @@ class _Progress extends StatelessWidget {
               ),
               Text(
                 done ? '${progress.finished} de ${progress.goal} libros' : '${progress.goal - progress.finished} por leer para tu meta',
-                style: const TextStyle(color: Colors.grey, fontSize: 13),
+                style: TextStyle(color: context.cs.onSurfaceVariant, fontSize: 13),
               ),
               const SizedBox(height: 6),
               Text(progress.message, style: TextStyle(fontWeight: FontWeight.w800, color: messageColor)),
@@ -295,7 +295,7 @@ class _GoalDialogState extends State<_GoalDialog> {
         if (widget.current != null)
           TextButton(
             onPressed: () => Navigator.pop(context, const _GoalResult(null)),
-            child: const Text('QUITAR RETO', style: TextStyle(color: Colors.redAccent)),
+            child: Text('QUITAR RETO', style: TextStyle(color: context.cs.error)),
           ),
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
         ElevatedButton(

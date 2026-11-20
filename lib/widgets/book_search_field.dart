@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../services/book_api_service.dart';
 import '../services/isbn.dart';
+import '../theme/app_colors.dart';
 
 /// Buscador de libros (Open Library y, si hay clave, Google Books): muestra resultados mientras se escribe y avisa
 /// con [onSelected] cuando el usuario elige uno.
@@ -121,7 +122,7 @@ class _BookSearchFieldState extends State<BookSearchField> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final muted = isDark ? Colors.white38 : Colors.black38;
+    final muted = context.cs.onSurfaceVariant;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,7 +169,7 @@ class _BookSearchFieldState extends State<BookSearchField> {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.03),
+              color: context.cs.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Column(

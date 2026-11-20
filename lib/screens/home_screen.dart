@@ -20,6 +20,7 @@ import '../services/library_ad_layout.dart';
 import 'book_details_screen.dart';
 import 'quotes_screen.dart';
 import '../database/database.dart';
+import '../theme/app_colors.dart';
 
 // --- PROVIDERS DE FILTRADO Y ORDENAMIENTO ---
 enum BookSortOption { recentlyAdded, mostProgress, longest, alphabetical }
@@ -187,10 +188,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Color _getStatusColor(dynamic statusValue, ThemeData theme) {
     switch (statusValue) {
-      case 'status_0': case 0: return Colors.blue.shade600;
-      case 'status_1': case 1: return Colors.orange.shade600;
-      case 'status_2': case 2: return Colors.green.shade600;
-      case 'status_3': case 3: return Colors.red.shade600;
+      case 'status_0': case 0: return context.app.statusPending;
+      case 'status_1': case 1: return context.app.statusReading;
+      case 'status_2': case 2: return context.app.statusFinished;
+      case 'status_3': case 3: return context.app.statusAbandoned;
       default: return theme.colorScheme.primary;
     }
   }
@@ -288,7 +289,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     key: const ValueKey('title'),
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontSize: 20, fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
+                      color: context.cs.onSurface,
                       letterSpacing: -0.5,
                     ))
                 : _buildSearchField(ref, theme),
@@ -381,7 +382,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         decoration: InputDecoration(
           hintText: 'Título o autor...',
           hintStyle: TextStyle(
-            color: theme.brightness == Brightness.dark ? Colors.white38 : Colors.black38, 
+            color: context.cs.onSurfaceVariant, 
             fontSize: 18,
           ),
           border: InputBorder.none,
@@ -451,7 +452,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2))),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
             Text("Ordenar libros", style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
@@ -524,7 +525,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     child: Row(
                       children: [
-                        Text(labels[i], style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : activeColor)),
+                        Text(labels[i], style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isSelected ? context.cs.surface : activeColor)),
                         const SizedBox(width: 6),
                         Text('$count', style: TextStyle(fontSize: 10, color: isSelected ? Colors.white70 : activeColor.withValues(alpha: 0.6))),
                       ],
@@ -550,8 +551,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         background: Container(
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 20),
-          decoration: BoxDecoration(color: Colors.redAccent.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(20)),
-          child: const Icon(Icons.delete_sweep_rounded, color: Colors.white, size: 30),
+          decoration: BoxDecoration(color: context.cs.error, borderRadius: BorderRadius.circular(20)),
+          child: Icon(Icons.delete_sweep_rounded, color: context.cs.onError, size: 30),
         ),
         confirmDismiss: (direction) async {
           HapticFeedback.heavyImpact();
@@ -564,7 +565,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               actions: [
                 TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCELAR')),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                  style: ElevatedButton.styleFrom(backgroundColor: context.cs.error, foregroundColor: context.cs.onError),
                   onPressed: () => Navigator.pop(context, true), 
                   child: const Text('ELIMINAR')
                 ),
@@ -653,11 +654,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 gradient: LinearGradient(
-                  colors: [theme.colorScheme.primary, theme.colorScheme.primary.withValues(alpha: 0.8)],
+                  colors: [context.app.accent, context.app.accent],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                    color: context.app.accent.withValues(alpha: 0.3),
                     blurRadius: 15,
                     offset: const Offset(0, 8),
                   )
@@ -666,15 +667,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+                  Icon(Icons.add_rounded, color: context.app.onAccent, size: 28),
                   // 3. Lógica Dinámica de Texto:
                   // Solo mostramos el texto y el espacio si NO es una pantalla compacta
                   if (!isCompact) ...[
                     const SizedBox(width: 10),
-                    const Text(
+                    Text(
                       'Nuevo Libro',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: context.app.onAccent,
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.5,

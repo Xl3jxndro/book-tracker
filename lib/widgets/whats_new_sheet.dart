@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../theme/app_colors.dart';
 
 /// Novedades de la versión, para quien actualiza (los usuarios nuevos ven la
 /// bienvenida en su lugar). Al publicar otra versión con novedades, cambiar
@@ -65,7 +66,7 @@ class WhatsNewSheet extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 12),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[500], borderRadius: BorderRadius.circular(10))),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(10))),
             Expanded(
               child: ListView(
                 controller: scroll,

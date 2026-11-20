@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../database/database.dart';
 import '../providers/database_provider.dart';
+import '../theme/app_colors.dart';
 
 /// Resumen de la lectura terminada: "12 días · 6 h 30 min · 417 páginas".
 String finishSummary(Book book) {
@@ -109,7 +110,7 @@ class _FinishReviewSheetState extends ConsumerState<FinishReviewSheet> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[500], borderRadius: BorderRadius.circular(10))),
+                Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(10))),
                 const SizedBox(height: 20),
                 Text(widget.celebrate ? '🎉' : (_abandoned ? '📕' : '✍️'), style: const TextStyle(fontSize: 44)),
                 const SizedBox(height: 8),
@@ -135,7 +136,7 @@ class _FinishReviewSheetState extends ConsumerState<FinishReviewSheet> {
                     return IconButton(
                       tooltip: '$value ${value == 1 ? 'estrella' : 'estrellas'}',
                       iconSize: 38,
-                      icon: Icon(value <= _rating ? Icons.star_rounded : Icons.star_outline_rounded, color: Colors.amber.shade600),
+                      icon: Icon(value <= _rating ? Icons.star_rounded : Icons.star_outline_rounded, color: context.app.rating),
                       onPressed: () {
                         HapticFeedback.selectionClick();
                         setState(() => _rating = value);
@@ -145,7 +146,7 @@ class _FinishReviewSheetState extends ConsumerState<FinishReviewSheet> {
                 ),
                 SizedBox(
                   height: 20,
-                  child: Text(_ratingLabels[_rating], style: TextStyle(color: Colors.amber.shade800, fontWeight: FontWeight.w700)),
+                  child: Text(_ratingLabels[_rating], style: TextStyle(color: context.app.rating, fontWeight: FontWeight.w700)),
                 ),
                 const SizedBox(height: 12),
                 TextField(

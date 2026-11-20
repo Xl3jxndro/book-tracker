@@ -35,7 +35,7 @@ class YearSummaryCard extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF1E1B4B), Color(0xFF4338CA), Color(0xFF7C3AED)],
+            colors: [Color(0xFF1F1426), Color(0xFF2B1C33), Color(0xFF47334F)],
           ),
         ),
         child: Padding(
@@ -73,7 +73,7 @@ class YearSummaryCard extends StatelessWidget {
                       value: (s.booksFinished / goal).clamp(0.0, 1.0),
                       minHeight: 10,
                       backgroundColor: Colors.white24,
-                      color: goalDone ? const Color(0xFFFBBF24) : Colors.white,
+                      color: goalDone ? const Color(0xFFFF8C12) : Colors.white,
                     ),
                   ),
                   const SizedBox(height: 6),

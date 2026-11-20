@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../services/isbn.dart';
 import '../widgets/isbn_help.dart';
+import '../theme/app_colors.dart';
 
 /// Escanea el código de barras de un libro y devuelve su ISBN-13
 /// (`Navigator.pop(context, isbn)`), o `null` si se cancela.
@@ -124,7 +125,7 @@ class _IsbnScannerScreenState extends State<IsbnScannerScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(12)),
-                    child: Text(_hint ?? '', textAlign: TextAlign.center, style: const TextStyle(color: Colors.orangeAccent)),
+                    child: Text(_hint ?? '', textAlign: TextAlign.center, style: TextStyle(color: context.app.streak)),
                   ),
                 ),
               ],

@@ -6,6 +6,7 @@ import '../providers/streak_save_provider.dart';
 import '../services/ads_gate.dart';
 import '../services/rewarded_ads.dart';
 import '../services/streak_save.dart';
+import '../theme/app_colors.dart';
 
 /// "Perdiste tu racha de N días: ¿la recuperas viendo un anuncio?".
 Future<void> showStreakSaveSheet(
@@ -96,15 +97,15 @@ class _StreakSaveSheetState extends ConsumerState<StreakSaveSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[500], borderRadius: BorderRadius.circular(10))),
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(10))),
               const SizedBox(height: 24),
               Container(
                 width: 84,
                 height: 84,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: LinearGradient(colors: [Colors.orange.shade400, Colors.deepOrange.shade600]),
-                  boxShadow: [BoxShadow(color: Colors.deepOrange.withValues(alpha: 0.35), blurRadius: 24, offset: const Offset(0, 10))],
+                  gradient: LinearGradient(colors: [context.app.streak.withValues(alpha: 0.8), context.app.streak]),
+                  boxShadow: [BoxShadow(color: context.app.streak.withValues(alpha: 0.35), blurRadius: 24, offset: const Offset(0, 10))],
                 ),
                 child: const Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 46),
               ),
@@ -140,8 +141,8 @@ class _StreakSaveSheetState extends ConsumerState<StreakSaveSheet> {
                       : (widget.free ? 'Salvar mi racha' : 'Ver anuncio y salvar mi racha')),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
-                    backgroundColor: Colors.deepOrange,
-                    foregroundColor: Colors.white,
+                    backgroundColor: context.app.streak,
+                    foregroundColor: context.app.onAccent,
                   ),
                 ),
               ),

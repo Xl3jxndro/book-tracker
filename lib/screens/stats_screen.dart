@@ -17,6 +17,7 @@ import '../providers/streak_save_provider.dart';
 import '../services/year_summary.dart';
 import '../providers/yearly_goal_provider.dart';
 import '../database/database.dart';
+import '../theme/app_colors.dart';
 
 class StatsScreen extends ConsumerStatefulWidget {
   const StatsScreen({super.key});
@@ -82,7 +83,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0A0A0A) : const Color(0xFFFBFBFC),
+      backgroundColor: context.cs.surface,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -91,7 +92,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
             style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 28,
-                color: isDark ? Colors.white : Colors.black,
+                color: context.cs.onSurface,
                 letterSpacing: -1)),
         actions: [
           // Compartir "Mi año lector" como imagen
@@ -160,11 +161,11 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                     showStreakSaveSheet(context, StreakSaveOffer(5, DateTime(now.year, now.month, now.day - 1)));
                   }
                 : null,
-            child: _miniStatCard("Racha", "$streak días", Icons.local_fire_department_rounded, Colors.orangeAccent, isDark),
+            child: _miniStatCard("Racha", "$streak días", Icons.local_fire_department_rounded, context.app.streak, isDark),
           ),
-          _miniStatCard("Leídos", completed.toString(), Icons.check_circle_rounded, Colors.indigoAccent, isDark),
-          _miniStatCard("Páginas", pages.toString(), Icons.auto_stories_rounded, Colors.blueAccent, isDark),
-          _miniStatCard("Tiempo", _formatReadingTime(seconds), Icons.timer_rounded, Colors.teal, isDark),
+          _miniStatCard("Leídos", completed.toString(), Icons.check_circle_rounded, context.app.accent, isDark),
+          _miniStatCard("Páginas", pages.toString(), Icons.auto_stories_rounded, context.app.statusPending, isDark),
+          _miniStatCard("Tiempo", _formatReadingTime(seconds), Icons.timer_rounded, context.cs.primary, isDark),
         ],
       ),
     );
@@ -175,9 +176,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+        color: context.cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+        border: Border.all(color: context.cs.outlineVariant),
       ),
       child: Row(
         children: [
@@ -188,7 +189,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-              Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w600)),
+              Text(label, style: TextStyle(color: context.cs.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600)),
             ],
           )
         ],
@@ -202,17 +203,17 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
       child: Container(
         height: 50,
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+          color: context.cs.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(25),
         ),
         child: TabBar(
           controller: _tabController,
           indicator: BoxDecoration(
-            color: isDark ? Colors.white : Colors.black,
+            color: context.cs.onSurface,
             borderRadius: BorderRadius.circular(25),
           ),
-          labelColor: isDark ? Colors.black : Colors.white,
-          unselectedLabelColor: Colors.grey,
+          labelColor: context.cs.surface,
+          unselectedLabelColor: context.cs.onSurfaceVariant,
           labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, letterSpacing: 1),
           indicatorSize: TabBarIndicatorSize.tab,
           dividerColor: Colors.transparent,
@@ -270,7 +271,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
       children: [
         Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
         const Spacer(),
-        Container(width: 40, height: 2, color: isDark ? Colors.white10 : Colors.black12),
+        Container(width: 40, height: 2, color: context.cs.outlineVariant),
       ],
     );
   }
@@ -292,7 +293,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
     return Container(
       padding: const EdgeInsets.fromLTRB(15, 20, 20, 15),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
+        color: context.cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(30),
       ),
       child: Column(
@@ -302,7 +303,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
             padding: const EdgeInsets.only(left: 45, bottom: 25),
             child: Text(
               DateFormat('MMMM yyyy', 'es').format(now).toUpperCase(),
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.indigoAccent, letterSpacing: 1),
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: context.app.accent, letterSpacing: 1),
             ),
           ),
           Row(
@@ -315,16 +316,16 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                   children: [
                     RotatedBox(
                       quarterTurns: 3,
-                      child: Text("MINUTOS", style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.grey.withValues(alpha: 0.6), letterSpacing: 1.5)),
+                      child: Text("MINUTOS", style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: context.cs.onSurfaceVariant.withValues(alpha: 0.6), letterSpacing: 1.5)),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('$maxMin', style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.w600)),
-                          Text('${(maxMin / 2).round()}', style: const TextStyle(fontSize: 9, color: Colors.grey)),
-                          const Text('0', style: TextStyle(fontSize: 9, color: Colors.grey)),
+                          Text('$maxMin', style: TextStyle(fontSize: 9, color: context.cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                          Text('${(maxMin / 2).round()}', style: TextStyle(fontSize: 9, color: context.cs.onSurfaceVariant)),
+                          Text('0', style: TextStyle(fontSize: 9, color: context.cs.onSurfaceVariant)),
                         ],
                       ),
                     ),
@@ -339,7 +340,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                     children: [
                       Column(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(3, (i) => Container(height: 0.5, color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05))),
+                        children: List.generate(3, (i) => Container(height: 0.5, color: context.cs.outlineVariant)),
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -374,8 +375,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                                     height: barHeight,
                                     decoration: BoxDecoration(
                                       color: isSelected
-                                          ? Colors.orangeAccent
-                                          : (isToday ? Colors.indigoAccent : (sec > 0 ? (isDark ? Colors.white70 : Colors.black87) : Colors.grey.withValues(alpha: 0.15))),
+                                          ? context.app.streak
+                                          : (isToday ? context.app.accent : (sec > 0 ? (context.cs.onSurfaceVariant) : context.cs.onSurfaceVariant.withValues(alpha: 0.15))),
                                       borderRadius: BorderRadius.circular(2),
                                     ),
                                   ),
@@ -385,12 +386,12 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                                       child: Material(
                                         elevation: 4,
                                         borderRadius: BorderRadius.circular(6),
-                                        color: isDark ? Colors.white : Colors.black,
+                                        color: context.cs.onSurface,
                                         child: Padding(
                                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                                           child: Text(
                                             "$mins m",
-                                            style: TextStyle(color: isDark ? Colors.black : Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                            style: TextStyle(color: context.cs.surface, fontSize: 9, fontWeight: FontWeight.bold),
                                           ),
                                         ),
                                       ),
@@ -412,18 +413,18 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('1', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
-                Text('${(daysInMonth / 2).round()}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                Text('$daysInMonth', style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+                Text('1', style: TextStyle(fontSize: 10, color: context.cs.onSurfaceVariant, fontWeight: FontWeight.bold)),
+                Text('${(daysInMonth / 2).round()}', style: TextStyle(fontSize: 10, color: context.cs.onSurfaceVariant)),
+                Text('$daysInMonth', style: TextStyle(fontSize: 10, color: context.cs.onSurfaceVariant, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
-          const Center(
+          Center(
             child: Padding(
-              padding: EdgeInsets.only(top: 12),
+              padding: const EdgeInsets.only(top: 12),
               child: Text(
                 "DÍA DEL MES",
-                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 2.5, color: Colors.grey),
+                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 2.5, color: context.cs.onSurfaceVariant),
               ),
             ),
           )
@@ -447,7 +448,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
     return Container(
       padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
+        color: context.cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(30),
       ),
       child: Column(
@@ -455,7 +456,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
           SizedBox(
             height: 140,
             width: 140,
-            child: CustomPaint(painter: PieChartPainter(sortedGenres, total, [Colors.indigoAccent, Colors.blueAccent, Colors.tealAccent, Colors.orangeAccent])),
+            child: CustomPaint(painter: PieChartPainter(sortedGenres, total, [context.app.accent, context.cs.primary, context.app.statusPending, context.app.statusFinished], context.cs.surfaceContainerHighest)),
           ),
           const SizedBox(height: 25),
           Wrap(
@@ -465,7 +466,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
             children: sortedGenres.take(4).map((e) => Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                    color: context.cs.surfaceContainerHigh,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text("${e.key} ${total > 0 ? ((e.value / total) * 100).toInt() : 0}%", style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
@@ -514,7 +515,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
             fontSize: 10, 
             fontWeight: FontWeight.w900, 
             letterSpacing: 1.5,
-            color: isDark ? Colors.white38 : Colors.black38
+            color: context.cs.onSurfaceVariant
           )
         ),
       ),
@@ -524,7 +525,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
   Widget _achievementRow(String title, String desc, num current, num target, IconData icon, bool isDark, {bool isLegendary = false}) {
     final bool unlocked = current >= target;
     final double progress = (current / target).clamp(0.0, 1.0);
-    final Color activeColor = isLegendary ? Colors.amber : Colors.indigoAccent;
+    final Color activeColor = isLegendary ? context.app.rating : context.app.accent;
     
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
@@ -533,10 +534,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
         decoration: BoxDecoration(
           color: unlocked 
               ? activeColor.withValues(alpha: isDark ? 0.08 : 0.03) 
-              : (isDark ? Colors.white.withValues(alpha: 0.02) : Colors.black.withValues(alpha: 0.01)),
+              : (context.cs.surfaceContainerHigh),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: unlocked ? activeColor.withValues(alpha: 0.2) : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)), 
+            color: unlocked ? activeColor.withValues(alpha: 0.2) : (context.cs.outlineVariant), 
             width: 1
           ),
         ),
@@ -548,12 +549,12 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: unlocked ? activeColor.withValues(alpha: 0.15) : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.03)),
+                    color: unlocked ? activeColor.withValues(alpha: 0.15) : (context.cs.outlineVariant),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     unlocked ? icon : Icons.lock_outline_rounded, 
-                    color: unlocked ? activeColor : Colors.grey.withValues(alpha: 0.5), 
+                    color: unlocked ? activeColor : context.cs.onSurfaceVariant.withValues(alpha: 0.5), 
                     size: 22
                   ),
                 ),
@@ -566,14 +567,14 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                         style: TextStyle(
                           fontWeight: FontWeight.w800, 
                           fontSize: 15, 
-                          color: unlocked ? (isDark ? Colors.white : Colors.black) : Colors.grey,
+                          color: unlocked ? (context.cs.onSurface) : context.cs.onSurfaceVariant,
                           letterSpacing: -0.3
                         )
                       ),
                       Text(desc, 
                         style: TextStyle(
                           fontSize: 12, 
-                          color: isDark ? Colors.white60 : Colors.black54
+                          color: context.cs.onSurfaceVariant
                         )
                       ),
                     ],
@@ -583,7 +584,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                   Icon(Icons.stars_rounded, color: activeColor, size: 20)
                 else
                   Text("${(progress * 100).toInt()}%", 
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: context.cs.onSurfaceVariant)
                   ),
               ],
             ),
@@ -594,7 +595,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 6,
-                backgroundColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                backgroundColor: context.cs.outlineVariant,
                 valueColor: AlwaysStoppedAnimation<Color>(
                   unlocked ? activeColor : activeColor.withValues(alpha: 0.4)
                 ),
@@ -613,7 +614,6 @@ class ReadingHeatMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final Map<DateTime, int> data = {};
     final Set<DateTime> daysWithTime = {};
     for (var s in sessions) {
@@ -645,7 +645,7 @@ class ReadingHeatMap extends StatelessWidget {
                       return Container(
                         width: 12, height: 12, margin: const EdgeInsets.all(1),
                         decoration: BoxDecoration(
-                          color: isFuture ? Colors.transparent : (!isActive ? (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)) : Colors.indigoAccent.withValues(alpha: (p/30).clamp(0.2, 1.0))),
+                          color: isFuture ? Colors.transparent : (!isActive ? (context.cs.outlineVariant) : context.app.accent.withValues(alpha: (p/30).clamp(0.2, 1.0))),
                           borderRadius: BorderRadius.circular(2.5),
                         ),
                       );
@@ -657,14 +657,14 @@ class ReadingHeatMap extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("Menos", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                  Text("Menos", style: TextStyle(fontSize: 10, color: context.cs.onSurfaceVariant)),
                   const SizedBox(width: 8),
-                  _buildLegendSquare(isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
-                  _buildLegendSquare(Colors.indigoAccent.withValues(alpha: 0.3)),
-                  _buildLegendSquare(Colors.indigoAccent.withValues(alpha: 0.6)),
-                  _buildLegendSquare(Colors.indigoAccent),
+                  _buildLegendSquare(context.cs.outlineVariant),
+                  _buildLegendSquare(context.app.accent.withValues(alpha: 0.3)),
+                  _buildLegendSquare(context.app.accent.withValues(alpha: 0.6)),
+                  _buildLegendSquare(context.app.accent),
                   const SizedBox(width: 8),
-                  const Text("Más", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                  Text("Más", style: TextStyle(fontSize: 10, color: context.cs.onSurfaceVariant)),
                 ],
               ),
             ],
@@ -686,7 +686,8 @@ class PieChartPainter extends CustomPainter {
   final List<MapEntry<String, int>> data;
   final int total;
   final List<Color> colors;
-  PieChartPainter(this.data, this.total, this.colors);
+  final Color trackColor;
+  PieChartPainter(this.data, this.total, this.colors, this.trackColor);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -694,7 +695,7 @@ class PieChartPainter extends CustomPainter {
     final rect = Rect.fromCircle(center: Offset(size.width / 2, size.height / 2), radius: size.width / 2);
     double startAngle = -math.pi / 2;
     if (total == 0) {
-      paint.color = Colors.grey.withValues(alpha: 0.2);
+      paint.color = trackColor;
       canvas.drawArc(rect, 0, 2 * math.pi, false, paint);
       return;
     }

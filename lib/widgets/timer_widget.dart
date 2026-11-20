@@ -11,6 +11,7 @@ import '../services/session_goal.dart';
 import '../services/timer_persistence.dart';
 import '../services/home_widget_sync.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import '../theme/app_colors.dart';
 
 class TimerWidget extends ConsumerStatefulWidget {
   final Book book;
@@ -314,17 +315,16 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isDark ? scheme.surfaceContainerHighest.withValues(alpha: 0.1) : scheme.surfaceContainerLow,
+        color: scheme.surfaceContainer,
         borderRadius: BorderRadius.circular(30),
         border: Border.all(
           color: (_isRunning || _isPaused) 
             ? scheme.primary.withValues(alpha: 0.4) 
-            : (isDark ? Colors.white10 : Colors.grey.shade200)
+            : context.cs.outlineVariant
         ),
       ),
       child: Column(
@@ -337,7 +337,7 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
                 style: TextStyle(
                   fontSize: 12, 
                   fontWeight: FontWeight.bold, 
-                  color: _isPaused ? Colors.orangeAccent : scheme.primary, 
+                  color: _isPaused ? context.app.streak : scheme.primary, 
                   letterSpacing: 1.5
                 )
               ),
@@ -377,8 +377,8 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _isRunning ? Colors.orangeAccent.withValues(alpha: 0.2) : scheme.primary,
-                    foregroundColor: _isRunning ? Colors.orangeAccent : scheme.onPrimary,
+                    backgroundColor: _isRunning ? context.app.streak.withValues(alpha: 0.2) : scheme.primary,
+                    foregroundColor: _isRunning ? context.app.streak : scheme.onPrimary,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -501,12 +501,12 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
                   }
                   navigator.pop();
                 },
-                child: const Text('DESCARTAR', style: TextStyle(color: Colors.grey)),
+                child: Text('DESCARTAR', style: TextStyle(color: context.cs.onSurfaceVariant)),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isOverLimit ? Colors.grey.shade300 : scheme.primary,
-                  foregroundColor: isOverLimit ? Colors.grey.shade500 : scheme.onPrimary,
+                  backgroundColor: isOverLimit ? context.cs.surfaceContainerHighest : scheme.primary,
+                  foregroundColor: isOverLimit ? context.cs.onSurfaceVariant : scheme.onPrimary,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))
@@ -665,7 +665,7 @@ class _GoalPickerSheet extends StatelessWidget {
               child: Container(
                 width: 40,
                 height: 4,
-                decoration: BoxDecoration(color: Colors.grey[500], borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: context.cs.onSurfaceVariant, borderRadius: BorderRadius.circular(10)),
               ),
             ),
             const SizedBox(height: 20),
@@ -726,7 +726,7 @@ class _GoalRow extends StatelessWidget {
     } else {
       text = 'Meta: ${g.label}';
     }
-    final color = reached ? Colors.green.shade600 : scheme.primary;
+    final color = reached ? context.app.statusFinished : scheme.primary;
 
     return InkWell(
       key: const Key('session_goal_row'),
@@ -785,7 +785,7 @@ class _GoalResult extends StatelessWidget {
           ? '🎯 ¡Llegaste a la pág. ${goal.untilPage}!'
           : 'Meta: pág. ${goal.untilPage} · te faltan ${goal.untilPage! - page} páginas';
     }
-    final color = met ? Colors.green.shade700 : Theme.of(context).colorScheme.onSurfaceVariant;
+    final color = met ? context.app.statusFinished : Theme.of(context).colorScheme.onSurfaceVariant;
     return Text(text, textAlign: TextAlign.center, style: TextStyle(color: color, fontWeight: FontWeight.w700));
   }
 }

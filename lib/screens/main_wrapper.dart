@@ -23,6 +23,7 @@ import '../services/ads_consent.dart';
 import '../services/ads_gate.dart';
 import '../services/streak_save.dart';
 import 'package:flutter/services.dart';
+import '../theme/app_colors.dart';
 
 class MainWrapper extends ConsumerStatefulWidget {
   const MainWrapper({super.key});
@@ -270,12 +271,10 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
             decoration: BoxDecoration(
-              color: isDark 
-                  ? const Color(0xFF121212).withValues(alpha: 0.85) 
-                  : Colors.white.withValues(alpha: 0.9),
+              color: context.cs.surfaceContainer.withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: isDark ? Colors.black45 : Colors.black12,
+                color: context.cs.outlineVariant,
                 width: 1.5,
               ),
             ),
@@ -295,9 +294,7 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
 
   Widget _buildNavItem(int index, IconData icon, IconData selectedIcon, String label, GlobalKey? key) {
     final isSelected = _currentIndex == index;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final selectedColor = isDark ? Colors.indigoAccent : Colors.indigo;
+    final selectedColor = context.app.accent;
 
     return GestureDetector(
       key: key, 
@@ -327,7 +324,7 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
               builder: (context, value, child) {
                 return Icon(
                   isSelected ? selectedIcon : icon, 
-                  color: isSelected ? selectedColor : (isDark ? Colors.white38 : Colors.black38), 
+                  color: isSelected ? selectedColor : (context.cs.onSurfaceVariant), 
                   size: 24 + (value * 2), // Crece ligeramente de 24 a 26
                 );
               },
@@ -336,7 +333,7 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? selectedColor : (isDark ? Colors.white38 : Colors.black38),
+                color: isSelected ? selectedColor : (context.cs.onSurfaceVariant),
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
               ),

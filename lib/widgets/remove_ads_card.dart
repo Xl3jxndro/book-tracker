@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../services/remove_ads.dart';
+import '../theme/app_colors.dart';
 
 /// Ajustes: comprar "Quitar anuncios" (pago único) o restaurar la compra.
 class RemoveAdsCard extends StatefulWidget {
@@ -58,13 +59,13 @@ class _RemoveAdsCardState extends State<RemoveAdsCard> {
           return Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.08),
+              color: context.app.statusFinished.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: Colors.green.withValues(alpha: 0.25)),
+              border: Border.all(color: context.app.statusFinished.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.verified_rounded, color: Colors.green, size: 32),
+                Icon(Icons.verified_rounded, color: context.app.statusFinished, size: 32),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(

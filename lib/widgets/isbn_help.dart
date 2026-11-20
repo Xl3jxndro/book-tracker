@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
 import '../services/isbn.dart';
+import '../theme/app_colors.dart';
 
 /// Explica qué es el ISBN y dónde encontrarlo en el libro.
 Future<void> showIsbnHelp(BuildContext context) {
@@ -16,11 +17,11 @@ Future<void> showIsbnHelp(BuildContext context) {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(10)))),
+            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(10)))),
             const SizedBox(height: 20),
             const Text('¿Dónde encuentro el ISBN?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
             const SizedBox(height: 8),
-            const Text('Es el número que identifica cada edición de un libro.', style: TextStyle(color: Colors.grey)),
+            Text('Es el número que identifica cada edición de un libro.', style: TextStyle(color: context.cs.onSurfaceVariant)),
             const SizedBox(height: 20),
             const IsbnBreakdown(),
             const SizedBox(height: 24),
@@ -194,7 +195,7 @@ class _ManualIsbnDialogState extends State<_ManualIsbnDialog> {
             ),
           ),
           const SizedBox(height: 10),
-          const Text('13 dígitos (empieza por 978 o 979) o 10 dígitos en libros antiguos.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          Text('13 dígitos (empieza por 978 o 979) o 10 dígitos en libros antiguos.', style: TextStyle(fontSize: 12, color: context.cs.onSurfaceVariant)),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(

@@ -11,6 +11,7 @@ import '../widgets/native_ad_card.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/quote_share.dart';
 import 'book_details_screen.dart';
+import '../theme/app_colors.dart';
 
 /// Filtra las citas por texto (en la cita, el título o el autor) y, si se
 /// pide, solo las favoritas. Conserva el orden recibido.
@@ -106,7 +107,7 @@ class _QuotesScreenState extends ConsumerState<QuotesScreen> {
                     ),
                     const SizedBox(width: 8),
                     ChoiceChip(
-                      avatar: Icon(Icons.star_rounded, size: 18, color: Colors.amber.shade700),
+                      avatar: Icon(Icons.star_rounded, size: 18, color: context.app.rating),
                       label: Text('Favoritas ($favorites)'),
                       selected: _favoritesOnly,
                       onSelected: (_) => setState(() => _favoritesOnly = true),
@@ -223,7 +224,7 @@ class _QuoteCard extends ConsumerWidget {
                   ),
                   IconButton(
                     tooltip: note.isFavorite ? 'Quitar de favoritas' : 'Marcar como favorita',
-                    icon: Icon(note.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded, color: Colors.amber.shade700),
+                    icon: Icon(note.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded, color: context.app.rating),
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       ref.read(databaseProvider).setNoteFavorite(note.id, !note.isFavorite);

@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' as drift;
 import '../database/database.dart';
 import '../providers/database_provider.dart';
 import '../services/voice_service.dart';
+import '../theme/app_colors.dart';
 
 class AddNoteSheet extends ConsumerStatefulWidget {
   final int bookId;
@@ -157,7 +158,6 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       padding: EdgeInsets.only(
@@ -165,7 +165,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
         top: 12, left: 24, right: 24
       ),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF141414) : Colors.white,
+        color: context.cs.surfaceContainerLow,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
@@ -257,7 +257,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
                         ),
                         child: Icon(
                           _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                          color: _isListening ? Colors.white : scheme.onSurfaceVariant,
+                          color: _isListening ? scheme.onPrimary : scheme.onSurfaceVariant,
                           size: 24,
                         ),
                       ),
@@ -280,7 +280,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
               hintText: 'Comienza a hablar o escribir...',
               hintStyle: TextStyle(color: scheme.onSurfaceVariant.withValues(alpha: 0.4)),
               filled: true,
-              fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : scheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              fillColor: scheme.surfaceContainerHigh,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(24),
                 borderSide: BorderSide.none,
@@ -341,7 +341,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
                   child: Text(
                     widget.noteToEdit == null ? 'Guardar nota' : 'Guardar cambios',
                     style: TextStyle(
-                      color: _isEmpty ? scheme.onSurfaceVariant : Colors.white, 
+                      color: _isEmpty ? scheme.onSurfaceVariant : scheme.onPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                       letterSpacing: 0.5

@@ -13,6 +13,7 @@ import '../services/book_api_service.dart';
 import 'book_search_field.dart';
 import '../screens/isbn_scanner_screen.dart';
 import 'isbn_help.dart';
+import '../theme/app_colors.dart';
 
 class AddBookSheet extends ConsumerStatefulWidget {
   final Book? bookToEdit;
@@ -175,13 +176,13 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
       builder: (context) => Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+          color: context.cs.surfaceContainerLow,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: isDark ? Colors.white10 : Colors.black12, borderRadius: BorderRadius.circular(10))),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outlineVariant, borderRadius: BorderRadius.circular(10))),
             const SizedBox(height: 24),
             const Text("Cambiar portada", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
             const SizedBox(height: 32),
@@ -208,10 +209,10 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.indigo.withValues(alpha: 0.05),
+              color: context.cs.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(24),
             ),
-            child: Icon(icon, color: Colors.indigoAccent, size: 32),
+            child: Icon(icon, color: context.app.accent, size: 32),
           ),
           const SizedBox(height: 12),
           Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
@@ -332,7 +333,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
           top: 16, left: 28, right: 28
         ),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF0F0F0F).withValues(alpha: 0.9) : Colors.white.withValues(alpha: 0.95),
+          color: context.cs.surfaceContainerLow,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(50)),
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 40)],
         ),
@@ -343,7 +344,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(child: Container(width: 45, height: 5, decoration: BoxDecoration(color: isDark ? Colors.white12 : Colors.black12, borderRadius: BorderRadius.circular(10)))),
+                Center(child: Container(width: 45, height: 5, decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(10)))),
                 const SizedBox(height: 32),
 
                 if (widget.bookToEdit == null) ...[
@@ -383,13 +384,13 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                           Icon(
                             _isbnMessageIsError ? Icons.info_outline_rounded : Icons.check_circle_rounded,
                             size: 16,
-                            color: _isbnMessageIsError ? theme.colorScheme.error : Colors.green,
+                            color: _isbnMessageIsError ? theme.colorScheme.error : context.app.statusFinished,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _isbnMessage!,
-                              style: TextStyle(fontSize: 12, color: _isbnMessageIsError ? theme.colorScheme.error : Colors.green),
+                              style: TextStyle(fontSize: 12, color: _isbnMessageIsError ? theme.colorScheme.error : context.app.statusFinished),
                             ),
                           ),
                         ],
@@ -409,9 +410,9 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                           duration: const Duration(milliseconds: 300),
                           height: 150, width: 105,
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                            color: context.cs.surfaceContainerHigh,
                             borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: isDNF ? Colors.redAccent.withValues(alpha: 0.3) : Colors.transparent),
+                            border: Border.all(color: isDNF ? context.app.statusAbandoned.withValues(alpha: 0.4) : Colors.transparent),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.15),
@@ -448,7 +449,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                   style: TextStyle(
                     fontWeight: FontWeight.w800, 
                     fontSize: 16, 
-                    color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.8)
+                    color: (context.cs.onSurface).withValues(alpha: 0.8)
                   )
                 ),
                 const SizedBox(height: 16),
@@ -468,7 +469,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                     style: TextStyle(
                       fontWeight: FontWeight.w800, 
                       fontSize: 16, 
-                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.8)
+                      color: (context.cs.onSurface).withValues(alpha: 0.8)
                     )
                   ),
                   const SizedBox(height: 16),
@@ -486,12 +487,12 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                       borderRadius: BorderRadius.circular(24),
                       gradient: LinearGradient(
                         colors: isDNF 
-                          ? [Colors.redAccent.shade200, Colors.redAccent.shade700] 
+                          ? [context.app.statusAbandoned.withValues(alpha: 0.75), context.app.statusAbandoned] 
                           : [theme.colorScheme.primary, theme.colorScheme.secondary.withValues(alpha: 0.8)],
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: (isDNF ? Colors.redAccent : theme.colorScheme.primary).withValues(alpha: 0.3),
+                          color: (isDNF ? context.app.statusAbandoned : theme.colorScheme.primary).withValues(alpha: 0.3),
                           blurRadius: 20, offset: const Offset(0, 10)
                         )
                       ],
@@ -499,7 +500,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                     child: Center(
                       child: Text(
                         widget.bookToEdit == null ? "Añadir a la Colección" : "Actualizar Biblioteca",
-                        style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                        style: TextStyle(color: theme.colorScheme.onPrimary, fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                       ),
                     ),
                   ),
@@ -520,7 +521,6 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
     bool isBold = false,
     String? Function(String?)? validator,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -534,19 +534,19 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
           style: TextStyle(
             fontSize: 16, 
             fontWeight: isBold ? FontWeight.w800 : FontWeight.w500,
-            color: isDark ? Colors.white : Colors.black87
+            color: context.cs.onSurface
           ),
           decoration: InputDecoration(
             labelText: label,
-            labelStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 14, fontWeight: FontWeight.w400),
-            prefixIcon: Icon(icon, size: 20, color: Colors.indigoAccent.withValues(alpha: 0.5)),
+            labelStyle: TextStyle(color: context.cs.onSurfaceVariant, fontSize: 14, fontWeight: FontWeight.w400),
+            prefixIcon: Icon(icon, size: 20, color: context.app.accent.withValues(alpha: 0.5)),
             filled: true,
-            fillColor: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.03),
+            fillColor: context.cs.surfaceContainerHigh,
             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20), 
-              borderSide: BorderSide(color: Colors.indigoAccent.withValues(alpha: 0.3), width: 1)
+              borderSide: BorderSide(color: context.app.accent.withValues(alpha: 0.3), width: 1)
             ),
           ),
         ),
@@ -558,7 +558,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.03),
+        color: context.cs.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
@@ -582,18 +582,18 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: isSelected 
-              ? (isDnfColor ? Colors.redAccent : Colors.indigoAccent) 
+              ? (isDnfColor ? context.app.statusAbandoned : context.app.accent) 
               : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
           ),
           child: Column(
             children: [
-              Icon(icon, size: 20, color: isSelected ? Colors.white : (isDark ? Colors.white38 : Colors.black38)),
+              Icon(icon, size: 20, color: isSelected ? context.app.onAccent : (context.cs.onSurfaceVariant)),
               const SizedBox(height: 4),
               Text(label, style: TextStyle(
                 fontSize: 10, 
                 fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : (isDark ? Colors.white38 : Colors.black38)
+                color: isSelected ? context.app.onAccent : (context.cs.onSurfaceVariant)
               )),
             ],
           ),

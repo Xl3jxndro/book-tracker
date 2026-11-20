@@ -3,20 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:palette_generator/palette_generator.dart';
-import 'package:google_fonts/google_fonts.dart';
-
-// --- TEMA EDITORIAL (CONFIGURACIÓN DE FUENTES) ---
-TextTheme _buildEditorialTextTheme(Brightness brightness) {
-  final color = brightness == Brightness.dark ? Colors.white : Colors.black87;
-  return TextTheme(
-    displayLarge: GoogleFonts.lora(fontWeight: FontWeight.bold, color: color),
-    headlineMedium: GoogleFonts.lora(fontWeight: FontWeight.w700, color: color),
-    titleLarge: GoogleFonts.lora(fontWeight: FontWeight.w600, fontSize: 20, letterSpacing: -0.5),
-    bodyLarge: GoogleFonts.inter(fontSize: 16, letterSpacing: 0.2),
-    bodyMedium: GoogleFonts.inter(fontSize: 14, color: color.withValues(alpha: 0.8)),
-    labelLarge: GoogleFonts.inter(fontWeight: FontWeight.bold, letterSpacing: 1.1, fontSize: 12),
-  );
-}
+import '../theme/app_colors.dart';
 
 // --- PROVIDER DE MODO DE TEMA ---
 final themeProvider = NotifierProvider<ThemeNotifier, ThemeMode>(ThemeNotifier.new);
@@ -43,37 +30,29 @@ class ThemeNotifier extends Notifier<ThemeMode> {
 }
 
 // --- PROVIDER DE ESQUEMA DE COLOR DINÁMICO ---
+/// Colores de la pantalla de un libro: los del sistema de diseño, con la
+/// familia "primary" tomada de su portada (fondos y textos no cambian).
 final bookColorSchemeProvider = FutureProvider.family<ColorScheme, String?>((ref, coverPath) async {
   final themeMode = ref.watch(themeProvider);
-  final bool isDark = themeMode == ThemeMode.dark || 
+  final bool isDark = themeMode == ThemeMode.dark ||
       (themeMode == ThemeMode.system && WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark);
-  const defaultSeed = Colors.indigo;
+  final base = isDark ? AppSchemes.dark : AppSchemes.light;
+  final brightness = isDark ? Brightness.dark : Brightness.light;
 
-  if (coverPath == null || !File(coverPath).existsSync()) {
-    return ColorScheme.fromSeed(seedColor: defaultSeed, brightness: isDark ? Brightness.dark : Brightness.light);
-  }
+  if (coverPath == null || !File(coverPath).existsSync()) return base;
 
   try {
     final PaletteGenerator palette = await PaletteGenerator.fromImageProvider(FileImage(File(coverPath)), maximumColorCount: 10);
-    final Color targetColor = palette.vibrantColor?.color ?? palette.dominantColor?.color ?? defaultSeed;
-    return ColorScheme.fromSeed(seedColor: targetColor, brightness: isDark ? Brightness.dark : Brightness.light);
+    final Color? cover = palette.vibrantColor?.color ?? palette.dominantColor?.color;
+    if (cover == null) return base;
+    final seeded = ColorScheme.fromSeed(seedColor: cover, brightness: brightness);
+    return base.copyWith(
+      primary: seeded.primary,
+      onPrimary: seeded.onPrimary,
+      primaryContainer: seeded.primaryContainer,
+      onPrimaryContainer: seeded.onPrimaryContainer,
+    );
   } catch (e) {
-    return ColorScheme.fromSeed(seedColor: defaultSeed, brightness: isDark ? Brightness.dark : Brightness.light);
+    return base;
   }
-});
-
-// --- PROVIDER DE TEMA COMPLETO ---
-final appThemeProvider = Provider.family<ThemeData, ColorScheme>((ref, colorScheme) {
-  final isDark = colorScheme.brightness == Brightness.dark;
-  return ThemeData(
-    useMaterial3: true,
-    colorScheme: colorScheme,
-    textTheme: _buildEditorialTextTheme(colorScheme.brightness),
-    scaffoldBackgroundColor: isDark ? const Color(0xFF0A0A0A) : const Color(0xFFFBFBFC),
-    appBarTheme: const AppBarTheme(centerTitle: false, backgroundColor: Colors.transparent, elevation: 0),
-    timePickerTheme: TimePickerThemeData(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      hourMinuteShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ),
-  );
 });

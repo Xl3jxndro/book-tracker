@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import '../database/database.dart';
 import 'add_book_sheet.dart';
+import '../theme/app_colors.dart';
 
 class BookCard extends StatelessWidget {
   final Book book;
@@ -29,20 +30,20 @@ class BookCard extends StatelessWidget {
     final int percentage = (progress * 100).toInt();
 
     final Color accentColor = isDNF 
-        ? Colors.redAccent 
-        : (isFinished ? Colors.green : theme.colorScheme.primary);
+        ? context.app.statusAbandoned
+        : (isFinished ? context.app.statusFinished : context.app.accent);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: isDNF 
-            ? (isDark ? Colors.red.withValues(alpha: 0.05) : Colors.grey.shade50) 
-            : theme.cardColor,
+            ? context.app.statusAbandoned.withValues(alpha: 0.06)
+            : context.cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDNF 
-              ? Colors.redAccent.withValues(alpha: 0.2) 
-              : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade200),
+              ? context.app.statusAbandoned.withValues(alpha: 0.2)
+              : context.cs.outlineVariant,
           width: 1,
         ),
         boxShadow: [
@@ -65,7 +66,7 @@ class BookCard extends StatelessWidget {
             padding: const EdgeInsets.all(14.0),
             child: Row(
               children: [
-                _buildCoverImage(book.coverUrl, isDark, isDNF, accentColor),
+                _buildCoverImage(context, book.coverUrl, isDark, isDNF, accentColor),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -76,7 +77,7 @@ class BookCard extends StatelessWidget {
                         children: [
                           _buildStatusBadge(book.status, accentColor),
                           if (isFinished && (book.rating ?? 0) > 0)
-                            _buildRatingStars(book.rating!)
+                            _buildRatingStars(context, book.rating!)
                           else
                             IconButton(
                               visualDensity: VisualDensity.compact,
@@ -84,7 +85,7 @@ class BookCard extends StatelessWidget {
                               constraints: const BoxConstraints(),
                               icon: Icon(Icons.edit_note_rounded, 
                                 size: 20, 
-                                color: isDNF ? Colors.grey : theme.colorScheme.primary.withValues(alpha: 0.7)),
+                                color: isDNF ? context.cs.onSurfaceVariant : theme.colorScheme.primary.withValues(alpha: 0.7)),
                               onPressed: () {
                                 HapticFeedback.mediumImpact();
                                 _showEditSheet(context);
@@ -99,7 +100,7 @@ class BookCard extends StatelessWidget {
                         searchQuery, 
                         theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: isDNF ? Colors.grey : (isDark ? Colors.white : Colors.black87),
+                          color: isDNF ? context.cs.onSurfaceVariant : (context.cs.onSurface),
                           decoration: isDNF ? TextDecoration.lineThrough : null,
                         ) ?? const TextStyle(),
                         theme.colorScheme.primary,
@@ -109,12 +110,12 @@ class BookCard extends StatelessWidget {
                         book.author, 
                         searchQuery, 
                         theme.textTheme.bodySmall?.copyWith(
-                          color: isDNF ? Colors.grey.withValues(alpha: 0.6) : Colors.grey.shade600,
+                          color: isDNF ? context.cs.onSurfaceVariant.withValues(alpha: 0.6) : context.cs.onSurfaceVariant,
                         ) ?? const TextStyle(),
                         theme.colorScheme.primary.withValues(alpha: 0.8),
                       ),
                       const SizedBox(height: 12),
-                      _buildProgressInfo(progress, percentage, isDNF, accentColor, isDark),
+                      _buildProgressInfo(context, progress, percentage, isDNF, accentColor, isDark),
                     ],
                   ),
                 ),
@@ -166,7 +167,7 @@ class BookCard extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressInfo(double progress, int percentage, bool isDNF, Color accentColor, bool isDark) {
+  Widget _buildProgressInfo(BuildContext context, double progress, int percentage, bool isDNF, Color accentColor, bool isDark) {
     return Column(
       children: [
         Row(
@@ -183,7 +184,7 @@ class BookCard extends StatelessWidget {
             ),
             Text(
               '${book.readPages}/${book.totalPages} p.',
-              style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 10, color: context.cs.onSurfaceVariant, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -201,17 +202,17 @@ class BookCard extends StatelessWidget {
     );
   }
 
-  Widget _buildRatingStars(int rating) {
+  Widget _buildRatingStars(BuildContext context, int rating) {
     return Row(
       children: List.generate(5, (index) => Icon(
         index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
-        color: Colors.amber,
+        color: context.app.rating,
         size: 14,
       )),
     );
   }
 
-  Widget _buildCoverImage(String? url, bool isDark, bool isDNF, Color accentColor) {
+  Widget _buildCoverImage(BuildContext context, String? url, bool isDark, bool isDNF, Color accentColor) {
     return Container(
       width: 80,
       height: 115,
@@ -235,15 +236,15 @@ class BookCard extends StatelessWidget {
                 child: url != null && url.isNotEmpty && File(url).existsSync()
                     ? Image.file(File(url), fit: BoxFit.cover)
                     : Container(
-                        color: isDark ? Colors.white10 : Colors.grey.shade200,
-                        child: const Icon(Icons.book_rounded, color: Colors.grey),
+                        color: context.cs.surfaceContainerHighest,
+                        child: Icon(Icons.book_rounded, color: context.cs.onSurfaceVariant),
                       ),
               ),
             ),
           ),
           if (isDNF)
-            const Center(
-              child: Icon(Icons.close_rounded, color: Colors.redAccent, size: 30),
+            Center(
+              child: Icon(Icons.close_rounded, color: context.app.statusAbandoned, size: 30),
             ),
         ],
       ),
