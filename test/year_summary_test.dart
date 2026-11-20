@@ -1,7 +1,7 @@
 import 'package:book_tracker/database/database.dart';
 import 'package:book_tracker/services/year_summary.dart';
 import 'package:book_tracker/widgets/year_summary_card.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 int _id = 1;

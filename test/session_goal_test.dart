@@ -5,7 +5,7 @@ import 'package:book_tracker/services/session_goal_alarm.dart';
 import 'package:book_tracker/services/timer_persistence.dart';
 import 'package:book_tracker/widgets/timer_widget.dart';
 import 'package:drift/native.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

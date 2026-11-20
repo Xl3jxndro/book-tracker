@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -198,10 +198,17 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
 
       // Bloqueo al volver a la app: login por encima de todo (incluidas las
       // pantallas abiertas), sin desmontar la app.
-      builder: (context, child) => AppLockOverlay(
-        isLocked: isRelocked,
-        lockScreenBuilder: (_) => const LoginScreen(),
-        child: child!,
+      builder: (context, child) =>
+          // Puente temporal de material_ui: librerías que aún usan
+          // package:flutter/material.dart (tooltips del tutorial, tarjeta de
+          // "Mi año lector") reciben el tema de la app. Quitar cuando migren.
+          // ignore: deprecated_member_use
+          MaterialUiCompatibilityBridge(
+        child: AppLockOverlay(
+          isLocked: isRelocked,
+          lockScreenBuilder: (_) => const LoginScreen(),
+          child: child!,
+        ),
       ),
     );
   }

@@ -2,7 +2,7 @@ import 'package:book_tracker/database/database.dart';
 import 'package:book_tracker/providers/yearly_goal_provider.dart';
 import 'package:book_tracker/services/reading_challenge.dart';
 import 'package:book_tracker/widgets/reading_challenge_card.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';

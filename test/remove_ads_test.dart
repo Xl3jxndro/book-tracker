@@ -4,7 +4,7 @@ import 'package:book_tracker/services/ads_consent.dart';
 import 'package:book_tracker/services/ads_gate.dart';
 import 'package:book_tracker/services/remove_ads.dart';
 import 'package:book_tracker/widgets/remove_ads_card.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';

@@ -72,6 +72,8 @@ dependencies:
   mobile_scanner: ^7.5.0
   in_app_purchase: ^3.3.1
   in_app_purchase_android: ^0.5.5
+  # Widgets de Material (antes package:flutter/material.dart, obsoleto desde Flutter 3.47)
+  material_ui: ^1.11.1
 
 dev_dependencies:
   flutter_test:

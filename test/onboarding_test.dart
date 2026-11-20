@@ -1,7 +1,7 @@
 import 'package:book_tracker/providers/tutorial_provider.dart';
 import 'package:book_tracker/screens/onboarding_screen.dart';
 import 'package:book_tracker/widgets/whats_new_sheet.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Muestra la pantalla de bloqueo por encima de toda la app sin desmontarla,
 /// para que al desbloquear se siga en la misma pantalla.

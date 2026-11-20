@@ -1,5 +1,5 @@
 import 'package:book_tracker/widgets/app_lock_overlay.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Reproduce el caso real: app abierta en un libro (con portada Hero), se
