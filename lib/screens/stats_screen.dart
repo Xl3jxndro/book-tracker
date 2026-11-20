@@ -15,6 +15,7 @@ import '../services/streak.dart';
 import '../services/streak_save.dart';
 import '../providers/streak_save_provider.dart';
 import '../services/year_summary.dart';
+import '../services/reading_challenge.dart';
 import '../providers/yearly_goal_provider.dart';
 import '../database/database.dart';
 import '../theme/app_colors.dart';
@@ -82,7 +83,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
 
   Widget _buildMainLayout(List<Book> books, List<ReadingSession> sessions, bool isDark) {
     final theme = Theme.of(context);
-    final completedBooks = books.where((b) => b.status == 2).length;
+    final completedBooks = ReadingChallenge.finishedCount(books);
     // Las sesiones guardan el historial (no se pierde al "Releer"), pero los datos
     // anteriores a que existieran pueden estar solo en el libro: tomamos el mayor.
     final pagesFromBooks = books.fold<int>(0, (sum, b) => sum + b.readPages);
@@ -117,16 +118,12 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
         const SizedBox(height: AppSpace.lg),
         _buildStreakTile(streak, bestStreak, readingDays, theme),
         const SizedBox(height: AppSpace.sm),
-        // Mismo alto para las dos casillas
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: _buildTodayTile(theme)),
-              const SizedBox(width: AppSpace.sm),
-              Expanded(child: _bigNumberTile('Libros leídos', '$completedBooks', Icons.check_circle_outline_rounded, theme)),
-            ],
-          ),
+        Row(
+          children: [
+            Expanded(child: _buildTodayTile(theme)),
+            const SizedBox(width: AppSpace.sm),
+            Expanded(child: _smallTile('Libros leídos', '$completedBooks', theme)),
+          ],
         ),
         const SizedBox(height: AppSpace.sm),
         Row(
@@ -244,64 +241,47 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     );
   }
 
-  /// Minutos leídos hoy frente a la meta diaria.
+  /// Minutos leídos hoy frente a la meta diaria (con un anillo pequeño).
   Widget _buildTodayTile(ThemeData theme) {
     final cs = context.cs;
     final seconds = ref.watch(totalTimeTodayProvider).value ?? 0;
     final goal = ref.watch(dailyGoalProvider);
     final minutes = seconds ~/ 60;
     final progress = goal > 0 ? (minutes / goal).clamp(0.0, 1.0) : 0.0;
-    return _tile(
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Hoy', style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-          const SizedBox(height: AppSpace.sm),
-          SizedBox(
-            width: 64,
-            height: 64,
-            child: CircularProgressIndicator(
-              value: progress,
-              strokeWidth: 8,
-              strokeCap: StrokeCap.round,
-              color: progress >= 1 ? context.app.statusFinished : context.app.accent,
-              backgroundColor: cs.surfaceContainerHighest,
-            ),
-          ),
-          const SizedBox(height: AppSpace.sm),
-          Text('$minutes min', style: theme.textTheme.titleLarge?.copyWith(fontFamily: theme.textTheme.titleMedium?.fontFamily)),
-          Text('de $goal min', style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
-        ],
+    return _smallTile(
+      'Hoy',
+      '$minutes de $goal min',
+      theme,
+      trailing: SizedBox(
+        width: 28,
+        height: 28,
+        child: CircularProgressIndicator(
+          value: progress,
+          strokeWidth: 4,
+          strokeCap: StrokeCap.round,
+          color: progress >= 1 ? context.app.statusFinished : context.app.accent,
+          backgroundColor: cs.surfaceContainerHighest,
+        ),
       ),
     );
   }
 
-  Widget _bigNumberTile(String label, String value, IconData icon, ThemeData theme) {
-    final cs = context.cs;
-    return _tile(
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-          const Spacer(),
-          Icon(icon, color: context.app.statusFinished, size: 28),
-          Text(value, style: theme.textTheme.displaySmall?.copyWith(fontFamily: theme.textTheme.titleMedium?.fontFamily, fontWeight: FontWeight.w700, color: cs.onSurface)),
-        ],
-      ),
-    );
-  }
-
-  Widget _smallTile(String label, String value, ThemeData theme) => _tile(
+  Widget _smallTile(String label, String value, ThemeData theme, {Widget? trailing}) => _tile(
         padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant)),
-            const SizedBox(height: 4),
-            Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleLarge?.copyWith(fontFamily: theme.textTheme.titleMedium?.fontFamily)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant)),
+                  const SizedBox(height: 4),
+                  Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleLarge?.copyWith(fontFamily: theme.textTheme.titleMedium?.fontFamily)),
+                ],
+              ),
+            ),
+            if (trailing != null) ...[const SizedBox(width: AppSpace.xs), trailing],
           ],
         ),
       );

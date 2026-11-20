@@ -36,6 +36,11 @@ class ReadingChallenge {
 
   /// Libros cuya lectura terminó en [year]. Incluye los que se están
   /// releyendo (conservan la fecha de su lectura anterior).
+  /// Libros leídos en total: los terminados, también los que se están
+  /// releyendo ("Releer" conserva la fecha en que se terminaron). Mismo
+  /// criterio que el reto anual.
+  static int finishedCount(List<Book> books) => books.where((b) => b.status == 2 || b.finishedAt != null).length;
+
   static List<Book> finishedIn(List<Book> books, int year) =>
       books.where((b) => b.finishedAt != null && b.finishedAt!.year == year).toList()
         ..sort((a, b) => b.finishedAt!.compareTo(a.finishedAt!));

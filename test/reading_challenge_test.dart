@@ -22,6 +22,18 @@ Book _book({int status = 2, DateTime? finishedAt, String title = 'Libro'}) => Bo
 
 void main() {
   group('cálculo del reto', () {
+    test('libros leídos: terminados y los que se releen; mismo criterio que el reto', () {
+      final books = [
+        _book(status: 2, finishedAt: DateTime(2026, 3, 1)),
+        _book(status: 1, finishedAt: DateTime(2026, 5, 1)), // releyéndolo
+        _book(status: 2), // terminado antes de existir las fechas
+        _book(status: 1),
+        _book(status: 0),
+      ];
+      expect(ReadingChallenge.finishedCount(books), 3);
+      expect(ReadingChallenge.finishedIn(books, 2026), hasLength(2));
+    });
+
     test('cuenta solo los libros terminados en el año (incluidas relecturas en curso)', () {
       final books = [
         _book(finishedAt: DateTime(2026, 2, 1)),
