@@ -18,6 +18,8 @@ import '../services/year_summary.dart';
 import '../providers/yearly_goal_provider.dart';
 import '../database/database.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_tokens.dart';
+import '../providers/daily_goal_provider.dart';
 import '../widgets/skeleton_loader.dart';
 
 class StatsScreen extends ConsumerStatefulWidget {
@@ -27,21 +29,8 @@ class StatsScreen extends ConsumerStatefulWidget {
   ConsumerState<StatsScreen> createState() => _StatsScreenState();
 }
 
-class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _StatsScreenState extends ConsumerState<StatsScreen> {
   int? selectedDayIndex;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
 
   String _formatReadingTime(int totalSeconds) {
     if (totalSeconds <= 0) return '0m';
@@ -69,12 +58,6 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
     showYearSummaryShare(context, summary);
   }
 
-  /// Racha actual, contando los días salvados con un anuncio.
-  int _calculateStreak(List<ReadingSession> sessions) => ReadingStreak.current(
-        StreakSave.withSavedDays(sessions.map((s) => s.date), ref.watch(streakSaveProvider).savedDays),
-        DateTime.now(),
-      );
-
   @override
   Widget build(BuildContext context) {
     final booksAsync = ref.watch(booksStreamProvider);
@@ -85,28 +68,6 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
 
     return Scaffold(
       backgroundColor: context.cs.surface,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        centerTitle: false,
-        title: Text('Estadísticas',
-            style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 28,
-                color: context.cs.onSurface,
-                letterSpacing: -1)),
-        actions: [
-          // Compartir "Mi año lector" como imagen
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: IconButton.filledTonal(
-              tooltip: 'Compartir mi año lector',
-              icon: const Icon(Icons.ios_share_rounded),
-              onPressed: () => _shareYear(booksAsync.value ?? const [], sessionsAsync.value ?? const []),
-            ),
-          ),
-        ],
-      ),
       body: booksAsync.when(
         data: (books) => sessionsAsync.when(
           data: (sessions) => _buildMainLayout(books, sessions, isDark),
@@ -120,6 +81,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
   }
 
   Widget _buildMainLayout(List<Book> books, List<ReadingSession> sessions, bool isDark) {
+    final theme = Theme.of(context);
     final completedBooks = books.where((b) => b.status == 2).length;
     // Las sesiones guardan el historial (no se pierde al "Releer"), pero los datos
     // anteriores a que existieran pueden estar solo en el libro: tomamos el mayor.
@@ -127,155 +89,222 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
     final pagesFromSessions = sessions.fold<int>(0, (sum, s) => sum + s.pagesRead);
     final totalPagesRead = math.max(pagesFromBooks, pagesFromSessions);
     final totalSeconds = sessions.fold<int>(0, (sum, s) => sum + s.seconds);
-    final streak = _calculateStreak(sessions);
+    final readingDays = StreakSave.withSavedDays(sessions.map((s) => s.date), ref.watch(streakSaveProvider).savedDays);
+    final streak = ReadingStreak.current(readingDays, DateTime.now());
+    final bestStreak = ReadingStreak.best(readingDays);
 
-    return Column(
+    return ListView(
+      physics: const BouncingScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(AppSpace.screen, MediaQuery.of(context).padding.top + AppSpace.md, AppSpace.screen,
+          140 + MediaQuery.of(context).padding.bottom),
       children: [
-        const SizedBox(height: 10),
-        _buildSummaryCarousel(completedBooks, totalPagesRead, totalSeconds, streak, isDark),
-        const SizedBox(height: 25),
-        _buildCustomTabBar(isDark),
-        Expanded(
-          child: TabBarView(
-            controller: _tabController,
+        Row(
+          children: [
+            Expanded(child: Text('Estadísticas', style: theme.textTheme.headlineLarge)),
+            // Compartir "Mi año lector" como imagen
+            IconButton(
+              tooltip: 'Compartir mi año lector',
+              icon: const Icon(Icons.ios_share_rounded, size: 22),
+              style: IconButton.styleFrom(
+                fixedSize: const Size(44, 44),
+                backgroundColor: context.cs.surfaceContainerHigh,
+                foregroundColor: context.cs.onSurface,
+              ),
+              onPressed: () => _shareYear(books, sessions),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpace.lg),
+        _buildStreakTile(streak, bestStreak, readingDays, theme),
+        const SizedBox(height: AppSpace.sm),
+        // Mismo alto para las dos casillas
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildActivityTab(books, sessions, isDark),
-              _buildLibraryTab(books, completedBooks, totalPagesRead, totalSeconds, streak, isDark),
+              Expanded(child: _buildTodayTile(theme)),
+              const SizedBox(width: AppSpace.sm),
+              Expanded(child: _bigNumberTile('Libros leídos', '$completedBooks', Icons.check_circle_outline_rounded, theme)),
             ],
           ),
         ),
+        const SizedBox(height: AppSpace.sm),
+        Row(
+          children: [
+            Expanded(child: _smallTile('Páginas', NumberFormat.decimalPattern('es').format(totalPagesRead), theme)),
+            const SizedBox(width: AppSpace.sm),
+            Expanded(child: _smallTile('Tiempo total', _formatReadingTime(totalSeconds), theme)),
+          ],
+        ),
+        const SizedBox(height: AppSpace.sm),
+        ReadingChallengeCard(books: books),
+        const SizedBox(height: AppSpace.sm),
+        _tile(child: _buildMonthlyActivityChart(sessions, isDark)),
+        const SizedBox(height: AppSpace.sm),
+        _tile(child: ReadingHeatMap(sessions: sessions)),
+        NativeAdCard(adUnitId: AdHelper.statsNativeAdUnitId, margin: const EdgeInsets.only(top: AppSpace.sm)),
+        const SizedBox(height: AppSpace.sm),
+        _tile(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Géneros favoritos', style: theme.textTheme.titleMedium),
+              const SizedBox(height: AppSpace.md),
+              _buildGenreSection(books, isDark),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpace.xxl),
+        Text('Logros y desafíos', style: theme.textTheme.headlineSmall),
+        const SizedBox(height: AppSpace.sm),
+        _buildAchievements(completedBooks, totalPagesRead, totalSeconds, streak, isDark),
+        NativeAdCard(adUnitId: AdHelper.statsNativeAdUnitId, margin: const EdgeInsets.only(top: AppSpace.md)),
       ],
     );
   }
 
-  Widget _buildSummaryCarousel(int completed, int pages, int seconds, int streak, bool isDark) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          GestureDetector(
-            // Solo en versiones de prueba: ver la oferta de "salvar racha"
-            onLongPress: kDebugMode
-                ? () {
-                    final now = DateTime.now();
-                    showStreakSaveSheet(context, StreakSaveOffer(5, DateTime(now.year, now.month, now.day - 1)));
-                  }
-                : null,
-            child: _miniStatCard("Racha", "$streak días", Icons.local_fire_department_rounded, context.app.streak, isDark),
-          ),
-          _miniStatCard("Leídos", completed.toString(), Icons.check_circle_rounded, context.app.accent, isDark),
-          _miniStatCard("Páginas", pages.toString(), Icons.auto_stories_rounded, context.app.statusPending, isDark),
-          _miniStatCard("Tiempo", _formatReadingTime(seconds), Icons.timer_rounded, context.cs.primary, isDark),
-        ],
-      ),
-    );
-  }
+  /// Bloque del mosaico.
+  Widget _tile({required Widget child, EdgeInsets padding = const EdgeInsets.all(20)}) => Container(
+        padding: padding,
+        decoration: BoxDecoration(color: context.cs.surfaceContainerLow, borderRadius: AppRadius.xxlAll),
+        child: child,
+      );
 
-  Widget _miniStatCard(String label, String value, IconData icon, Color color, bool isDark) {
-    return Container(
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: context.cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: context.cs.outlineVariant),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-              Text(label, style: TextStyle(color: context.cs.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600)),
-            ],
-          )
-        ],
-      ),
-    );
-  }
+  /// Racha actual, la mejor y los últimos 7 días (un día salvado cuenta).
+  Widget _buildStreakTile(int streak, int best, Iterable<DateTime> readingDays, ThemeData theme) {
+    final cs = context.cs;
+    final app = context.app;
+    final days = ReadingStreak.daysOf(readingDays);
+    final today = DateUtils.dateOnly(DateTime.now());
+    final week = [for (var i = 6; i >= 0; i--) DateTime(today.year, today.month, today.day - i)];
+    final letter = DateFormat('EEEEE', 'es');
 
-  Widget _buildCustomTabBar(bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        height: 50,
-        decoration: BoxDecoration(
-          color: context.cs.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(25),
-        ),
-        child: TabBar(
-          controller: _tabController,
-          indicator: BoxDecoration(
-            color: context.cs.onSurface,
-            borderRadius: BorderRadius.circular(25),
-          ),
-          labelColor: context.cs.surface,
-          unselectedLabelColor: context.cs.onSurfaceVariant,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, letterSpacing: 1),
-          indicatorSize: TabBarIndicatorSize.tab,
-          dividerColor: Colors.transparent,
-          tabs: const [
-            Tab(text: "ACTIVIDAD"),
-            Tab(text: "BIBLIOTECA"),
+    return GestureDetector(
+      // Solo en versiones de prueba: ver la oferta de "salvar racha"
+      onLongPress: kDebugMode
+          ? () => showStreakSaveSheet(context, StreakSaveOffer(5, DateTime(today.year, today.month, today.day - 1)))
+          : null,
+      child: _tile(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Racha actual', style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                      Text(streak == 1 ? '1 día' : '$streak días',
+                          style: theme.textTheme.displaySmall?.copyWith(fontFamily: theme.textTheme.titleMedium?.fontFamily, fontWeight: FontWeight.w700, color: cs.onSurface)),
+                      if (best > 0)
+                        Text('Tu mejor racha: ${best == 1 ? '1 día' : '$best días'}',
+                            style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(color: app.accentSoft, borderRadius: BorderRadius.circular(16)),
+                  child: Icon(Icons.local_fire_department_rounded, color: app.streak),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpace.md),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (final d in week)
+                  Column(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: days.contains(d)
+                              ? (d == today ? app.accent : app.accentSoft)
+                              : cs.surfaceContainerHigh,
+                        ),
+                        child: days.contains(d)
+                            ? Icon(Icons.check_rounded, size: 18, color: d == today ? app.onAccent : app.accentText)
+                            : null,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(letter.format(d).toUpperCase(), style: theme.textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
+                    ],
+                  ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildActivityTab(List<Book> books, List<ReadingSession> sessions, bool isDark) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(25),
-      physics: const BouncingScrollPhysics(),
+  /// Minutos leídos hoy frente a la meta diaria.
+  Widget _buildTodayTile(ThemeData theme) {
+    final cs = context.cs;
+    final seconds = ref.watch(totalTimeTodayProvider).value ?? 0;
+    final goal = ref.watch(dailyGoalProvider);
+    final minutes = seconds ~/ 60;
+    final progress = goal > 0 ? (minutes / goal).clamp(0.0, 1.0) : 0.0;
+    return _tile(
+      padding: const EdgeInsets.all(18),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ReadingChallengeCard(books: books),
-          const SizedBox(height: 32),
-          ReadingHeatMap(sessions: sessions),
-          NativeAdCard(adUnitId: AdHelper.statsNativeAdUnitId, margin: const EdgeInsets.only(top: 32)),
-          const SizedBox(height: 40),
-          _sectionHeader("Rendimiento Mensual", isDark),
-          const SizedBox(height: 20),
-          _buildMonthlyActivityChart(sessions, isDark),
-          const SizedBox(height: 30),
+          Text('Hoy', style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+          const SizedBox(height: AppSpace.sm),
+          SizedBox(
+            width: 64,
+            height: 64,
+            child: CircularProgressIndicator(
+              value: progress,
+              strokeWidth: 8,
+              strokeCap: StrokeCap.round,
+              color: progress >= 1 ? context.app.statusFinished : context.app.accent,
+              backgroundColor: cs.surfaceContainerHighest,
+            ),
+          ),
+          const SizedBox(height: AppSpace.sm),
+          Text('$minutes min', style: theme.textTheme.titleLarge?.copyWith(fontFamily: theme.textTheme.titleMedium?.fontFamily)),
+          Text('de $goal min', style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
         ],
       ),
     );
   }
 
-  Widget _buildLibraryTab(List<Book> books, int completed, int pages, int seconds, int streak, bool isDark) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(25),
-      physics: const BouncingScrollPhysics(),
+  Widget _bigNumberTile(String label, String value, IconData icon, ThemeData theme) {
+    final cs = context.cs;
+    return _tile(
+      padding: const EdgeInsets.all(18),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionHeader("Géneros Favoritos", isDark),
-          const SizedBox(height: 20),
-          _buildGenreSection(books, isDark),
-          NativeAdCard(adUnitId: AdHelper.statsNativeAdUnitId, margin: const EdgeInsets.only(top: 32)),
-          const SizedBox(height: 40),
-          _sectionHeader("Logros y Desafíos", isDark),
-          const SizedBox(height: 20),
-          _buildAchievements(completed, pages, seconds, streak, isDark),
-          const SizedBox(height: 30),
+          Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+          const Spacer(),
+          Icon(icon, color: context.app.statusFinished, size: 28),
+          Text(value, style: theme.textTheme.displaySmall?.copyWith(fontFamily: theme.textTheme.titleMedium?.fontFamily, fontWeight: FontWeight.w700, color: cs.onSurface)),
         ],
       ),
     );
   }
 
-  Widget _sectionHeader(String title, bool isDark) {
-    return Row(
-      children: [
-        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
-        const Spacer(),
-        Container(width: 40, height: 2, color: context.cs.outlineVariant),
-      ],
-    );
-  }
+  Widget _smallTile(String label, String value, ThemeData theme) => _tile(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant)),
+            const SizedBox(height: 4),
+            Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleLarge?.copyWith(fontFamily: theme.textTheme.titleMedium?.fontFamily)),
+          ],
+        ),
+      );
 
   Widget _buildMonthlyActivityChart(List<ReadingSession> sessions, bool isDark) {
     final now = DateTime.now();
@@ -291,12 +320,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
     final maxSec = dailySeconds.values.fold(1, (p, c) => c > p ? c : p).toDouble();
     final maxMin = (maxSec / 60).ceil();
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(15, 20, 20, 15),
-      decoration: BoxDecoration(
-        color: context.cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(30),
-      ),
+    return Padding(
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -446,12 +471,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
     final sortedGenres = genreCounts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
     final total = genreCounts.values.fold<int>(0, (sum, val) => sum + val);
 
-    return Container(
-      padding: const EdgeInsets.all(25),
-      decoration: BoxDecoration(
-        color: context.cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(30),
-      ),
+    return Center(
       child: Column(
         children: [
           SizedBox(
@@ -529,18 +549,12 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
     final Color activeColor = isLegendary ? context.app.rating : context.app.accent;
     
     return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.only(bottom: AppSpace.xs),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: unlocked 
-              ? activeColor.withValues(alpha: isDark ? 0.08 : 0.03) 
-              : (context.cs.surfaceContainerHigh),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: unlocked ? activeColor.withValues(alpha: 0.2) : (context.cs.outlineVariant), 
-            width: 1
-          ),
+          color: unlocked ? activeColor.withValues(alpha: isDark ? 0.14 : 0.10) : context.cs.surfaceContainerLow,
+          borderRadius: AppRadius.xlAll,
         ),
         child: Column(
           children: [
@@ -550,7 +564,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: unlocked ? activeColor.withValues(alpha: 0.15) : (context.cs.outlineVariant),
+                    color: unlocked ? activeColor.withValues(alpha: 0.18) : context.cs.surfaceContainerHigh,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -596,7 +610,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 6,
-                backgroundColor: context.cs.outlineVariant,
+                backgroundColor: context.cs.surfaceContainerHighest,
                 valueColor: AlwaysStoppedAnimation<Color>(
                   unlocked ? activeColor : activeColor.withValues(alpha: 0.4)
                 ),

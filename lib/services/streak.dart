@@ -25,6 +25,19 @@ class ReadingStreak {
     if (days.contains(today)) return endingOn(days, today);
     return endingOn(days, DateTime(today.year, today.month, today.day - 1));
   }
+
+  /// La racha más larga de la historia.
+  static int best(Iterable<DateTime> dates) {
+    final days = daysOf(dates).toList()..sort();
+    var best = 0, run = 0;
+    DateTime? prev;
+    for (final d in days) {
+      run = (prev != null && DateTime(prev.year, prev.month, prev.day + 1) == d) ? run + 1 : 1;
+      if (run > best) best = run;
+      prev = d;
+    }
+    return best;
+  }
 }
 
 /// Aviso "racha en riesgo" que hay que programar.

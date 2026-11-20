@@ -71,4 +71,13 @@ void main() {
       expect(StreakRisk.title(5), '🔥 Tu racha de 5 días está en riesgo');
     });
   });
+
+  test('mejor racha: la serie más larga, aunque ya terminó', () {
+    DateTime d(int day) => DateTime(2026, 11, day, 21);
+    expect(ReadingStreak.best([d(1), d(2), d(3), d(5), d(6), d(9)]), 3);
+    expect(ReadingStreak.best([d(1), d(1), d(2)]), 2, reason: 'varias sesiones el mismo día cuentan una vez');
+    expect(ReadingStreak.best(const []), 0);
+    // Cruza fin de mes
+    expect(ReadingStreak.best([DateTime(2026, 10, 30), DateTime(2026, 10, 31), DateTime(2026, 11, 1)]), 3);
+  });
 }
