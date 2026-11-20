@@ -1,42 +1,30 @@
 # -------------------------------------------------------------------------
-# REGLAS DE PROGUARD PARA BOOK TRACKER
+# Reglas de R8 para Book Tracker (solo en release)
+#
+# La mayoría de librerías traen sus propias reglas (Google Mobile Ads,
+# Play Billing, ML Kit, AndroidX) y el plugin de Flutter añade las del motor.
+# Aquí solo va lo que no está cubierto. El mapa de desofuscación
+# (mapping.txt) viaja dentro del AAB y Play Console lo usa automáticamente.
 # -------------------------------------------------------------------------
 
-# 1. PROTECCIÓN DEL MOTOR DE FLUTTER Y PLUGINS
-# Evita que R8 elimine o renombre clases críticas del framework
--keep class io.flutter.app.** { *; }
--keep class io.flutter.plugin.** { *; }
--keep class io.flutter.util.** { *; }
--keep class io.flutter.view.** { *; }
--keep class io.flutter.** { *; }
--keep class io.flutter.plugins.** { *; }
--keep class com.google.android.gms.internal.** { *; }
-
-# 2. PROTECCIÓN DE TU LÓGICA DE NEGOCIO (¡CRÍTICO PARA STATS!)
-# Sustituye 'com.jabc.booktracker' por el package name real de tu app si es distinto.
-# Esto evita que se ofusquen tus modelos (Book, ReadingSession) y se rompa la DB.
+# Código propio de la app: MainActivity, widget y fábrica de anuncios nativos
+# (se registran por nombre desde Flutter y el manifest).
 -keep class com.jabc.booktracker.** { *; }
 
-# 3. GOOGLE MOBILE ADS (ADMOD)
-# Reglas necesarias para que los anuncios y tu Native Ad Factory funcionen
--keep class com.jabc.booktracker.ListTileNativeAdFactory { *; }
--keep class com.google.android.gms.ads.** { *; }
--keep class com.google.ads.** { *; }
+# flutter_local_notifications guarda las notificaciones programadas con Gson
+# (sin estas reglas, tras reiniciar el teléfono no se reprograman).
+-keep class com.dexterous.** { *; }
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class com.google.gson.reflect.TypeToken { *; }
+-keep class * extends com.google.gson.reflect.TypeToken
 
-# 4. PERSISTENCIA Y SERIALIZACIÓN (SQLite / Drift / Riverpod)
-# Mantiene las anotaciones y firmas necesarias para la inyección de dependencias
--keepattributes *Annotation*,Signature,EnclosingMethod,InnerClasses
--keep class androidx.sqlite.db.** { *; }
--dontwarn androidx.sqlite.db.**
+# home_widget: receptor y servicio de las acciones del widget en segundo plano.
+-keep class es.antonborri.home_widget.** { *; }
 
-# 5. MANEJO DE ADVERTENCIAS AUTOMÁTICAS
-# Evita errores de compilación por librerías que referencian clases inexistentes
+# Componentes diferidos de Flutter que la app no usa (Play Core no se incluye).
 -dontwarn com.google.android.play.core.**
--dontwarn com.google.android.play.core.splitcompat.SplitCompatApplication
--dontwarn com.google.android.play.core.splitinstall.**
--dontwarn com.google.android.play.core.tasks.**
 
-# 6. REGLAS PARA TUTORIAL COACH MARK Y UI
-# Mantiene los nombres de los widgets para que las GlobalKeys funcionen
--keepnames class * extends android.view.View
--keepnames class * extends android.app.Activity
+# Números de línea en los informes de fallos de Play Console.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile

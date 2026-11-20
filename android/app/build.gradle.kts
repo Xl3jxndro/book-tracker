@@ -68,8 +68,10 @@ android {
                 signingConfigs.getByName("debug")
             }
             
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // R8: encoge y ofusca el código Java/Kotlin. El mapping.txt va dentro
+            // del AAB (Play Console lo usa para leer los fallos).
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
