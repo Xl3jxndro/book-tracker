@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/theme_provider.dart';
+import '../providers/color_source_provider.dart';
 import '../providers/notifications_provider.dart';
 import '../providers/streak_risk_provider.dart';
 import '../providers/auth_provider.dart';
@@ -144,6 +145,14 @@ class SettingsScreen extends ConsumerWidget {
               leadingIcon: currentMode == ThemeMode.dark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
               iconColor: context.cs.primary,
               onTap: () => _showThemePicker(context, ref, isDark),
+            ),
+            _settingsTile(
+              context,
+              title: 'Colores',
+              subtitle: _colorSourceLabel(ref),
+              leadingIcon: Icons.palette_rounded,
+              iconColor: context.cs.primary,
+              onTap: () => _showColorSourcePicker(context, ref),
             ),
           ], context),
           /*
@@ -698,6 +707,95 @@ class SettingsScreen extends ConsumerWidget {
       trailing: selected ? Icon(Icons.check_circle_rounded, color: context.app.accent) : null,
       onTap: () {
         ref.read(themeProvider.notifier).setTheme(value);
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  String _colorSourceLabel(WidgetRef ref) {
+    final source = ref.watch(colorSourceProvider);
+    final available = ref.watch(systemPaletteProvider).value != null;
+    if (source == ColorSource.system && available) return 'Del fondo de pantalla';
+    return 'Book Tracker';
+  }
+
+  void _showColorSourcePicker(BuildContext context, WidgetRef ref) {
+    final available = ref.read(systemPaletteProvider).value != null;
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 20, 8, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(10))),
+              const SizedBox(height: 16),
+              _colorSourceOption(
+                context,
+                ref,
+                ColorSource.brand,
+                'Book Tracker',
+                'Crema y verde abeto de día, ciruela y ámbar de noche.',
+                const [Color(0xFFEEE2CB), Color(0xFF1B4532), Color(0xFFC4553A), Color(0xFF2B1C33), Color(0xFFD9D3CC), Color(0xFFFF8C12)],
+              ),
+              _colorSourceOption(
+                context,
+                ref,
+                ColorSource.system,
+                'Del fondo de pantalla',
+                available
+                    ? 'Material You: los colores de tu fondo de pantalla.'
+                    : 'Disponible en Android 12 o superior.',
+                null,
+                enabled: available,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _colorSourceOption(
+    BuildContext context,
+    WidgetRef ref,
+    ColorSource value,
+    String title,
+    String subtitle,
+    List<Color>? swatches, {
+    bool enabled = true,
+  }) {
+    final selected = ref.read(colorSourceProvider) == value && enabled;
+    final colors = swatches ??
+        [context.cs.primaryContainer, context.cs.primary, context.cs.tertiary, context.cs.primaryContainer, context.cs.primary, context.cs.tertiary];
+    return ListTile(
+      enabled: enabled,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: SizedBox(
+        width: 56,
+        height: 28,
+        child: Stack(children: [
+          for (var i = 0; i < 3; i++)
+            Positioned(
+              left: i * 14.0,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: enabled ? colors[i + (Theme.of(context).brightness == Brightness.dark ? 3 : 0)] : context.cs.surfaceContainerHighest,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: context.cs.surfaceContainerLow, width: 2),
+                ),
+              ),
+            ),
+        ]),
+      ),
+      title: Text(title, style: TextStyle(fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+      subtitle: Text(subtitle),
+      trailing: selected ? Icon(Icons.check_circle_rounded, color: context.app.accent) : null,
+      onTap: () {
+        ref.read(colorSourceProvider.notifier).set(value);
         Navigator.pop(context);
       },
     );

@@ -9,6 +9,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'screens/main_wrapper.dart';
 import 'screens/login_screen.dart';
 import 'providers/theme_provider.dart';
+import 'providers/color_source_provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/database_provider.dart';
@@ -174,6 +175,10 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
   @override
   Widget build(BuildContext context) {
     final mode = ref.watch(themeProvider);
+    // Material You solo si el usuario lo eligió y el teléfono lo ofrece
+    final systemPalette = ref.watch(colorSourceProvider) == ColorSource.system
+        ? ref.watch(systemPaletteProvider).value
+        : null;
     final auth = ref.watch(authProvider);
     if (auth.canEnterApp) _hasEnteredApp = true;
     final isRelocked = _hasEnteredApp && !auth.isLoading && !auth.canEnterApp;
@@ -182,8 +187,8 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
       debugShowCheckedModeBanner: false,
       title: 'Book Tracker',
       themeMode: mode,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
+      theme: systemPalette == null ? AppTheme.light : AppTheme.fromSystem(systemPalette, Brightness.light),
+      darkTheme: systemPalette == null ? AppTheme.dark : AppTheme.fromSystem(systemPalette, Brightness.dark),
 
       // Lógica de enrutamiento principal:
       home: auth.isLoading

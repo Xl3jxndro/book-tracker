@@ -1,3 +1,4 @@
+import 'package:material_color_utilities/material_color_utilities.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Paletas de Book Tracker.
@@ -93,6 +94,25 @@ class AppColors extends ThemeExtension<AppColors> {
     streak: AppPalette.amber,
     rating: Color(0xFFFFB347),
   );
+
+  /// Colores propios para un esquema de Material You: el acento es el
+  /// "tertiary" del sistema y los estados se armonizan con su "primary".
+  static AppColors fromScheme(ColorScheme scheme, AppColors base) {
+    Color h(Color c) => Color(Blend.harmonize(c.toARGB32(), scheme.primary.toARGB32()));
+    return AppColors(
+      accent: scheme.tertiary,
+      onAccent: scheme.onTertiary,
+      accentText: scheme.tertiary,
+      accentSoft: scheme.tertiaryContainer,
+      heading: scheme.onSurface,
+      statusPending: h(base.statusPending),
+      statusReading: h(base.statusReading),
+      statusFinished: h(base.statusFinished),
+      statusAbandoned: h(base.statusAbandoned),
+      streak: scheme.tertiary,
+      rating: h(base.rating),
+    );
+  }
 
   static AppColors of(BuildContext context) =>
       Theme.of(context).extension<AppColors>() ??

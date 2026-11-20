@@ -74,6 +74,8 @@ dependencies:
   in_app_purchase_android: ^0.5.5
   # Widgets de Material (antes package:flutter/material.dart, obsoleto desde Flutter 3.47)
   material_ui: ^1.11.1
+  dynamic_color: ^2.1.0                 # Colores del sistema (Material You)
+  material_color_utilities: ^0.13.0
 
 dev_dependencies:
   flutter_test:

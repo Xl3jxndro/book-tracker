@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:palette_generator/palette_generator.dart';
 import '../theme/app_colors.dart';
+import 'color_source_provider.dart';
 
 // --- PROVIDER DE MODO DE TEMA ---
 final themeProvider = NotifierProvider<ThemeNotifier, ThemeMode>(ThemeNotifier.new);
@@ -36,8 +37,12 @@ final bookColorSchemeProvider = FutureProvider.family<ColorScheme, String?>((ref
   final themeMode = ref.watch(themeProvider);
   final bool isDark = themeMode == ThemeMode.dark ||
       (themeMode == ThemeMode.system && WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark);
-  final base = isDark ? AppSchemes.dark : AppSchemes.light;
   final brightness = isDark ? Brightness.dark : Brightness.light;
+  // Mismos fondos que el resto de la app (paleta propia o Material You)
+  final palette = ref.watch(colorSourceProvider) == ColorSource.system ? await ref.watch(systemPaletteProvider.future) : null;
+  final base = palette != null
+      ? ColorScheme.fromSeed(seedColor: Color(palette.primary.get(40)), brightness: brightness)
+      : (isDark ? AppSchemes.dark : AppSchemes.light);
 
   if (coverPath == null || !File(coverPath).existsSync()) return base;
 
