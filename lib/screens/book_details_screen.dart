@@ -839,6 +839,20 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
 
     setState(() => _isTutorialShowing = true);
 
+    // Al abrir, la pantalla muestra "Sintonizando tu lectura..." mientras saca
+    // los colores de la portada: hay que esperar a que existan los elementos
+    // que señala el tutorial (si no, la librería falla y deja la capa encima).
+    for (var i = 0; i < 100 && mounted && _progressKey.currentContext == null; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    if (!mounted) return;
+    if (_progressKey.currentContext == null) {
+      setState(() => _isTutorialShowing = false); // se intentará la próxima vez
+      return;
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 300)); // que termine la animación de entrada
+    if (!mounted) return;
+
     // SECUENCIA GARANTIZADA:
     // Paso 1: Progreso
     await _showStep(
@@ -895,8 +909,9 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       await Future.delayed(const Duration(milliseconds: 150));
     }
 
-    // Si el usuario salió de la pantalla durante el scroll, no hay nada que mostrar
-    if (!mounted) return;
+    // Si el usuario salió de la pantalla durante el scroll, o el elemento no
+    // está (p. ej. sin cronómetro en un libro terminado), se salta el paso
+    if (!mounted || key.currentContext == null) return;
 
     // 2. TUTORIAL: Mostramos el foco solo para ESTE widget
     final completer = Completer<void>();
