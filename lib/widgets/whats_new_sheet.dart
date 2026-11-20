@@ -6,19 +6,18 @@ import '../theme/app_colors.dart';
 /// bienvenida en su lugar). Al publicar otra versión con novedades, cambiar
 /// [version] y [items].
 class WhatsNew {
-  static const version = '1.2.0';
+  static const version = '1.4.0';
   static const prefsKey = 'whats_new_seen_version';
 
   static const items = <(IconData, String, String)>[
-    (Icons.qr_code_scanner_rounded, 'Escáner de ISBN', 'Añade un libro escaneando su código de barras o escribiendo el ISBN.'),
-    (Icons.format_quote_rounded, 'Mis citas', 'Todas tus notas en un lugar: búscalas, marca favoritas y compártelas.'),
-    (Icons.emoji_events_rounded, 'Reto anual y fechas', 'Fechas de inicio y fin de cada libro y tu meta de libros del año.'),
-    (Icons.flag_rounded, 'Meta por sesión', 'Elige 15–60 min o una página y te aviso al cumplirla.'),
-    (Icons.rate_review_rounded, 'Reseñas', 'Califica y reseña al terminar un libro (o cuando quieras).'),
-    (Icons.local_fire_department_rounded, 'Racha en riesgo', 'Un aviso por la noche si aún no has leído y llevas racha.'),
-    (Icons.widgets_rounded, 'Widget renovado', 'Con la portada de tu libro y pausa en un toque.'),
-    (Icons.ios_share_rounded, 'Mi año lector', 'Comparte una tarjeta con tus estadísticas del año.'),
-    (Icons.download_rounded, 'Goodreads y respaldos', 'Importa tu biblioteca de Goodreads y guarda una copia completa con portadas.'),
+    (Icons.auto_awesome_rounded, 'Diseño renovado', 'Más limpio y tranquilo, con nuevos colores, tipografía y modo oscuro.'),
+    (Icons.palette_outlined, 'Colores de tu teléfono', 'En Ajustes > Colores puedes usar la paleta de tu fondo de pantalla.'),
+    (Icons.play_circle_outline_rounded, 'Continuar leyendo', 'Tu libro actual arriba de la biblioteca: retoma la sesión en un toque.'),
+    (Icons.grid_view_rounded, 'Lista o cuadrícula', 'Elige cómo ver tu biblioteca y filtra por estado o categoría.'),
+    (Icons.swipe_rounded, 'Desliza para actuar', 'A la derecha: empezar o terminar un libro, con Deshacer. A la izquierda: borrar.'),
+    (Icons.menu_book_rounded, 'Detalle del libro', 'Rediseñado, con tu ritmo, lo que falta y tus notas como citas.'),
+    (Icons.insights_rounded, 'Estadísticas en mosaico', 'Racha, tu mejor racha y la semana de un vistazo.'),
+    (Icons.arrow_back_rounded, 'Gesto atrás', 'Desliza para volver y mira a dónde vas; "atrás" vuelve a Libros antes de salir.'),
   ];
 
   /// ¿Hay que mostrarlas? Solo una vez por versión.
@@ -73,10 +72,10 @@ class WhatsNewSheet extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
                 children: [
                   Text('NOVEDADES · ${WhatsNew.version}',
-                      style: theme.textTheme.labelMedium?.copyWith(color: scheme.primary, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+                      style: theme.textTheme.labelMedium?.copyWith(color: context.app.accentText, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
                   const SizedBox(height: 6),
                   Text('Lo nuevo en Book Tracker',
-                      style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                      style: theme.textTheme.headlineSmall),
                   const SizedBox(height: 20),
                   for (final (icon, title, text) in WhatsNew.items)
                     Padding(
@@ -87,10 +86,10 @@ class WhatsNewSheet extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: scheme.primaryContainer.withValues(alpha: 0.6),
+                              color: context.app.accentSoft,
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            child: Icon(icon, size: 20, color: scheme.onPrimaryContainer),
+                            child: Icon(icon, size: 20, color: context.app.accentText),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -118,7 +117,7 @@ class WhatsNewSheet extends StatelessWidget {
                   child: FilledButton(
                     onPressed: () => Navigator.pop(context),
                     style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-                    child: const Text('¡Genial!'),
+                    child: const Text('Empezar'),
                   ),
                 ),
               ),

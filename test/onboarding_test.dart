@@ -60,7 +60,7 @@ void main() {
       await tester.pumpWidget(const MaterialApp(home: Scaffold(body: WhatsNewSheet())));
       expect(tester.takeException(), isNull);
       expect(find.text('Lo nuevo en Book Tracker'), findsOneWidget);
-      expect(find.text('Mis citas'), findsOneWidget);
+      expect(find.text('Diseño renovado'), findsOneWidget);
     });
   });
 
