@@ -80,8 +80,16 @@ android {
     }
 }
 
+// Citas con la cámara: el modelo de reconocimiento de texto lo descarga
+// Google Play (al instalar la app) en vez de ir dentro del APK (~11 MB menos
+// por teléfono). Misma API y también funciona en el teléfono, sin cuenta.
+configurations.all {
+    exclude(group = "com.google.mlkit", module = "text-recognition")
+}
+
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
 }
 
 kotlin {

@@ -44,7 +44,13 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-1355991417734091~5002717370"/>
-            
+
+        <!-- Citas con la cámara: Google Play descarga el modelo de
+             reconocimiento de texto al instalar la app (no al primer uso) -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr" />
+
         <!-- flutter_local_notifications: necesarios para que los recordatorios
              programados se disparen y se restauren tras reiniciar o actualizar -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />

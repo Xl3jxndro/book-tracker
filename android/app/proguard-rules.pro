@@ -28,3 +28,11 @@
 # Números de línea en los informes de fallos de Play Console.
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# Reconocimiento de texto (citas con la cámara): solo se incluye el modelo
+# latino; el plugin también nombra los de chino, japonés, coreano y
+# devanagari, que no van en la app.
+-dontwarn com.google.mlkit.vision.text.chinese.**
+-dontwarn com.google.mlkit.vision.text.devanagari.**
+-dontwarn com.google.mlkit.vision.text.japanese.**
+-dontwarn com.google.mlkit.vision.text.korean.**

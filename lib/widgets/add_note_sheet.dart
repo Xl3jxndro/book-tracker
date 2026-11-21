@@ -5,6 +5,8 @@ import 'package:drift/drift.dart' as drift;
 import '../database/database.dart';
 import '../providers/database_provider.dart';
 import '../services/voice_service.dart';
+import '../screens/scan_quote_screen.dart';
+import 'package:image_picker/image_picker.dart';
 import '../theme/app_colors.dart';
 
 class AddNoteSheet extends ConsumerStatefulWidget {
@@ -122,6 +124,47 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
     }
   }
 
+  /// Cita desde una foto de la página: se reconoce el texto en el teléfono
+  /// y se eligen las líneas; el texto se añade a la nota para revisarlo.
+  Future<void> _scanText() async {
+    if (_isListening) _stopVoice();
+    FocusScope.of(context).unfocus();
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const _ScanSourceSheet(),
+    );
+    if (source == null || !mounted) return;
+
+    XFile? photo;
+    try {
+      photo = await ImagePicker().pickImage(source: source, maxWidth: 2400, maxHeight: 2400, imageQuality: 92);
+    } catch (e) {
+      debugPrint('Foto para escanear: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('No se pudo abrir la cámara. Revisa el permiso en los ajustes del teléfono.'),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+      return;
+    }
+    if (photo == null || !mounted) return;
+
+    final text = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => ScanQuoteScreen(imagePath: photo!.path)),
+    );
+    if (text == null || text.isEmpty || !mounted) return;
+    final current = _contentController.text.trimRight();
+    var combined = current.isEmpty ? text : '$current\n$text';
+    if (combined.length > AddNoteSheet.maxLength) combined = combined.substring(0, AddNoteSheet.maxLength);
+    setState(() {
+      _contentController.text = combined;
+      _contentController.selection = TextSelection.collapsed(offset: combined.length);
+    });
+  }
+
   void _saveNote() async {
     final content = _contentController.text.trim();
     if (content.isEmpty) return;
@@ -197,7 +240,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
                       )
                     ),
                     Text(
-                      _isListening ? 'Escuchando voz...' : 'Escribe tus ideas',
+                      _isListening ? 'Escuchando voz...' : 'Escribe, dicta o escanea',
                       style: TextStyle(
                         fontSize: 14, 
                         color: _isListening ? scheme.primary : scheme.onSurfaceVariant,
@@ -208,6 +251,18 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
                 ),
               ),
               
+              // Escanear una cita con la cámara
+              IconButton(
+                tooltip: 'Escanear texto con la cámara',
+                onPressed: _scanText,
+                style: IconButton.styleFrom(
+                  fixedSize: const Size(48, 48),
+                  backgroundColor: scheme.surfaceContainerHigh,
+                  foregroundColor: scheme.onSurfaceVariant,
+                ),
+                icon: const Icon(Icons.document_scanner_outlined, size: 22),
+              ),
+              const SizedBox(width: 4),
               // CONTENEDOR DE TAMAÑO FIJO PARA EVITAR SALTOS
               SizedBox(
                 width: 60,
@@ -352,6 +407,65 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Cámara o galería para escanear una cita.
+class _ScanSourceSheet extends StatelessWidget {
+  const _ScanSourceSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: context.cs.surfaceContainerLow,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text('Escanear una cita', style: theme.textTheme.titleLarge),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
+                child: Text(
+                  'El texto se reconoce en tu teléfono: la foto no se envía a ningún sitio.',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant),
+                ),
+              ),
+              ListTile(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                leading: Icon(Icons.photo_camera_outlined, color: context.app.accent),
+                title: const Text('Tomar foto de la página'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                leading: Icon(Icons.photo_library_outlined, color: context.app.accent),
+                title: const Text('Elegir de la galería'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
