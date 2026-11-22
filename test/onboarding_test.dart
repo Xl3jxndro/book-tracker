@@ -60,7 +60,8 @@ void main() {
       await tester.pumpWidget(const MaterialApp(home: Scaffold(body: WhatsNewSheet())));
       expect(tester.takeException(), isNull);
       expect(find.text('Lo nuevo en Book Tracker'), findsOneWidget);
-      expect(find.text('Diseño renovado'), findsOneWidget);
+      // La primera novedad de la última versión (sin atar la prueba a una versión)
+      expect(find.text(WhatsNew.items.first.$2), findsOneWidget);
     });
   });
 

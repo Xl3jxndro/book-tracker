@@ -16,6 +16,12 @@ class WhatsNew {
   static const prefsKey = 'whats_new_seen_version';
 
   static const history = <ReleaseNotes>[
+    ReleaseNotes('1.4.1', [
+      (Icons.document_scanner_outlined, 'Citas con la cámara', 'Fotografía una página y subraya con el dedo la frase que quieres guardar. Con zoom y lupa para más precisión.'),
+      (Icons.lock_outline_rounded, 'Todo en tu teléfono', 'El texto se reconoce en tu dispositivo: la foto no se envía a ningún sitio.'),
+      (Icons.calendar_month_rounded, 'Calendario de lectura', 'Cada día coloreado según cuánto leíste. Toca un día para ver qué libros leíste.'),
+      (Icons.bar_chart_rounded, 'Gráfico mensual más claro', 'Escala redonda y barras que nacen en el cero.'),
+    ]),
     ReleaseNotes('1.4.0', [
       (Icons.auto_awesome_rounded, 'Diseño renovado', 'Más limpio y tranquilo, con nuevos colores, tipografía y modo oscuro.'),
       (Icons.palette_outlined, 'Colores de tu teléfono', 'En Ajustes > Colores puedes usar la paleta de tu fondo de pantalla.'),
