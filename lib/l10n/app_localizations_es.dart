@@ -2275,6 +2275,13 @@ class AppLocalizationsEs extends AppLocalizations {
       'Plurales correctos (\"1 página\", \"1 libro\") y fechas más claras.';
 
   @override
+  String get whatsNew142IconTitle => 'Ícono nuevo';
+
+  @override
+  String get whatsNew142IconText =>
+      'Un libro dentro de un anillo de progreso, con los colores de la app. También en versión temática.';
+
+  @override
   String get whatsNew141CameraQuotesTitle => 'Citas con la cámara';
 
   @override

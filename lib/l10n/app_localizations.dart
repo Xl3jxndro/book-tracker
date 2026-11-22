@@ -3734,6 +3734,18 @@ abstract class AppLocalizations {
   /// **'Plurales correctos (\"1 página\", \"1 libro\") y fechas más claras.'**
   String get whatsNew142PluralsText;
 
+  /// No description provided for @whatsNew142IconTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ícono nuevo'**
+  String get whatsNew142IconTitle;
+
+  /// No description provided for @whatsNew142IconText.
+  ///
+  /// In es, this message translates to:
+  /// **'Un libro dentro de un anillo de progreso, con los colores de la app. También en versión temática.'**
+  String get whatsNew142IconText;
+
   /// No description provided for @whatsNew141CameraQuotesTitle.
   ///
   /// In es, this message translates to:

@@ -2252,6 +2252,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Correct singular and plural forms (\"1 page\", \"1 book\") and clearer dates.';
 
   @override
+  String get whatsNew142IconTitle => 'New icon';
+
+  @override
+  String get whatsNew142IconText =>
+      'A book inside a progress ring, in the app\'s colors. Also available as a themed icon.';
+
+  @override
   String get whatsNew141CameraQuotesTitle => 'Quotes from the camera';
 
   @override

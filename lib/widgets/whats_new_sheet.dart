@@ -23,6 +23,7 @@ class WhatsNew {
           (Icons.translate_rounded, l.whatsNew142EnglishTitle, l.whatsNew142EnglishText),
           (Icons.language_rounded, l.whatsNew142LanguageTitle, l.whatsNew142LanguageText),
           (Icons.spellcheck_rounded, l.whatsNew142PluralsTitle, l.whatsNew142PluralsText),
+          (Icons.auto_awesome_rounded, l.whatsNew142IconTitle, l.whatsNew142IconText),
         ]),
         ReleaseNotes('1.4.1', [
           (Icons.document_scanner_outlined, l.whatsNew141CameraQuotesTitle, l.whatsNew141CameraQuotesText),

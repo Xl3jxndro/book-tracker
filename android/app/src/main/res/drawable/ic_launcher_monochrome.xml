@@ -1,34 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Icono temático (Android 13+): libro abierto con una línea de progreso.
-     El sistema lo tiñe con los colores del fondo de pantalla. -->
+<!-- Ícono temático (Android 13+): el mismo dibujo en un solo color, que el
+     sistema tiñe con los colores del fondo de pantalla. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Páginas -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="4"
-        android:strokeLineJoin="round"
-        android:pathData="M54,42 C47,37 38,35.5 28,37 L28,72 C38,70.5 47,72 54,77 C61,72 70,70.5 80,72 L80,37 C70,35.5 61,37 54,42 Z" />
-    <!-- Lomo -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="4"
-        android:strokeLineCap="round"
-        android:pathData="M54,42 L54,77" />
-    <!-- Progreso -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="3.5"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M33,63 L40,57 L46,60 M60,56 L67,50 L74,46" />
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M76.5,42 L77.5,50.5 L70,46.5 Z" />
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="1.1"
+        android:scaleY="1.1">
+        <!-- Pista del anillo (tenue) -->
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#55FFFFFF"
+            android:strokeWidth="5"
+            android:pathData="M54,28 A26,26 0 1,1 53.99,28 Z" />
+        <!-- Progreso -->
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="5"
+            android:strokeLineCap="round"
+            android:pathData="M54,28 A26,26 0 1,1 28.01,54.54" />
+        <!-- Libro abierto -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M53.2,47.4 C48.4,44.4 42.5,43.6 36.2,44.5 L36.2,65.2 C42.5,64.3 48.4,65 53.2,68.1 Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M54.8,47.4 C59.6,44.4 65.5,43.6 71.8,44.5 L71.8,65.2 C65.5,64.3 59.6,65 54.8,68.1 Z" />
+    </group>
 </vector>

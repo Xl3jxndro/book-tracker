@@ -443,6 +443,11 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
   Widget _bottomBar(BuildContext context) {
     final theme = Theme.of(context);
     final quote = _quote;
+    // Alto fijo de dos líneas para la ayuda o la cita: si la barra creciera
+    // al aparecer la cita, la foto se movería bajo el dedo mientras subraya.
+    final textStyle = theme.textTheme.bodyMedium ?? const TextStyle(fontSize: 14);
+    final lineHeight = MediaQuery.textScalerOf(context).scale(textStyle.fontSize ?? 14) * (textStyle.height ?? 1.45);
+    final previewHeight = lineHeight * 2 + 4;
     return Container(
       decoration: BoxDecoration(
         color: context.cs.surfaceContainerLow,
@@ -455,8 +460,10 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpace.sm),
+            Container(
+              height: previewHeight,
+              margin: const EdgeInsets.only(bottom: AppSpace.sm),
+              alignment: Alignment.centerLeft,
               child: quote.isEmpty
                   ? Row(
                       children: [
@@ -464,13 +471,15 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
                         const SizedBox(width: AppSpace.xs),
                         Expanded(
                           child: Text(context.l10n.scanHint,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant)),
                         ),
                       ],
                     )
                   : Text(
                       '“$quote”',
-                      maxLines: 3,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic, color: context.cs.onSurface),
                     ),
