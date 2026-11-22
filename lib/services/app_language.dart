@@ -32,6 +32,10 @@ class AppLanguage {
   /// Idioma en uso ahora mismo (se actualiza al dibujar la app).
   static Locale current = const Locale('es');
 
+  /// Código del idioma en uso ("es" o "en"), para fechas y números en
+  /// código sin pantalla: `DateFormat.MMMMd(AppLanguage.code)`.
+  static String get code => current.languageCode;
+
   /// Textos en el idioma en uso, para código sin pantalla (notificaciones,
   /// widget de inicio, archivos exportados…).
   static AppLocalizations get strings => lookupAppLocalizations(current);
