@@ -6,6 +6,7 @@ import 'package:drift/drift.dart';
 import 'package:path/path.dart' as p;
 
 import '../database/database.dart';
+import 'app_language.dart';
 import 'library_export_service.dart';
 
 /// Error de respaldo con un mensaje listo para mostrar al usuario.
@@ -118,7 +119,7 @@ class BackupService {
     try {
       bytes = await file.readAsBytes();
     } catch (_) {
-      throw const BackupException('No se pudo leer el archivo.');
+      throw BackupException(AppLanguage.strings.backupSvcReadFailed);
     }
 
     final isZip = bytes.length > 4 && bytes[0] == 0x50 && bytes[1] == 0x4B && bytes[2] == 0x03 && bytes[3] == 0x04;
@@ -130,11 +131,11 @@ class BackupService {
       try {
         archive = ZipDecoder().decodeBytes(bytes);
       } catch (_) {
-        throw const BackupException('El archivo .zip está dañado.');
+        throw BackupException(AppLanguage.strings.backupSvcZipDamaged);
       }
       final jsonFile = archive.find(jsonEntry);
       if (jsonFile == null) {
-        throw const BackupException('Este .zip no es un respaldo de Book Tracker.');
+        throw BackupException(AppLanguage.strings.backupSvcZipNotBackup);
       }
       jsonText = utf8.decode(jsonFile.content, allowMalformed: true);
 
@@ -152,7 +153,7 @@ class BackupService {
       try {
         jsonText = utf8.decode(bytes);
       } catch (_) {
-        throw const BackupException('El archivo no es un respaldo de Book Tracker.');
+        throw BackupException(AppLanguage.strings.backupSvcNotBackup);
       }
     }
 
@@ -160,18 +161,18 @@ class BackupService {
     try {
       data = jsonDecode(jsonText.startsWith('﻿') ? jsonText.substring(1) : jsonText);
     } catch (_) {
-      throw const BackupException('El archivo no es un respaldo de Book Tracker.');
+      throw BackupException(AppLanguage.strings.backupSvcNotBackup);
     }
     if (data is! Map<String, dynamic> || data['app'] != LibraryExportService.appId) {
-      throw const BackupException('El archivo no es un respaldo de Book Tracker.');
+      throw BackupException(AppLanguage.strings.backupSvcNotBackup);
     }
 
     final version = data['format_version'];
     if (version is! int || version < 1) {
-      throw const BackupException('El respaldo tiene un formato desconocido.');
+      throw BackupException(AppLanguage.strings.backupSvcUnknownFormat);
     }
     if (version > LibraryExportService.formatVersion) {
-      throw const BackupException('Este respaldo es de una versión más nueva de la app. Actualízala y vuelve a intentarlo.');
+      throw BackupException(AppLanguage.strings.backupSvcNewerVersion);
     }
 
     final Map<String, dynamic> json = data;
@@ -179,7 +180,7 @@ class BackupService {
         ((json[key] as List?) ?? const []).whereType<Map<String, dynamic>>().toList();
 
     if (json['books'] is! List) {
-      throw const BackupException('El respaldo está incompleto: no contiene libros.');
+      throw BackupException(AppLanguage.strings.backupSvcNoBooks);
     }
 
     return BackupPreview(
@@ -217,7 +218,7 @@ class BackupService {
       final author = _text(b['author'], _maxText);
       final totalPages = _int(b['total_pages']);
       if (id == null || title == null || author == null || totalPages == null || totalPages < 0 || !bookIds.add(id)) {
-        throw BackupException('El respaldo tiene datos dañados (libro ${i + 1}). No se cambió nada.');
+        throw BackupException(AppLanguage.strings.backupSvcDamagedBook(i + 1));
       }
       final status = _int(b['status']) ?? 0;
       final rating = _int(b['rating']) ?? 0;
@@ -285,7 +286,7 @@ class BackupService {
       }
     } catch (e) {
       await _deleteAll(copied);
-      throw const BackupException('No se pudieron copiar las portadas. No se cambió nada.');
+      throw BackupException(AppLanguage.strings.backupSvcCoversFailed);
     }
 
     final books = [
@@ -308,7 +309,7 @@ class BackupService {
       });
     } catch (e) {
       await _deleteAll(copied);
-      throw const BackupException('No se pudo restaurar el respaldo. Tu biblioteca no cambió.');
+      throw BackupException(AppLanguage.strings.backupSvcRestoreFailed);
     }
 
     // 4. Las portadas antiguas que ya nadie usa dejan de ocupar espacio

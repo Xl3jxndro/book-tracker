@@ -26,6 +26,7 @@ import '../widgets/skeleton_loader.dart';
 import '../widgets/add_book_sheet.dart';
 import '../widgets/book_card.dart';
 import '../theme/app_tokens.dart';
+import '../l10n/l10n.dart';
 
 enum NoteFilter { recent, page, length, favorites }
 
@@ -79,10 +80,8 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
   // --- LÓGICA DE COMPARTIR AVANZADA ---
   
   void _shareBook(Book book) async {
-    String text = "📖 *Estoy leyendo:* ${book.title}\n✍️ *Autor:* ${book.author}\n";
-    text += "📊 *Progreso:* ${book.readPages}/${book.totalPages} pág.\n\n";
-    text += "✨ Compartido desde $appName";
-    
+    final text = context.l10n.detailsShareText(book.title, book.author, book.readPages, book.totalPages, appName);
+
     SharePlus.instance.share(ShareParams(text: text));
   }
 
@@ -103,10 +102,11 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
   String _getRelativeTime(DateTime date) {
     final now = DateTime.now();
     final diff = now.difference(date);
-    if (diff.inMinutes < 1) return 'Ahora';
-    if (diff.inMinutes < 60) return 'Hace ${diff.inMinutes}m';
-    if (diff.inHours < 24) return now.day == date.day ? 'Hoy' : 'Ayer';
-    return '${date.day}/${date.month}/${date.year % 100}';
+    final l10n = context.l10n;
+    if (diff.inMinutes < 1) return l10n.detailsTimeNow;
+    if (diff.inMinutes < 60) return l10n.detailsTimeMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return now.day == date.day ? l10n.detailsTimeToday : l10n.detailsTimeYesterday;
+    return DateFormat.yMd(context.languageCode).format(date);
   }
 
   void _showFeedback(String message, Color color) {
@@ -254,14 +254,14 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       child: Row(
         children: [
           IconButton(
-            tooltip: 'Volver',
+            tooltip: context.l10n.commonBack,
             style: style,
             icon: const Icon(Icons.arrow_back_rounded),
             onPressed: () => Navigator.pop(context),
           ),
           const Spacer(),
           IconButton(
-            tooltip: 'Compartir',
+            tooltip: context.l10n.detailsShare,
             style: style,
             icon: const Icon(Icons.ios_share_rounded, size: 20),
             onPressed: () => _shareBook(book),
@@ -270,7 +270,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
           MenuAnchor(
             alignmentOffset: const Offset(-120, 4),
             builder: (context, controller, _) => IconButton(
-              tooltip: 'Más opciones',
+              tooltip: context.l10n.detailsMoreOptions,
               style: style,
               icon: const Icon(Icons.more_horiz_rounded),
               onPressed: () => controller.isOpen ? controller.close() : controller.open(),
@@ -284,12 +284,12 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                   backgroundColor: Colors.transparent,
                   builder: (_) => AddBookSheet(bookToEdit: book),
                 ),
-                child: const Text('Editar libro'),
+                child: Text(context.l10n.detailsEditBook),
               ),
               MenuItemButton(
                 leadingIcon: Icon(Icons.delete_outline_rounded, color: cs.error),
                 onPressed: () => _confirmDelete(context, ref.read(databaseProvider), book),
-                child: Text('Eliminar', style: TextStyle(color: cs.error)),
+                child: Text(context.l10n.commonDelete, style: TextStyle(color: cs.error)),
               ),
             ],
           ),
@@ -333,8 +333,8 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpace.lg),
             child: EmptyStateWidget(
-              icon: Icons.edit_note_rounded, title: 'Sin notas aún', description: 'Guarda aquí tus citas y pensamientos.',
-              actionLabel: 'Nueva nota', onAction: () => _showAddNote(context, currentBook.id),
+              icon: Icons.edit_note_rounded, title: context.l10n.detailsNotesEmptyTitle, description: context.l10n.detailsNotesEmptyDescription,
+              actionLabel: context.l10n.detailsNewNote, onAction: () => _showAddNote(context, currentBook.id),
             ),
           );
         }
@@ -347,7 +347,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
             if (sortedNotes.isEmpty && _selectedFilter == NoteFilter.favorites)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Text('Toca la ☆ de una nota para guardarla en tus citas favoritas.',
+                child: Text(context.l10n.detailsFavoritesEmptyHint,
                     textAlign: TextAlign.center, style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
               ),
             ListView.separated(
@@ -388,23 +388,23 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                                   const Spacer(),
                                   _buildActionIcon(
                                     icon: Icons.image_outlined,
-                                    tooltip: 'Compartir como imagen',
+                                    tooltip: context.l10n.detailsShareAsImage,
                                     color: scheme.onSurfaceVariant,
                                     onTap: () => shareQuoteAsImage(context, currentBook, note),
                                   ),
                                   _buildActionIcon(
                                     icon: note.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
-                                    tooltip: note.isFavorite ? 'Quitar de favoritas' : 'Guardar en favoritas',
+                                    tooltip: note.isFavorite ? context.l10n.detailsRemoveFavorite : context.l10n.detailsAddFavorite,
                                     color: note.isFavorite ? context.app.rating : scheme.onSurfaceVariant,
                                     onTap: () => _toggleFavorite(note),
                                   ),
                                   _buildActionIcon(
                                     icon: Icons.copy_rounded,
-                                    tooltip: 'Copiar',
+                                    tooltip: context.l10n.detailsCopy,
                                     color: scheme.onSurfaceVariant,
                                     onTap: () {
                                       Clipboard.setData(ClipboardData(text: note.content));
-                                      _showFeedback('Copiado', scheme.primary);
+                                      _showFeedback(context.l10n.detailsCopied, scheme.primary);
                                     },
                                   ),
                                 ],
@@ -416,7 +416,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                               const SizedBox(height: AppSpace.sm),
                               Text(
                                 [
-                                  if (note.pageNumber != null) 'Página ${note.pageNumber}',
+                                  if (note.pageNumber != null) context.l10n.detailsNotePage(note.pageNumber!),
                                   _getRelativeTime(note.createdAt),
                                 ].join(' · '),
                                 style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
@@ -466,7 +466,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
           _buildReadingStats(currentBook, scheme, theme),
           _buildDailyGoalSection(scheme, theme),
           const SizedBox(height: AppSpace.xl),
-          _buildSectionTitle('Sesión de lectura', theme),
+          _buildSectionTitle(context.l10n.detailsReadingSession, theme),
           const SizedBox(height: AppSpace.sm),
           TimerWidget(key: _timerKey, book: currentBook, autoFinish: widget.autoFinishSession, autoStart: widget.autoStartTimer),
         ],
@@ -487,7 +487,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _buildSectionTitle('Notas y citas', theme),
+            _buildSectionTitle(context.l10n.detailsNotesAndQuotes, theme),
             if (count > 0) ...[
               const SizedBox(width: AppSpace.xs),
               Text('$count', style: theme.textTheme.titleMedium?.copyWith(color: scheme.onSurfaceVariant)),
@@ -497,7 +497,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
               key: _notesKey,
               style: FilledButton.styleFrom(minimumSize: const Size(0, 40), padding: const EdgeInsets.symmetric(horizontal: 14)),
               icon: const Icon(Icons.add_rounded, size: 20),
-              label: const Text('Añadir'),
+              label: Text(context.l10n.detailsAdd),
               onPressed: () => _showAddNote(context, currentBook.id),
             ),
           ],
@@ -511,13 +511,13 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          _filterChip('Recientes', NoteFilter.recent, scheme),
+          _filterChip(context.l10n.detailsFilterRecent, NoteFilter.recent, scheme),
           const SizedBox(width: 8),
-          _filterChip('Página', NoteFilter.page, scheme),
+          _filterChip(context.l10n.detailsFilterPage, NoteFilter.page, scheme),
           const SizedBox(width: 8),
-          _filterChip('Longitud', NoteFilter.length, scheme),
+          _filterChip(context.l10n.detailsFilterLength, NoteFilter.length, scheme),
           const SizedBox(width: 8),
-          _filterChip('★ Favoritas', NoteFilter.favorites, scheme),
+          _filterChip(context.l10n.detailsFilterFavorites, NoteFilter.favorites, scheme),
         ],
       ),
     );
@@ -559,7 +559,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Tu progreso', style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                  Text(context.l10n.detailsYourProgress, style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
                   Wrap(
                     crossAxisAlignment: WrapCrossAlignment.end,
                     spacing: 10,
@@ -568,7 +568,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                           style: theme.textTheme.displaySmall?.copyWith(fontFamily: theme.textTheme.titleMedium?.fontFamily, fontWeight: FontWeight.w700, color: cs.onSurface)),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
-                        child: Text('${book.readPages} de ${book.totalPages} páginas',
+                        child: Text(context.l10n.detailsPagesOfTotal(book.readPages, book.totalPages),
                             style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
                       ),
                     ],
@@ -581,14 +581,14 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                 style: FilledButton.styleFrom(minimumSize: const Size(0, 40), padding: const EdgeInsets.symmetric(horizontal: 14)),
                 onPressed: () => _showResetConfirmation(context, ref, book),
                 icon: const Icon(Icons.replay_rounded, size: 18),
-                label: const Text('Releer'),
+                label: Text(context.l10n.detailsReread),
               )
             else
               FilledButton.tonalIcon(
                 style: FilledButton.styleFrom(minimumSize: const Size(0, 40), padding: const EdgeInsets.symmetric(horizontal: 14)),
                 onPressed: () => _showUpdateDialog(context, ref, book),
                 icon: const Icon(Icons.edit_outlined, size: 18),
-                label: const Text('Actualizar'),
+                label: Text(context.l10n.detailsUpdate),
               ),
           ],
         ),
@@ -608,7 +608,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     final isFinished = book.status == 2;
     if (book.startedAt == null && !isFinished && book.status == 0) return const SizedBox.shrink();
 
-    final fmt = DateFormat("d MMM y", 'es');
+    final fmt = DateFormat.yMMMd(context.languageCode);
     Widget chip({required IconData icon, required String label, required VoidCallback onTap}) => ActionChip(
           avatar: Icon(icon, size: 16, color: context.cs.onSurfaceVariant),
           label: Text(label, style: theme.textTheme.labelMedium),
@@ -617,10 +617,9 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
           shape: const StadiumBorder(),
         );
 
-    String? duration;
+    int? days;
     if (isFinished && book.startedAt != null && book.finishedAt != null) {
-      final days = DateUtils.dateOnly(book.finishedAt!).difference(DateUtils.dateOnly(book.startedAt!)).inDays + 1;
-      duration = days == 1 ? '1 día' : '$days días';
+      days = DateUtils.dateOnly(book.finishedAt!).difference(DateUtils.dateOnly(book.startedAt!)).inDays + 1;
     }
 
     return Padding(
@@ -631,15 +630,19 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
         children: [
           chip(
             icon: Icons.play_arrow_rounded,
-            label: book.startedAt == null ? 'Inicio: añadir fecha' : 'Empezado el ${fmt.format(book.startedAt!)}',
+            label: book.startedAt == null
+                ? context.l10n.detailsStartAddDate
+                : context.l10n.detailsStartedOn(fmt.format(book.startedAt!)),
             onTap: () => _editReadingDate(book, isStart: true),
           ),
           if (isFinished)
             chip(
               icon: Icons.flag_rounded,
               label: book.finishedAt == null
-                  ? 'Fin: añadir fecha'
-                  : 'Terminado el ${fmt.format(book.finishedAt!)}${duration == null ? '' : ' · $duration'}',
+                  ? context.l10n.detailsFinishAddDate
+                  : (days == null
+                      ? context.l10n.detailsFinishedOn(fmt.format(book.finishedAt!))
+                      : context.l10n.detailsFinishedOnDays(fmt.format(book.finishedAt!), days)),
               onTap: () => _editReadingDate(book, isStart: false),
             ),
         ],
@@ -659,7 +662,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       initialDate: current.isBefore(first) ? first : (current.isAfter(last) ? last : current),
       firstDate: first,
       lastDate: last,
-      helpText: isStart ? '¿Cuándo lo empezaste?' : '¿Cuándo lo terminaste?',
+      helpText: isStart ? context.l10n.detailsWhenStarted : context.l10n.detailsWhenFinished,
     );
     if (picked == null || !mounted) return;
 
@@ -674,8 +677,12 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     if (book.totalReadTime <= 0 || book.readPages <= 0) return const SizedBox.shrink();
     final double ppm = book.readPages / (book.totalReadTime / 60);
     final int left = book.totalPages - book.readPages;
-    String duration(int minutes) => minutes >= 60 ? '${minutes ~/ 60} h ${minutes % 60} min' : '$minutes min';
-    final pace = ppm >= 1 ? '${ppm.toStringAsFixed(1)} pág/min' : '${(ppm * 60).round()} pág/h';
+    final l10n = context.l10n;
+    String duration(int minutes) =>
+        minutes >= 60 ? l10n.detailsDurationHoursMinutes(minutes ~/ 60, minutes % 60) : l10n.detailsDurationMinutes(minutes);
+    final pace = ppm >= 1
+        ? l10n.detailsPacePerMinute(NumberFormat('0.0', context.languageCode).format(ppm))
+        : l10n.detailsPacePerHour((ppm * 60).round());
 
     Widget tile(String label, String value) => Expanded(
           child: Container(
@@ -695,11 +702,11 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpace.sm),
       child: Row(children: [
-        tile('Ritmo', pace),
+        tile(l10n.detailsPace, pace),
         const SizedBox(width: AppSpace.xs),
-        tile('Faltan', duration((left / ppm).round())),
+        tile(l10n.detailsTimeLeft, duration((left / ppm).round())),
         const SizedBox(width: AppSpace.xs),
-        tile('Leído', duration((book.totalReadTime / 60).round())),
+        tile(l10n.detailsTimeRead, duration((book.totalReadTime / 60).round())),
       ]),
     );
   }
@@ -729,11 +736,11 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
             const SizedBox(width: AppSpace.md),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Meta diaria', style: theme.textTheme.titleMedium),
-                Text('${(sec / 60).toInt()} de $goalMinutes min hoy', style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
+                Text(context.l10n.detailsDailyGoal, style: theme.textTheme.titleMedium),
+                Text(context.l10n.detailsDailyGoalProgress((sec / 60).toInt(), goalMinutes), style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
               ]),
             ),
-            IconButton(tooltip: 'Cambiar meta diaria', icon: const Icon(Icons.tune_rounded), onPressed: () => _showSetGoalDialog(scheme)),
+            IconButton(tooltip: context.l10n.detailsChangeDailyGoal, icon: const Icon(Icons.tune_rounded), onPressed: () => _showSetGoalDialog(scheme)),
           ]),
         );
       },
@@ -749,7 +756,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       child: Column(children: [
         Icon(Icons.auto_awesome_rounded, color: context.app.rating, size: 40),
         const SizedBox(height: AppSpace.sm),
-        Text('¡Lectura completada!', style: theme.textTheme.headlineSmall),
+        Text(context.l10n.detailsReadingCompleted, style: theme.textTheme.headlineSmall),
         const SizedBox(height: AppSpace.xs),
         _ratingRow(book, 34),
         const SizedBox(height: AppSpace.xs),
@@ -761,7 +768,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
   Widget _ratingRow(Book book, double size) => Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(5, (i) => IconButton(
-          tooltip: '${i + 1} de 5',
+          tooltip: context.l10n.detailsRatingStars(i + 1),
           icon: Icon(i < (book.rating ?? 0) ? Icons.star_rounded : Icons.star_outline_rounded, color: context.app.rating, size: size),
           onPressed: () => ref.read(databaseProvider).updateBook(book.copyWith(rating: Value(i + 1))),
         )),
@@ -780,7 +787,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           Icon(Icons.bookmark_remove_rounded, color: context.app.statusAbandoned),
           const SizedBox(width: 8),
-          Text('Abandonado', style: theme.textTheme.titleMedium?.copyWith(color: context.app.statusAbandoned)),
+          Text(context.l10n.statusAbandoned, style: theme.textTheme.titleMedium?.copyWith(color: context.app.statusAbandoned)),
         ]),
         _ratingRow(book, 28),
         _buildReviewSection(book, scheme, theme),
@@ -808,7 +815,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
           OutlinedButton.icon(
             onPressed: () => showFinishReviewSheet(context, book, celebrate: false),
             icon: Icon(review == null ? Icons.rate_review_outlined : Icons.edit_note_rounded),
-            label: Text(review == null ? 'Escribir reseña' : 'Editar reseña'),
+            label: Text(review == null ? context.l10n.detailsWriteReview : context.l10n.detailsEditReview),
           ),
         ]);
       },
@@ -826,7 +833,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
 
   void _toggleFavorite(Note note) {
     ref.read(databaseProvider).setNoteFavorite(note.id, !note.isFavorite);
-    _showFeedback(note.isFavorite ? 'Quitada de favoritas' : 'Guardada en favoritas ★', context.app.rating);
+    _showFeedback(note.isFavorite ? context.l10n.detailsFavoriteRemoved : context.l10n.detailsFavoriteAdded, context.app.rating);
   }
 
   /// Borra la nota y ofrece deshacerlo durante unos segundos.
@@ -839,11 +846,11 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
       SnackBar(
-        content: const Text('Nota eliminada'),
+        content: Text(context.l10n.detailsNoteDeleted),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 5),
         action: SnackBarAction(
-          label: 'DESHACER',
+          label: context.l10n.detailsUndoAction,
           onPressed: () => db.restoreNote(note),
         ),
       ),
@@ -856,12 +863,12 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
       builder: (dialogContext, setDialogState) {
         final int? val = int.tryParse(controller.text);
         final String? error = val == null
-            ? 'Escribe un número de página'
-            : (val > book.totalPages ? 'No puede superar ${book.totalPages}' : null);
+            ? dialogContext.l10n.detailsEnterPageNumber
+            : (val > book.totalPages ? dialogContext.l10n.detailsPageCannotExceed(book.totalPages) : null);
 
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-          title: const Text('Actualizar Progreso'),
+          title: Text(dialogContext.l10n.detailsUpdateProgressTitle),
           content: TextField(
             controller: controller,
             autofocus: true,
@@ -869,13 +876,13 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (_) => setDialogState(() {}),
             decoration: InputDecoration(
-              labelText: '¿En qué página vas?',
+              labelText: dialogContext.l10n.detailsWhatPage,
               suffixText: '/ ${book.totalPages}',
               errorText: error,
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(dialogContext.l10n.commonCancel)),
             ElevatedButton(
               onPressed: error != null ? null : () async {
                 final navigator = Navigator.of(dialogContext);
@@ -883,7 +890,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
                 await ref.read(databaseProvider).logProgress(book.id, val!);
                 navigator.pop();
               },
-              child: const Text('Guardar'),
+              child: Text(dialogContext.l10n.commonSave),
             ),
           ],
         );
@@ -894,14 +901,14 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
   void _confirmDelete(BuildContext context, AppDatabase db, Book book) {
     showDialog(context: context, builder: (context) => AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      title: const Text('¿Eliminar libro?'),
-      content: const Text('Se perderán todas tus notas.'),
+      title: Text(context.l10n.detailsDeleteBookTitle),
+      content: Text(context.l10n.detailsDeleteBookMessage),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.commonCancel)),
         ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: context.cs.error, foregroundColor: context.cs.onError), onPressed: () async {
           await db.deleteBookComplete(book);
           if (context.mounted) { Navigator.pop(context); Navigator.pop(context); }
-        }, child: const Text('Eliminar')),
+        }, child: Text(context.l10n.commonDelete)),
       ],
     ));
   }
@@ -909,9 +916,9 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
   void _showSetGoalDialog(ColorScheme scheme) {
     showDialog(context: context, builder: (context) => AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      title: const Text("Meta Diaria"),
+      title: Text(context.l10n.detailsDailyGoalTitle),
       content: Wrap(spacing: 10, children: DailyGoalNotifier.options.map((m) => ChoiceChip(
-        label: Text("$m min"),
+        label: Text(context.l10n.detailsDurationMinutes(m)),
         selected: ref.read(dailyGoalProvider) == m,
         onSelected: (v) {
           if (v) ref.read(dailyGoalProvider.notifier).setGoal(m);
@@ -924,9 +931,9 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
   void _showResetConfirmation(BuildContext context, WidgetRef ref, Book book) {
     showDialog(context: context, builder: (context) => AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      title: const Text('¿Nueva lectura?'),
+      title: Text(context.l10n.detailsRereadTitle),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.commonCancel)),
         ElevatedButton(onPressed: () async {
           // Nueva lectura: empieza hoy. Se conserva la fecha de fin de la
           // anterior hasta terminar de nuevo (el reto de ese año no baja).
@@ -937,7 +944,7 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
             startedAt: Value(DateTime.now()),
           ));
           if (context.mounted) Navigator.pop(context);
-        }, child: const Text('¡Vamos!')),
+        }, child: Text(context.l10n.detailsRereadConfirm)),
       ],
     ));
   }
@@ -970,34 +977,37 @@ class _BookDetailsScreenState extends ConsumerState<BookDetailsScreen> {
     await Future<void>.delayed(const Duration(milliseconds: 300)); // que termine la animación de entrada
     if (!mounted) return;
 
+    // Textos del tutorial (se leen antes de los await)
+    final l10n = context.l10n;
+
     // SECUENCIA GARANTIZADA:
     // Paso 1: Progreso
     await _showStep(
       key: _progressKey,
-      title: "📈​ Tu Progreso",
-      desc: "Visualiza cuántas páginas llevas leídas.",
+      title: l10n.detailsTutorialProgressTitle,
+      desc: l10n.detailsTutorialProgressDesc,
     );
 
     // Paso 2: Meta
     await _showStep(
       key: _goalKey,
-      title: "🏆​ Meta Diaria",
-      desc: "Configura tus minutos de lectura diarios.",
+      title: l10n.detailsTutorialGoalTitle,
+      desc: l10n.detailsTutorialGoalDesc,
     );
 
     // Paso 3: Cronómetro (Aquí el scroll será automático y perfecto)
     await _showStep(
       key: _timerKey,
-      title: "📖​ Sesión de Lectura",
-      desc: "Inicia el cronómetro para medir tu tiempo.",
+      title: l10n.detailsTutorialTimerTitle,
+      desc: l10n.detailsTutorialTimerDesc,
       align: ContentAlign.top,
     );
 
     // Paso 4: Notas
     await _showStep(
       key: _notesKey,
-      title: "​📜​ ​Añadir Notas",
-      desc: "Guarda tus citas favoritas aquí.",
+      title: l10n.detailsTutorialNotesTitle,
+      desc: l10n.detailsTutorialNotesDesc,
       align: ContentAlign.top,
       isCircle: true,
     );

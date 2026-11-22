@@ -1,6 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
+import '../l10n/l10n.dart';
+
 /// Qué eligió el usuario al terminar la bienvenida.
 enum OnboardingChoice { addBook, importGoodreads, explore }
 
@@ -19,52 +21,56 @@ class _OnboardingPage {
   });
 }
 
-const _pages = [
-  _OnboardingPage(
-    icon: Icons.auto_stories_rounded,
-    satellites: [Icons.qr_code_scanner_rounded, Icons.download_rounded],
-    title: 'Tu biblioteca, en un toque',
-    subtitle: 'Añade libros sin escribir de más.',
-    points: [
-      (Icons.qr_code_scanner_rounded, 'Escanea el código de barras (ISBN) o escríbelo a mano'),
-      (Icons.search_rounded, 'Búscalo por título y trae portada y páginas'),
-      (Icons.download_rounded, '¿Vienes de Goodreads? Importa toda tu biblioteca'),
-    ],
-  ),
-  _OnboardingPage(
-    icon: Icons.timer_rounded,
-    satellites: [Icons.flag_rounded, Icons.widgets_rounded],
-    title: 'Lee con foco',
-    subtitle: 'Mide tus sesiones y ponte una meta.',
-    points: [
-      (Icons.timer_outlined, 'Cronómetro de lectura que guarda tu página al terminar'),
-      (Icons.flag_outlined, 'Meta por sesión: te aviso al cumplirla, aunque bloquees el teléfono'),
-      (Icons.widgets_outlined, 'Widget en tu pantalla de inicio para pausar sin abrir la app'),
-    ],
-  ),
-  _OnboardingPage(
-    icon: Icons.format_quote_rounded,
-    satellites: [Icons.mic_rounded, Icons.star_rounded],
-    title: 'Guarda lo que te marca',
-    subtitle: 'Tus frases favoritas, siempre a mano.',
-    points: [
-      (Icons.edit_note_rounded, 'Notas y citas con la página, también dictadas por voz'),
-      (Icons.format_quote_rounded, 'Mis citas: búscalas todas y compártelas como imagen'),
-      (Icons.rate_review_outlined, 'Califica y escribe tu reseña al terminar cada libro'),
-    ],
-  ),
-  _OnboardingPage(
-    icon: Icons.local_fire_department_rounded,
-    satellites: [Icons.emoji_events_rounded, Icons.insights_rounded],
-    title: 'Hazlo hábito',
-    subtitle: 'Pequeños pasos, todos los días.',
-    points: [
-      (Icons.local_fire_department_outlined, 'Racha diaria y aviso si está en riesgo'),
-      (Icons.emoji_events_outlined, 'Reto anual: cuántos libros quieres leer este año'),
-      (Icons.ios_share_rounded, 'Tu año lector en una tarjeta para compartir'),
-    ],
-  ),
-];
+/// Número de pantallas de la bienvenida.
+const _pageCount = 4;
+
+/// Pantallas de la bienvenida, con los textos en el idioma en uso.
+List<_OnboardingPage> _buildPages(AppLocalizations l10n) => [
+      _OnboardingPage(
+        icon: Icons.auto_stories_rounded,
+        satellites: const [Icons.qr_code_scanner_rounded, Icons.download_rounded],
+        title: l10n.onboardingPage1Title,
+        subtitle: l10n.onboardingPage1Subtitle,
+        points: [
+          (Icons.qr_code_scanner_rounded, l10n.onboardingPage1Point1),
+          (Icons.search_rounded, l10n.onboardingPage1Point2),
+          (Icons.download_rounded, l10n.onboardingPage1Point3),
+        ],
+      ),
+      _OnboardingPage(
+        icon: Icons.timer_rounded,
+        satellites: const [Icons.flag_rounded, Icons.widgets_rounded],
+        title: l10n.onboardingPage2Title,
+        subtitle: l10n.onboardingPage2Subtitle,
+        points: [
+          (Icons.timer_outlined, l10n.onboardingPage2Point1),
+          (Icons.flag_outlined, l10n.onboardingPage2Point2),
+          (Icons.widgets_outlined, l10n.onboardingPage2Point3),
+        ],
+      ),
+      _OnboardingPage(
+        icon: Icons.format_quote_rounded,
+        satellites: const [Icons.mic_rounded, Icons.star_rounded],
+        title: l10n.onboardingPage3Title,
+        subtitle: l10n.onboardingPage3Subtitle,
+        points: [
+          (Icons.edit_note_rounded, l10n.onboardingPage3Point1),
+          (Icons.format_quote_rounded, l10n.onboardingPage3Point2),
+          (Icons.rate_review_outlined, l10n.onboardingPage3Point3),
+        ],
+      ),
+      _OnboardingPage(
+        icon: Icons.local_fire_department_rounded,
+        satellites: const [Icons.emoji_events_rounded, Icons.insights_rounded],
+        title: l10n.onboardingPage4Title,
+        subtitle: l10n.onboardingPage4Subtitle,
+        points: [
+          (Icons.local_fire_department_outlined, l10n.onboardingPage4Point1),
+          (Icons.emoji_events_outlined, l10n.onboardingPage4Point2),
+          (Icons.ios_share_rounded, l10n.onboardingPage4Point3),
+        ],
+      ),
+    ];
 
 /// Bienvenida para usuarios nuevos: 4 pantallas y, al final, por dónde empezar.
 class OnboardingScreen extends StatefulWidget {
@@ -79,7 +85,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _controller = PageController();
   int _page = 0;
 
-  bool get _isLast => _page == _pages.length - 1;
+  bool get _isLast => _page == _pageCount - 1;
 
   @override
   void dispose() {
@@ -101,6 +107,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final pages = _buildPages(context.l10n);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -117,7 +124,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   duration: const Duration(milliseconds: 200),
                   child: TextButton(
                     onPressed: _isLast ? null : () => _finish(OnboardingChoice.explore),
-                    child: const Text('Saltar'),
+                    child: Text(context.l10n.onboardingSkip),
                   ),
                 ),
               ),
@@ -125,16 +132,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Expanded(
               child: PageView.builder(
                 controller: _controller,
-                itemCount: _pages.length,
+                itemCount: pages.length,
                 onPageChanged: (i) => setState(() => _page = i),
-                itemBuilder: (context, i) => _PageContent(page: _pages[i]),
+                itemBuilder: (context, i) => _PageContent(page: pages[i]),
               ),
             ),
             // Indicador de página
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                for (var i = 0; i < _pages.length; i++)
+                for (var i = 0; i < pages.length; i++)
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
                     margin: const EdgeInsets.symmetric(horizontal: 3),
@@ -162,7 +169,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             child: FilledButton.icon(
                               onPressed: () => _finish(OnboardingChoice.addBook),
                               icon: const Icon(Icons.add_rounded),
-                              label: const Text('Añadir mi primer libro'),
+                              label: Text(context.l10n.homeAddFirstBook),
                               style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
                             ),
                           ),
@@ -172,13 +179,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             child: OutlinedButton.icon(
                               onPressed: () => _finish(OnboardingChoice.importGoodreads),
                               icon: const Icon(Icons.download_rounded),
-                              label: const Text('Importar de Goodreads'),
+                              label: Text(context.l10n.onboardingImportGoodreads),
                               style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
                             ),
                           ),
                           TextButton(
                             onPressed: () => _finish(OnboardingChoice.explore),
-                            child: const Text('Explorar primero'),
+                            child: Text(context.l10n.onboardingExploreFirst),
                           ),
                         ],
                       )
@@ -188,7 +195,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         child: FilledButton(
                           onPressed: _next,
                           style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-                          child: const Text('Siguiente'),
+                          child: Text(context.l10n.onboardingNext),
                         ),
                       ),
               ),

@@ -50,6 +50,8 @@ class BookTrackerWidgetProvider : HomeWidgetProvider() {
 
         if (bookId.isNullOrEmpty() || bookTitle.isNullOrEmpty()) {
             // Sin libros: mensaje y tocar abre la app
+            views.setTextViewText(R.id.widget_empty_title, label(data, "label_empty_title", "Añade tu primer libro"))
+            views.setTextViewText(R.id.widget_empty_subtitle, label(data, "label_empty_subtitle", "Toca para empezar"))
             views.setViewVisibility(R.id.widget_no_book_section, View.VISIBLE)
             views.setViewVisibility(R.id.widget_cover, View.GONE)
             views.setViewVisibility(R.id.widget_content_section, View.GONE)
@@ -63,6 +65,7 @@ class BookTrackerWidgetProvider : HomeWidgetProvider() {
         views.setViewVisibility(R.id.widget_content_section, View.VISIBLE)
 
         // --- Portada y fondo ambiental ---
+        views.setContentDescription(R.id.widget_cover, label(data, "label_cover", "Portada"))
         val art = CoverArt.load(context, data.getString("bookCover", null))
         if (art != null) {
             views.setImageViewBitmap(R.id.widget_cover, art.thumbnail)
@@ -86,9 +89,14 @@ class BookTrackerWidgetProvider : HomeWidgetProvider() {
             data.getString("todayMinutes", "0") ?: "0"
         } else "0"
         val goal = data.getString("dailyGoalMinutes", null)
+        // Plantillas en el idioma de la app ({m} = minutos de hoy, {g} = meta)
         views.setTextViewText(
             R.id.widget_today_session,
-            if (goal.isNullOrEmpty()) "Hoy $todayMinutes min" else "Hoy $todayMinutes/$goal min"
+            if (goal.isNullOrEmpty()) {
+                label(data, "label_today", "Hoy {m} min").replace("{m}", todayMinutes)
+            } else {
+                label(data, "label_today_goal", "Hoy {m}/{g} min").replace("{m}", todayMinutes).replace("{g}", goal)
+            }
         )
 
         // --- Sesión (cronómetro) ---
@@ -114,12 +122,23 @@ class BookTrackerWidgetProvider : HomeWidgetProvider() {
 
             views.setViewVisibility(R.id.widget_session_section, View.VISIBLE)
             views.setChronometer(R.id.widget_chronometer, base, null, isRunning)
-            views.setTextViewText(R.id.widget_session_label, if (isRunning) "LEYENDO" else "EN PAUSA")
+            views.setTextViewText(
+                R.id.widget_session_label,
+                if (isRunning) label(data, "label_reading", "LEYENDO") else label(data, "label_paused", "EN PAUSA")
+            )
             views.setImageViewResource(
                 R.id.widget_pause_button,
                 if (isRunning) R.drawable.widget_ic_pause else R.drawable.widget_ic_play
             )
-            views.setContentDescription(R.id.widget_pause_button, if (isRunning) "Pausar" else "Reanudar")
+            views.setContentDescription(
+                R.id.widget_pause_button,
+                if (isRunning) label(data, "label_pause", "Pausar") else label(data, "label_resume", "Reanudar")
+            )
+            views.setTextViewText(R.id.widget_finish_button, label(data, "label_finish", "Finalizar"))
+            views.setContentDescription(
+                R.id.widget_finish_button,
+                label(data, "label_finish_description", "Finalizar la sesión")
+            )
 
             // Pausar/reanudar sin abrir la app (callback de Dart en segundo plano)
             views.setOnClickPendingIntent(
@@ -137,6 +156,12 @@ class BookTrackerWidgetProvider : HomeWidgetProvider() {
 
         // Tocar el widget abre el libro
         views.setOnClickPendingIntent(R.id.widget_main_layout, launch(context, "open_book", bookId))
+    }
+
+    /** Texto en el idioma de la app (lo escribe Flutter); si falta, el español. */
+    private fun label(data: SharedPreferences, key: String, fallback: String): String {
+        val value = data.getString(key, null)
+        return if (value.isNullOrEmpty()) fallback else value
     }
 
     private fun launch(context: Context, host: String, bookId: String?) =

@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../providers/streak_save_provider.dart';
 import '../services/ads_gate.dart';
 import '../services/rewarded_ads.dart';
@@ -59,17 +60,17 @@ class _StreakSaveSheetState extends ConsumerState<StreakSaveSheet> {
         Navigator.pop(context);
         messenger.showSnackBar(SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('🔥 ¡Racha salvada! Sigues con ${widget.offer.lostStreak + 1} días. Lee hoy para mantenerla.'),
+          content: Text(context.l10n.streakSaveSuccess(widget.offer.lostStreak + 1)),
         ));
       case RewardedResult.closedEarly:
         setState(() {
           _loading = false;
-          _error = 'Hay que ver el anuncio completo para salvar la racha.';
+          _error = context.l10n.streakSaveAdIncomplete;
         });
       case RewardedResult.unavailable:
         setState(() {
           _loading = false;
-          _error = 'Ahora no hay anuncios disponibles. Revisa tu conexión e inténtalo de nuevo.';
+          _error = context.l10n.streakSaveAdUnavailable;
         });
     }
   }
@@ -110,19 +111,19 @@ class _StreakSaveSheetState extends ConsumerState<StreakSaveSheet> {
                 child: const Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 46),
               ),
               const SizedBox(height: 20),
-              Text('Tu racha de $n días se rompió',
+              Text(context.l10n.streakSaveTitle(n),
                   textAlign: TextAlign.center,
                   style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
               Text(
                 widget.free
-                    ? 'Ayer no registraste lectura. Como usuario sin anuncios, puedes recuperarla gratis: ayer contará para tu racha.'
-                    : 'Ayer no registraste lectura. Mira un anuncio corto y la recuperamos: ayer contará para tu racha.',
+                    ? context.l10n.streakSaveBodyFree
+                    : context.l10n.streakSaveBodyAd,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.4),
               ),
               const SizedBox(height: 6),
-              Text('Puedes hacerlo una vez por semana.',
+              Text(context.l10n.streakSaveOncePerWeek,
                   textAlign: TextAlign.center, style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
               if (_error != null) ...[
                 const SizedBox(height: 12),
@@ -137,8 +138,8 @@ class _StreakSaveSheetState extends ConsumerState<StreakSaveSheet> {
                       ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                       : Icon(widget.free ? Icons.local_fire_department_rounded : Icons.play_circle_fill_rounded),
                   label: Text(_loading
-                      ? 'Cargando anuncio…'
-                      : (widget.free ? 'Salvar mi racha' : 'Ver anuncio y salvar mi racha')),
+                      ? context.l10n.streakSaveLoadingAd
+                      : (widget.free ? context.l10n.streakSaveFreeButton : context.l10n.streakSaveWatchAdButton)),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
                     backgroundColor: context.app.streak,
@@ -148,7 +149,7 @@ class _StreakSaveSheetState extends ConsumerState<StreakSaveSheet> {
               ),
               TextButton(
                 onPressed: _loading ? null : _dismiss,
-                child: const Text('Ahora no'),
+                child: Text(context.l10n.streakSaveNotNow),
               ),
             ],
           ),

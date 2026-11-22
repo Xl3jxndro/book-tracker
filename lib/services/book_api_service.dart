@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 
+import 'app_language.dart';
+
 /// Resultado de búsqueda de un libro.
 class BookModel {
   final String title;
@@ -35,11 +37,11 @@ class BookSearchException implements Exception {
   String get message {
     switch (reason) {
       case BookSearchError.rateLimit:
-        return 'Demasiadas búsquedas seguidas. Inténtalo en un minuto.';
+        return AppLanguage.strings.bookApiRateLimit;
       case BookSearchError.network:
-        return 'Sin conexión. Puedes escribir los datos a mano.';
+        return AppLanguage.strings.bookApiNetwork;
       case BookSearchError.server:
-        return 'El buscador no respondió. Inténtalo de nuevo.';
+        return AppLanguage.strings.bookApiServer;
     }
   }
 
@@ -139,7 +141,7 @@ class BookApiService {
 
     return BookModel(
       title: title,
-      author: authors.isEmpty ? 'Autor desconocido' : authors.join(', '),
+      author: authors.isEmpty ? AppLanguage.strings.bookApiUnknownAuthor : authors.join(', '),
       pageCount: (info['pageCount'] as num?)?.toInt() ?? 0,
       // Google usa "Fiction / Fantasy": nos quedamos con la parte general
       category: categories.isEmpty ? null : categories.first.split('/').first.trim(),
@@ -201,7 +203,7 @@ class BookApiService {
     return BookModel(
       title: title,
       // Open Library repite autores entre ediciones: los deduplicamos
-      author: authors.isEmpty ? 'Autor desconocido' : authors.toSet().join(', '),
+      author: authors.isEmpty ? AppLanguage.strings.bookApiUnknownAuthor : authors.toSet().join(', '),
       pageCount: (doc['number_of_pages_median'] as num?)?.toInt() ?? 0,
       // Sus "subjects" son etiquetas muy variadas; mejor no adivinar la categoría
       category: null,

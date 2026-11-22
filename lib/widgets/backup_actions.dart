@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../l10n/l10n.dart';
 import '../providers/current_book_provider.dart';
 import '../providers/database_provider.dart';
 import '../services/backup_service.dart';
@@ -25,25 +26,26 @@ final autoBackupExistsProvider = FutureProvider<bool>((ref) async => (await _aut
 
 /// Crea el respaldo completo (.zip con portadas) y abre el menú de compartir.
 Future<void> shareFullBackup(BuildContext context, WidgetRef ref) async {
+  final l = context.l10n;
   try {
-    final file = await _withProgress(context, 'Preparando el respaldo…', () async {
+    final file = await _withProgress(context, l.backupPreparing, () async {
       final tmp = await getTemporaryDirectory();
       return BackupService.writeZip(ref.read(databaseProvider), tmp, BackupService.backupFileName(DateTime.now()));
     });
     if (file == null) return;
     await SharePlus.instance.share(ShareParams(
       files: [XFile(file.path, mimeType: 'application/zip')],
-      subject: 'Respaldo de Book Tracker',
+      subject: l.backupShareSubject,
     ));
   } catch (e) {
     debugPrint('Error creando respaldo: $e');
-    if (context.mounted) _showError(context, 'No se pudo crear el respaldo. Inténtalo de nuevo.');
+    if (context.mounted) _showError(context, l.backupCreateError);
   }
 }
 
 /// Elegir un respaldo (.zip) o exportación (.json) y restaurarlo.
 Future<void> restoreFromPickedFile(BuildContext context, WidgetRef ref) async {
-  final picked = await FilePicker.pickFiles(dialogTitle: 'Elige tu respaldo');
+  final picked = await FilePicker.pickFiles(dialogTitle: context.l10n.backupPickTitle);
   final path = picked.isEmpty ? null : picked.first.path;
   if (path == null || !context.mounted) return;
   await _restore(context, ref, File(path), isUndo: false);
@@ -58,13 +60,14 @@ Future<void> undoLastRestore(BuildContext context, WidgetRef ref) async {
 
 Future<void> _restore(BuildContext context, WidgetRef ref, File file, {required bool isUndo}) async {
   final db = ref.read(databaseProvider);
+  final l = context.l10n;
   final tmp = await getTemporaryDirectory();
   final workDir = Directory(p.join(tmp.path, 'restaurar_${DateTime.now().millisecondsSinceEpoch}'));
   if (!context.mounted) return;
 
   try {
     // 1. Leer y validar (no toca nada)
-    final preview = await _withProgress(context, 'Leyendo el respaldo…', () => BackupService.read(file, workDir));
+    final preview = await _withProgress(context, l.backupReading, () => BackupService.read(file, workDir));
     if (preview == null || !context.mounted) return;
 
     final currentBooks = (await db.select(db.books).get()).length;
@@ -75,7 +78,7 @@ Future<void> _restore(BuildContext context, WidgetRef ref, File file, {required 
     if (confirmed != true || !context.mounted) return;
 
     // 3. Copia automática de lo actual y restauración
-    final result = await _withProgress(context, 'Restaurando tu biblioteca…', () async {
+    final result = await _withProgress(context, l.backupRestoring, () async {
       final docs = await getApplicationDocumentsDirectory();
       await BackupService.writeZip(
         db,
@@ -96,14 +99,14 @@ Future<void> _restore(BuildContext context, WidgetRef ref, File file, {required 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       behavior: SnackBarBehavior.floating,
       content: Text(isUndo
-          ? 'Biblioteca anterior recuperada: ${result.books} libros.'
-          : 'Biblioteca restaurada: ${result.books} libros, ${result.notes} notas.'),
+          ? l.backupUndoDone(l.backupBooksCount(result.books))
+          : l.backupRestoreDone(l.backupBooksCount(result.books), l.backupNotesCount(result.notes))),
     ));
   } on BackupException catch (e) {
     if (context.mounted) _showError(context, e.message);
   } catch (e) {
     debugPrint('Error restaurando: $e');
-    if (context.mounted) _showError(context, 'No se pudo restaurar el respaldo. Tu biblioteca no cambió.');
+    if (context.mounted) _showError(context, l.backupRestoreError);
   } finally {
     try {
       if (await workDir.exists()) await workDir.delete(recursive: true);
@@ -112,37 +115,37 @@ Future<void> _restore(BuildContext context, WidgetRef ref, File file, {required 
 }
 
 Future<bool?> _confirm(BuildContext context, BackupPreview preview, int currentBooks, {required bool isUndo}) {
+  final l = context.l10n;
   final date = preview.exportedAt == null
       ? null
-      : DateFormat("d 'de' MMMM 'de' y, HH:mm", 'es').format(preview.exportedAt!);
+      : DateFormat.yMMMMd(context.languageCode).add_Hm().format(preview.exportedAt!);
   final covers = preview.coverFiles.length;
 
   return showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      title: Text(isUndo ? '¿Deshacer la última restauración?' : '¿Restaurar este respaldo?'),
+      title: Text(isUndo ? l.backupUndoConfirmTitle : l.backupRestoreConfirmTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (date != null) Text(isUndo ? 'Biblioteca guardada el $date' : 'Respaldo del $date'),
+          if (date != null) Text(isUndo ? l.backupSavedOn(date) : l.backupFrom(date)),
           const SizedBox(height: 8),
-          Text('• ${preview.books.length} libros\n'
-              '• ${preview.notes.length} notas\n'
-              '• ${preview.sessions.length} sesiones de lectura\n'
-              '• ${covers == 0 ? 'Sin portadas' : '$covers portadas'}'),
+          Text('• ${l.backupBooksCount(preview.books.length)}\n'
+              '• ${l.backupNotesCount(preview.notes.length)}\n'
+              '• ${l.backupSessionsCount(preview.sessions.length)}\n'
+              '• ${l.backupCoversCount(covers)}'),
           const SizedBox(height: 16),
           Text(
-            'Reemplazará tu biblioteca actual ($currentBooks libros). '
-            'Antes guardaremos una copia para que puedas deshacerlo.',
+            l.backupReplaceWarning(l.backupBooksCount(currentBooks)),
             style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-        ElevatedButton(onPressed: () => Navigator.pop(context, true), child: Text(isUndo ? 'DESHACER' : 'RESTAURAR')),
+        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l.commonCancel)),
+        ElevatedButton(onPressed: () => Navigator.pop(context, true), child: Text(isUndo ? l.backupUndoButton : l.backupRestoreButton)),
       ],
     ),
   );
@@ -180,9 +183,9 @@ void _showError(BuildContext context, String message) {
     context: context,
     builder: (context) => AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      title: const Text('No se pudo completar'),
+      title: Text(context.l10n.backupErrorTitle),
       content: Text(message),
-      actions: [ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text('Entendido'))],
+      actions: [ElevatedButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.settingsGotIt))],
     ),
   );
 }

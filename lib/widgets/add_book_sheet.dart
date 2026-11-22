@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../database/database.dart';
+import '../l10n/l10n.dart';
 import '../providers/database_provider.dart';
 import '../services/book_api_service.dart';
 import 'book_search_field.dart';
@@ -61,13 +62,13 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
       if (!mounted) return;
       if (results.isEmpty) {
         setState(() {
-          _isbnMessage = 'No encontramos el ISBN $isbn. Escribe los datos a mano.';
+          _isbnMessage = context.l10n.addBookIsbnNotFound(isbn);
           _isbnMessageIsError = true;
         });
         return;
       }
       setState(() {
-        _isbnMessage = 'Encontrado por ISBN $isbn';
+        _isbnMessage = context.l10n.addBookIsbnFound(isbn);
         _isbnMessageIsError = false;
       });
       await _applySearchResult(results.first);
@@ -82,7 +83,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
       debugPrint('Error buscando ISBN: $e');
       if (mounted) {
         setState(() {
-          _isbnMessage = 'No se pudo buscar el ISBN. Escribe los datos a mano.';
+          _isbnMessage = context.l10n.addBookIsbnSearchFailed;
           _isbnMessageIsError = true;
         });
       }
@@ -95,19 +96,20 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
   static const _maxTextLength = 100;
   static const _maxPages = 100000;
 
-  String? _validateText(String? value, String fieldName) {
+  /// [requiredMessage]: el aviso si está vacío ("El título es obligatorio").
+  String? _validateText(String? value, String requiredMessage) {
     final text = value?.trim() ?? '';
-    if (text.isEmpty) return '$fieldName es obligatorio';
-    if (text.length > _maxTextLength) return 'Máximo $_maxTextLength caracteres';
+    if (text.isEmpty) return requiredMessage;
+    if (text.length > _maxTextLength) return context.l10n.addBookMaxChars(_maxTextLength);
     return null;
   }
 
   String? _validatePages(String? value) {
     final pages = int.tryParse(value?.trim() ?? '');
-    if (pages == null || pages <= 0) return 'Indica las páginas';
-    if (pages > _maxPages) return 'Número no válido';
+    if (pages == null || pages <= 0) return context.l10n.addBookPagesRequired;
+    if (pages > _maxPages) return context.l10n.addBookInvalidNumber;
     final readPages = widget.bookToEdit?.readPages ?? 0;
-    if (pages < readPages) return 'Ya leíste $readPages';
+    if (pages < readPages) return context.l10n.addBookAlreadyRead(readPages);
     return null;
   }
 
@@ -184,13 +186,13 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
           children: [
             Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outlineVariant, borderRadius: BorderRadius.circular(10))),
             const SizedBox(height: 24),
-            const Text("Cambiar portada", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
+            Text(context.l10n.addBookChangeCover, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
             const SizedBox(height: 32),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildSourceOption(icon: Icons.camera_rounded, label: "Cámara", onTap: () => _pickImage(ImageSource.camera), isDark: isDark),
-                _buildSourceOption(icon: Icons.image_rounded, label: "Galería", onTap: () => _pickImage(ImageSource.gallery), isDark: isDark),
+                _buildSourceOption(icon: Icons.camera_rounded, label: context.l10n.addBookCamera, onTap: () => _pickImage(ImageSource.camera), isDark: isDark),
+                _buildSourceOption(icon: Icons.image_rounded, label: context.l10n.addBookGallery, onTap: () => _pickImage(ImageSource.gallery), isDark: isDark),
               ],
             ),
             const SizedBox(height: 16),
@@ -306,7 +308,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
         setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('No se pudo guardar el libro. Inténtalo de nuevo.'),
+            content: Text(context.l10n.addBookSaveError),
             backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -357,7 +359,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                         height: 52,
                         width: 52,
                         child: IconButton.filledTonal(
-                          tooltip: 'Escanear código de barras',
+                          tooltip: context.l10n.addBookScanBarcode,
                           style: IconButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
                           onPressed: _isLookingUpIsbn ? null : _scanIsbn,
                           icon: _isLookingUpIsbn
@@ -373,7 +375,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                       style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                       onPressed: () => showIsbnHelp(context),
                       icon: const Icon(Icons.help_outline_rounded, size: 16),
-                      label: const Text('¿Dónde encuentro el ISBN?', style: TextStyle(fontSize: 12)),
+                      label: Text(context.l10n.isbnHelpTitle, style: const TextStyle(fontSize: 12)),
                     ),
                   ),
                   if (_isbnMessage != null)
@@ -433,9 +435,9 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                     Expanded(
                       child: Column(
                         children: [
-                          _buildModernField(controller: _titleController, label: 'Título del libro', icon: Icons.book_rounded, isBold: true, validator: (v) => _validateText(v, 'El título')),
+                          _buildModernField(controller: _titleController, label: context.l10n.addBookTitleLabel, icon: Icons.book_rounded, isBold: true, validator: (v) => _validateText(v, context.l10n.addBookTitleRequired)),
                           const SizedBox(height: 16),
-                          _buildModernField(controller: _authorController, label: 'Autor', icon: Icons.person_rounded, validator: (v) => _validateText(v, 'El autor')),
+                          _buildModernField(controller: _authorController, label: context.l10n.addBookAuthorLabel, icon: Icons.person_rounded, validator: (v) => _validateText(v, context.l10n.addBookAuthorRequired)),
                         ],
                       ),
                     ),
@@ -445,7 +447,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                 const SizedBox(height: 32),
                 // CORRECCIÓN: El estilo no acepta opacity, se aplica al color
                 Text(
-                  "Detalles del libro", 
+                  context.l10n.addBookDetails,
                   style: TextStyle(
                     fontWeight: FontWeight.w800, 
                     fontSize: 16, 
@@ -455,9 +457,9 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: _buildModernField(controller: _categoryController, label: 'Categoría', icon: Icons.local_offer_rounded, validator: (v) => (v?.trim().length ?? 0) > _maxTextLength ? 'Máximo $_maxTextLength caracteres' : null)),
+                    Expanded(child: _buildModernField(controller: _categoryController, label: context.l10n.addBookCategoryLabel, icon: Icons.local_offer_rounded, validator: (v) => (v?.trim().length ?? 0) > _maxTextLength ? context.l10n.addBookMaxChars(_maxTextLength) : null)),
                     const SizedBox(width: 16),
-                    Expanded(child: _buildModernField(controller: _pagesController, label: 'Páginas', icon: Icons.auto_stories_rounded, isNumber: true, validator: _validatePages)),
+                    Expanded(child: _buildModernField(controller: _pagesController, label: context.l10n.addBookPagesLabel, icon: Icons.auto_stories_rounded, isNumber: true, validator: _validatePages)),
                   ],
                 ),
                 
@@ -465,7 +467,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                 if (widget.bookToEdit != null) ...[
                   // CORRECCIÓN: El estilo no acepta opacity, se aplica al color
                   Text(
-                    "Estado de lectura", 
+                    context.l10n.addBookReadingStatus,
                     style: TextStyle(
                       fontWeight: FontWeight.w800, 
                       fontSize: 16, 
@@ -499,7 +501,7 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
                     ),
                     child: Center(
                       child: Text(
-                        widget.bookToEdit == null ? "Añadir a la Colección" : "Actualizar Biblioteca",
+                        widget.bookToEdit == null ? context.l10n.addBookAddToCollection : context.l10n.addBookUpdateLibrary,
                         style: TextStyle(color: theme.colorScheme.onPrimary, fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                       ),
                     ),
@@ -563,10 +565,10 @@ class _AddBookSheetState extends ConsumerState<AddBookSheet> {
       ),
       child: Row(
         children: [
-          _statusItem(0, "Pendiente", Icons.hourglass_empty_rounded, isDark),
-          _statusItem(1, "Leyendo", Icons.menu_book_rounded, isDark),
-          _statusItem(2, "Leído", Icons.check_circle_rounded, isDark),
-          _statusItem(3, "DNF", Icons.heart_broken_rounded, isDark, isDnfColor: true),
+          _statusItem(0, context.l10n.statusPending, Icons.hourglass_empty_rounded, isDark),
+          _statusItem(1, context.l10n.statusReading, Icons.menu_book_rounded, isDark),
+          _statusItem(2, context.l10n.addBookStatusRead, Icons.check_circle_rounded, isDark),
+          _statusItem(3, context.l10n.addBookStatusDnf, Icons.heart_broken_rounded, isDark, isDnfColor: true),
         ],
       ),
     );

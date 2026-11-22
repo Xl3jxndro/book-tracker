@@ -51,7 +51,9 @@
                 android:textSize="11sp"
                 android:textStyle="bold" />
 
+            <!-- Textos por defecto en español: Kotlin pone los del idioma de la app -->
             <TextView
+                android:id="@+id/widget_empty_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
@@ -61,6 +63,7 @@
                 android:textSize="17sp" />
 
             <TextView
+                android:id="@+id/widget_empty_subtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"

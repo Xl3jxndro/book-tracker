@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../l10n/l10n.dart';
 import '../services/app_update.dart';
 import '../theme/app_colors.dart';
 
@@ -38,9 +39,9 @@ Future<void> startAppUpdate(BuildContext context) async {
 void offerInstall(BuildContext context) {
   _snack(
     context,
-    'Actualización descargada',
+    context.l10n.updateDownloaded,
     duration: const Duration(days: 1),
-    action: SnackBarAction(label: 'Reiniciar', onPressed: AppUpdate.install),
+    action: SnackBarAction(label: context.l10n.updateRestart, onPressed: AppUpdate.install),
   );
 }
 
@@ -52,7 +53,7 @@ Future<void> checkForUpdatesManually(BuildContext context) async {
     case UpdateStatus.downloaded:
       return offerInstall(context);
     case UpdateStatus.downloading:
-      return _snack(context, 'Descargando la versión nueva…');
+      return _snack(context, context.l10n.updateDownloadingNew);
     default:
       break;
   }
@@ -64,9 +65,9 @@ Future<void> checkForUpdatesManually(BuildContext context) async {
     case UpdateStatus.downloaded:
       offerInstall(context);
     case UpdateStatus.upToDate:
-      _snack(context, 'Tienes la última versión');
+      _snack(context, context.l10n.updateLatest);
     default:
-      _snack(context, 'No se pudo comprobar. Las actualizaciones llegan desde Google Play.');
+      _snack(context, context.l10n.updateCheckFailed);
   }
 }
 
@@ -105,10 +106,10 @@ class UpdatePromptSheet extends StatelessWidget {
                 child: Icon(Icons.system_update_rounded, color: app.accentText, size: 28),
               ),
               const SizedBox(height: 16),
-              Text('Hay una versión nueva', style: theme.textTheme.headlineSmall),
+              Text(context.l10n.updateAvailableTitle, style: theme.textTheme.headlineSmall),
               const SizedBox(height: 6),
               Text(
-                'Actualiza para tener las últimas mejoras. Se descarga mientras sigues usando la app.',
+                context.l10n.updatePromptBody,
                 style: theme.textTheme.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant, height: 1.35),
               ),
               const SizedBox(height: 24),
@@ -117,7 +118,7 @@ class UpdatePromptSheet extends StatelessWidget {
                 child: FilledButton(
                   onPressed: () => Navigator.pop(context, true),
                   style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-                  child: const Text('Actualizar'),
+                  child: Text(context.l10n.updateButton),
                 ),
               ),
               const SizedBox(height: 8),
@@ -126,7 +127,7 @@ class UpdatePromptSheet extends StatelessWidget {
                 child: TextButton(
                   onPressed: () => Navigator.pop(context, false),
                   style: TextButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-                  child: const Text('Ahora no'),
+                  child: Text(context.l10n.settingsNotNow),
                 ),
               ),
             ],

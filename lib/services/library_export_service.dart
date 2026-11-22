@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../database/database.dart';
+import 'app_language.dart';
 
 enum ExportFormat { json, csv }
 
@@ -177,7 +178,7 @@ class LibraryExportService {
 
     await SharePlus.instance.share(ShareParams(
       files: [XFile(file.path, mimeType: mimeType)],
-      subject: 'Mi biblioteca de Book Tracker',
+      subject: AppLanguage.strings.exportShareSubject,
     ));
     return books.length;
   }

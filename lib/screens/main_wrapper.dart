@@ -27,6 +27,7 @@ import '../services/app_update.dart';
 import '../widgets/app_update_actions.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
+import '../l10n/l10n.dart';
 
 /// Qué hace "atrás" (gesto o botón de Android) en la pantalla principal.
 enum MainBackAction { closeSearch, goToLibrary, leaveApp }
@@ -332,9 +333,9 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildNavItem(0, Icons.auto_stories_outlined, Icons.auto_stories, 'Libros', null),
-                _buildNavItem(1, Icons.insights_outlined, Icons.insights, 'Stats', _statsKey),
-                _buildNavItem(2, Icons.tune_outlined, Icons.tune, 'Ajustes', _settingsKey),
+                _buildNavItem(0, Icons.auto_stories_outlined, Icons.auto_stories, context.l10n.navBooks, null),
+                _buildNavItem(1, Icons.insights_outlined, Icons.insights, context.l10n.navStats, _statsKey),
+                _buildNavItem(2, Icons.tune_outlined, Icons.tune, context.l10n.navSettings, _settingsKey),
               ],
             ),
           ),
@@ -419,8 +420,8 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
               align: ContentAlign.top,
               builder: (context, controller) => _buildTutorialBalloon(
                 theme: theme,
-                title: "📊​ Analiza tu progreso",
-                description: "Mira estadísticas detalladas sobre tus lecturas.",
+                title: context.l10n.navTutorialStatsTitle,
+                description: context.l10n.navTutorialStatsDescription,
               ),
             ),
           ],
@@ -435,8 +436,8 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
               align: ContentAlign.top,
               builder: (context, controller) => _buildTutorialBalloon(
                 theme: theme,
-                title: "⚙️​ Configuración",
-                description: "Personaliza el tema y gestiona tus datos.",
+                title: context.l10n.navTutorialSettingsTitle,
+                description: context.l10n.navTutorialSettingsDescription,
               ),
             ),
           ],

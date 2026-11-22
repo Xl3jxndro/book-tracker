@@ -2,20 +2,37 @@ import 'package:drift/drift.dart' show Value;
 import 'package:material_ui/material_ui.dart' show IconData, Icons;
 
 import '../database/database.dart';
+import '../l10n/app_localizations.dart';
+
+/// Tipo de acción rápida (los textos se eligen al mostrarla, en el idioma en uso).
+enum QuickStatusKind { start, finish, resume }
 
 /// Acción rápida al deslizar un libro hacia la derecha en la biblioteca.
 class QuickStatusAction {
-  final String label;
-  final String done;
+  final QuickStatusKind kind;
   final IconData icon;
-  const QuickStatusAction(this.label, this.done, this.icon);
+  const QuickStatusAction(this.kind, this.icon);
+
+  /// Texto del fondo al deslizar ("Empezar a leer").
+  String label(AppLocalizations l10n) => switch (kind) {
+        QuickStatusKind.start => l10n.homeQuickStart,
+        QuickStatusKind.finish => l10n.homeQuickFinish,
+        QuickStatusKind.resume => l10n.homeQuickResume,
+      };
+
+  /// Aviso tras la acción ('Empezaste "Título"').
+  String doneMessage(AppLocalizations l10n, String title) => switch (kind) {
+        QuickStatusKind.start => l10n.homeQuickStartedSnack(title),
+        QuickStatusKind.finish => l10n.homeQuickFinishedSnack(title),
+        QuickStatusKind.resume => l10n.homeQuickResumedSnack(title),
+      };
 }
 
 /// Acción disponible según el estado (ninguna para un libro terminado).
 QuickStatusAction? quickStatusAction(Book book) => switch (book.status) {
-      0 => const QuickStatusAction('Empezar a leer', 'Empezaste', Icons.play_arrow_rounded),
-      1 => const QuickStatusAction('Terminado', 'Terminaste', Icons.check_rounded),
-      3 => const QuickStatusAction('Retomar', 'Retomaste', Icons.replay_rounded),
+      0 => const QuickStatusAction(QuickStatusKind.start, Icons.play_arrow_rounded),
+      1 => const QuickStatusAction(QuickStatusKind.finish, Icons.check_rounded),
+      3 => const QuickStatusAction(QuickStatusKind.resume, Icons.replay_rounded),
       _ => null,
     };
 

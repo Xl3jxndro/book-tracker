@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
+import '../l10n/l10n.dart';
 import '../services/book_api_service.dart';
 import '../services/isbn.dart';
 import '../theme/app_colors.dart';
@@ -91,7 +92,7 @@ class _BookSearchFieldState extends State<BookSearchField> {
       debugPrint('Error buscando libros: $e');
       if (!mounted || requestId != _requestId) return;
       setState(() {
-        _error = 'No se pudo buscar. Puedes escribir los datos a mano.';
+        _error = context.l10n.searchFailed;
         _results = const [];
         _isLoading = false;
       });
@@ -136,7 +137,7 @@ class _BookSearchFieldState extends State<BookSearchField> {
             if (text.trim().length >= BookApiService.minQueryLength) _search(text);
           },
           decoration: InputDecoration(
-            hintText: 'Buscar libro (título, autor o ISBN)',
+            hintText: context.l10n.searchHint,
             hintStyle: TextStyle(color: muted, fontSize: 14),
             prefixIcon: Icon(Icons.travel_explore_rounded, size: 20, color: theme.colorScheme.primary),
             suffixIcon: _isLoading
@@ -159,12 +160,12 @@ class _BookSearchFieldState extends State<BookSearchField> {
           _message(
             Icons.search_off_rounded,
             _searchedIsbn != null
-                ? 'No encontramos el ISBN $_searchedIsbn. Revisa el número o escribe los datos a mano.'
-                : 'No lo encontramos. Escribe los datos a mano.',
+                ? context.l10n.searchIsbnNotFound(_searchedIsbn!)
+                : context.l10n.searchNotFound,
             muted,
           )
         else if (_searchedIsbn != null && _results.isNotEmpty)
-          _message(Icons.pin_rounded, 'Resultado por ISBN $_searchedIsbn', theme.colorScheme.primary),
+          _message(Icons.pin_rounded, context.l10n.searchIsbnResult(_searchedIsbn!), theme.colorScheme.primary),
         if (_results.isNotEmpty) ...[
           const SizedBox(height: 8),
           Container(
@@ -199,7 +200,7 @@ class _BookSearchFieldState extends State<BookSearchField> {
   Widget _resultTile(BookModel book, ThemeData theme, Color muted) {
     final details = [
       book.author,
-      if (book.pageCount > 0) '${book.pageCount} pág.',
+      if (book.pageCount > 0) context.l10n.searchPageCount(book.pageCount),
     ].join(' · ');
 
     return InkWell(

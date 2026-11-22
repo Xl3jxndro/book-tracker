@@ -13,6 +13,7 @@ import '../widgets/quote_share.dart';
 import 'book_details_screen.dart';
 import '../theme/app_colors.dart';
 import '../widgets/skeleton_loader.dart';
+import '../l10n/l10n.dart';
 
 /// Filtra las citas por texto (en la cita, el título o el autor) y, si se
 /// pide, solo las favoritas. Conserva el orden recibido.
@@ -53,17 +54,17 @@ class _QuotesScreenState extends ConsumerState<QuotesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mis citas', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(context.l10n.quotesTitle, style: const TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: quotesAsync.when(
         loading: () => const SingleChildScrollView(child: QuotesSkeleton()),
-        error: (e, _) => Center(child: Text('No se pudieron cargar las citas: $e')),
+        error: (e, _) => Center(child: Text(context.l10n.quotesLoadError(e.toString()))),
         data: (all) {
           if (all.isEmpty) {
-            return const EmptyStateWidget(
+            return EmptyStateWidget(
               icon: Icons.format_quote_rounded,
-              title: 'Aún no tienes citas',
-              description: 'Guarda frases y pensamientos desde la sección "Notas y Citas" de cada libro. Aparecerán todas aquí.',
+              title: context.l10n.quotesEmptyTitle,
+              description: context.l10n.quotesEmptyDescription,
             );
           }
 
@@ -78,12 +79,12 @@ class _QuotesScreenState extends ConsumerState<QuotesScreen> {
                   controller: _searchController,
                   textInputAction: TextInputAction.search,
                   decoration: InputDecoration(
-                    hintText: 'Buscar en citas, títulos o autores',
+                    hintText: context.l10n.quotesSearchHint,
                     prefixIcon: const Icon(Icons.search_rounded),
                     suffixIcon: _query.isEmpty
                         ? null
                         : IconButton(
-                            tooltip: 'Borrar búsqueda',
+                            tooltip: context.l10n.quotesClearSearch,
                             icon: const Icon(Icons.close_rounded),
                             onPressed: () {
                               _searchController.clear();
@@ -102,14 +103,14 @@ class _QuotesScreenState extends ConsumerState<QuotesScreen> {
                 child: Row(
                   children: [
                     ChoiceChip(
-                      label: Text('Todas (${all.length})'),
+                      label: Text(context.l10n.quotesFilterAll(all.length)),
                       selected: !_favoritesOnly,
                       onSelected: (_) => setState(() => _favoritesOnly = false),
                     ),
                     const SizedBox(width: 8),
                     ChoiceChip(
                       avatar: Icon(Icons.star_rounded, size: 18, color: context.app.rating),
-                      label: Text('Favoritas ($favorites)'),
+                      label: Text(context.l10n.quotesFilterFavorites(favorites)),
                       selected: _favoritesOnly,
                       onSelected: (_) => setState(() => _favoritesOnly = true),
                     ),
@@ -161,8 +162,8 @@ class _EmptyFilter extends StatelessWidget {
         padding: const EdgeInsets.all(32),
         child: Text(
           favoritesOnly
-              ? 'Aún no tienes favoritas.\nToca la ☆ de una cita para guardarla aquí.'
-              : 'Ninguna cita coincide con la búsqueda.',
+              ? context.l10n.quotesNoFavorites
+              : context.l10n.quotesNoMatches,
           textAlign: TextAlign.center,
           style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
@@ -183,7 +184,7 @@ class _QuoteCard extends ConsumerWidget {
     final book = quote.book;
     final source = [
       book.title,
-      if (note.pageNumber != null) 'pág. ${note.pageNumber}',
+      if (note.pageNumber != null) context.l10n.quotesPageShort(note.pageNumber!),
     ].join(' · ');
 
     return Material(
@@ -224,7 +225,7 @@ class _QuoteCard extends ConsumerWidget {
                     ),
                   ),
                   IconButton(
-                    tooltip: note.isFavorite ? 'Quitar de favoritas' : 'Marcar como favorita',
+                    tooltip: note.isFavorite ? context.l10n.quotesRemoveFavorite : context.l10n.quotesMarkFavorite,
                     icon: Icon(note.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded, color: context.app.rating),
                     onPressed: () {
                       HapticFeedback.lightImpact();
@@ -232,18 +233,18 @@ class _QuoteCard extends ConsumerWidget {
                     },
                   ),
                   IconButton(
-                    tooltip: 'Compartir como imagen',
+                    tooltip: context.l10n.quotesShareAsImage,
                     icon: Icon(Icons.image_outlined, color: scheme.secondary),
                     onPressed: () => shareQuoteAsImage(context, book, note),
                   ),
                   IconButton(
-                    tooltip: 'Copiar',
+                    tooltip: context.l10n.quotesCopy,
                     icon: Icon(Icons.copy_rounded, color: scheme.primary),
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       Clipboard.setData(ClipboardData(text: '"${note.content}" — ${book.title}, ${book.author}'));
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Cita copiada'), behavior: SnackBarBehavior.floating, duration: Duration(seconds: 1)),
+                        SnackBar(content: Text(context.l10n.quotesCopied), behavior: SnackBarBehavior.floating, duration: const Duration(seconds: 1)),
                       );
                     },
                   ),

@@ -8,16 +8,18 @@ import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../database/database.dart';
+import '../l10n/l10n.dart';
 
 /// Crea la imagen de una cita (con la portada difuminada de fondo) y abre el
 /// menú de compartir. Se usa desde el detalle del libro y desde "Mis citas".
 Future<void> shareQuoteAsImage(BuildContext context, Book book, Note note) async {
   final accent = Theme.of(context).colorScheme.primary;
   final messenger = ScaffoldMessenger.of(context);
-  messenger.showSnackBar(const SnackBar(
-    content: Text('Generando tarjeta...'),
+  final l10n = context.l10n;
+  messenger.showSnackBar(SnackBar(
+    content: Text(l10n.quotesGeneratingCard),
     behavior: SnackBarBehavior.floating,
-    duration: Duration(seconds: 1),
+    duration: const Duration(seconds: 1),
   ));
 
   try {
@@ -39,13 +41,13 @@ Future<void> shareQuoteAsImage(BuildContext context, Book book, Note note) async
 
     await SharePlus.instance.share(ShareParams(
       files: [XFile(file.path, mimeType: 'image/png')],
-      text: '📖 ${book.title}\n✨ Compartido desde Book Tracker',
+      text: l10n.quotesShareText(book.title),
     ));
     HapticFeedback.heavyImpact();
   } catch (e) {
     debugPrint('Error compartiendo cita: $e');
-    messenger.showSnackBar(const SnackBar(
-      content: Text('No se pudo crear la imagen. Inténtalo de nuevo.'),
+    messenger.showSnackBar(SnackBar(
+      content: Text(l10n.quotesImageError),
       behavior: SnackBarBehavior.floating,
     ));
   }
@@ -163,15 +165,15 @@ class QuoteShareCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        'Página ${note.pageNumber}',
+                        context.l10n.quotesCardPage(note.pageNumber!),
                         style: TextStyle(color: accent, fontSize: 11, fontWeight: FontWeight.bold, decoration: TextDecoration.none),
                       ),
                     ),
                   ],
                   const SizedBox(height: 20),
-                  const Text(
-                    'Leído en Book Tracker',
-                    style: TextStyle(color: Colors.white38, fontSize: 10, letterSpacing: 1.2, decoration: TextDecoration.none),
+                  Text(
+                    context.l10n.quotesCardFooter,
+                    style: const TextStyle(color: Colors.white38, fontSize: 10, letterSpacing: 1.2, decoration: TextDecoration.none),
                   ),
                 ],
               ),

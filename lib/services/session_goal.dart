@@ -1,3 +1,5 @@
+import 'app_language.dart';
+
 /// Meta de una sesión de lectura: minutos o llegar a una página.
 class SessionGoal {
   /// Minutos a leer en la sesión (null si la meta es de páginas).
@@ -31,10 +33,12 @@ class SessionGoal {
   bool pageReached(int page) => untilPage != null && page >= untilPage!;
 
   /// "30 min" o "hasta la pág. 150".
-  String get label => isTime ? '$minutes min' : 'hasta la pág. $untilPage';
+  String get label => isTime
+      ? AppLanguage.strings.sessionGoalLabelTime(minutes!)
+      : AppLanguage.strings.sessionGoalLabelPage(untilPage!);
 
   /// "18 / 30 min".
-  String timeProgressLabel(int elapsedSeconds) => '${elapsedSeconds ~/ 60} / $minutes min';
+  String timeProgressLabel(int elapsedSeconds) => AppLanguage.strings.sessionGoalTimeProgress(elapsedSeconds ~/ 60, minutes!);
 
   /// Formato para guardarla: "t:30" o "p:150".
   String encode() => isTime ? 't:$minutes' : 'p:$untilPage';

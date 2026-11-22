@@ -130,7 +130,7 @@ void main() {
         _s(DateTime(2026, 11, 12), bookId: 1, minutes: 20, pages: 8),
       ]);
       expect(tester.takeException(), isNull);
-      expect(find.text('Noviembre 2026'), findsOneWidget);
+      expect(find.text('Noviembre de 2026'), findsOneWidget);
       expect(find.text('2'), findsWidgets); // 2 días leídos
       expect(find.text('días leídos'), findsOneWidget);
       expect(find.text('1 h 15 min'), findsOneWidget);
@@ -138,7 +138,7 @@ void main() {
 
       await tester.tap(find.text('10'));
       await tester.pumpAndSettle();
-      expect(find.text('Martes 10 de noviembre'), findsOneWidget);
+      expect(find.text('Martes, 10 de noviembre'), findsOneWidget);
       expect(find.text('Cien años de soledad'), findsOneWidget);
       expect(find.text('45 min · 20 págs.'), findsOneWidget);
       expect(find.text('Metamorphosis'), findsOneWidget);
@@ -164,23 +164,23 @@ void main() {
 
       await tester.tap(find.byTooltip('Mes siguiente'));
       await tester.pump();
-      expect(find.text('Noviembre 2026'), findsOneWidget, reason: 'no hay meses futuros');
+      expect(find.text('Noviembre de 2026'), findsOneWidget, reason: 'no hay meses futuros');
       expect(find.text('Este es el mes actual.'), findsOneWidget);
 
       await tester.tap(find.byTooltip('Mes anterior'));
       await tester.pumpAndSettle();
-      expect(find.text('Octubre 2026'), findsOneWidget);
+      expect(find.text('Octubre de 2026'), findsOneWidget);
       expect(find.text('día leído'), findsOneWidget);
 
       await tester.tap(find.byTooltip('Mes anterior'));
       await tester.pump();
-      expect(find.text('Octubre 2026'), findsOneWidget);
-      expect(find.text('Tu historial empieza en octubre 2026.'), findsOneWidget);
+      expect(find.text('Octubre de 2026'), findsOneWidget);
+      expect(find.text('Tu historial empieza en octubre de 2026.'), findsOneWidget);
 
       // El aviso se va solo
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
-      expect(find.text('Tu historial empieza en octubre 2026.'), findsNothing);
+      expect(find.text('Tu historial empieza en octubre de 2026.'), findsNothing);
     });
 
     testWidgets('deslizar a los lados cambia de mes', (tester) async {
@@ -188,11 +188,11 @@ void main() {
       // Hacia la derecha: mes anterior
       await tester.fling(find.text('15'), const Offset(300, 0), 1000);
       await tester.pumpAndSettle();
-      expect(find.text('Octubre 2026'), findsOneWidget);
+      expect(find.text('Octubre de 2026'), findsOneWidget);
       // Hacia la izquierda: vuelve a noviembre
       await tester.fling(find.text('15'), const Offset(-300, 0), 1000);
       await tester.pumpAndSettle();
-      expect(find.text('Noviembre 2026'), findsOneWidget);
+      expect(find.text('Noviembre de 2026'), findsOneWidget);
     });
 
     testWidgets('sin lecturas este mes lo dice', (tester) async {

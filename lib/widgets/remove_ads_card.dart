@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../l10n/l10n.dart';
 import '../services/remove_ads.dart';
 import '../theme/app_colors.dart';
 
@@ -32,11 +33,11 @@ class _RemoveAdsCardState extends State<RemoveAdsCard> {
     final messenger = ScaffoldMessenger.of(context);
     switch (_c.status.value) {
       case RemoveAdsStatus.error:
-        messenger.showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, content: Text(_c.lastError ?? 'La compra no se completó.')));
+        messenger.showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, content: Text(_c.lastError ?? context.l10n.removeAdsPurchaseFailed)));
       case RemoveAdsStatus.pending:
-        messenger.showSnackBar(const SnackBar(
+        messenger.showSnackBar(SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Tu pago está pendiente. Los anuncios se quitarán cuando Google Play lo confirme.'),
+          content: Text(context.l10n.removeAdsPending),
         ));
       default:
         break;
@@ -71,8 +72,8 @@ class _RemoveAdsCardState extends State<RemoveAdsCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Sin anuncios', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-                      Text('¡Gracias por apoyar Book Tracker! 💜',
+                      Text(context.l10n.removeAdsActiveTitle, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                      Text(context.l10n.removeAdsThanks,
                           style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
                     ],
                   ),
@@ -103,7 +104,7 @@ class _RemoveAdsCardState extends State<RemoveAdsCard> {
                   Icon(Icons.block_rounded, color: scheme.primary),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text('Quitar anuncios',
+                    child: Text(context.l10n.removeAdsTitle,
                         style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
                   ),
                   if (price != null)
@@ -112,8 +113,7 @@ class _RemoveAdsCardState extends State<RemoveAdsCard> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Pago único, para siempre. Sin anuncios en la biblioteca, estadísticas ni citas, y "Salvar racha" gratis. '
-                'Se mantiene si reinstalas o cambias de teléfono con la misma cuenta de Google.',
+                context.l10n.removeAdsDescription,
                 style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant, height: 1.4),
               ),
               const SizedBox(height: 14),
@@ -124,11 +124,13 @@ class _RemoveAdsCardState extends State<RemoveAdsCard> {
                       onPressed: (busy || unavailable) ? null : _c.buy,
                       child: busy
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                          : Text(unavailable ? 'No disponible por ahora' : (price == null ? 'Comprar' : 'Comprar por $price')),
+                          : Text(unavailable
+                              ? context.l10n.removeAdsUnavailable
+                              : (price == null ? context.l10n.removeAdsBuy : context.l10n.removeAdsBuyFor(price))),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  TextButton(onPressed: busy ? null : _c.restore, child: const Text('Restaurar')),
+                  TextButton(onPressed: busy ? null : _c.restore, child: Text(context.l10n.removeAdsRestore)),
                 ],
               ),
             ],

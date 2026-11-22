@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import 'add_book_sheet.dart';
 
@@ -27,7 +28,7 @@ class AddBookButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final app = context.app;
     return Tooltip(
-      message: 'Añadir libro',
+      message: context.l10n.addBookTooltip,
       child: Material(
         key: addBookButtonKey,
         color: app.accent,
@@ -40,7 +41,7 @@ class AddBookButton extends StatelessWidget {
           child: SizedBox(
             width: 64,
             height: 64,
-            child: Icon(Icons.add_rounded, size: 30, color: app.onAccent, semanticLabel: 'Añadir libro'),
+            child: Icon(Icons.add_rounded, size: 30, color: app.onAccent, semanticLabel: context.l10n.addBookTooltip),
           ),
         ),
       ),

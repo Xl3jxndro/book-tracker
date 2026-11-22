@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../database/database.dart';
+import '../l10n/l10n.dart';
 import '../services/reading_calendar.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_tokens.dart';
@@ -75,11 +76,12 @@ class _ReadingCalendarState extends State<ReadingCalendar> {
   void _changeMonth(int delta) {
     if (delta < 0 && !_canGoBack || delta > 0 && !_canGoForward) {
       HapticFeedback.lightImpact();
+      final l10n = context.l10n;
       _showLimit(delta < 0
           ? (widget.sessions.isEmpty
-              ? 'Tu historial empieza aquí: aún no hay meses anteriores con lecturas.'
-              : 'Tu historial empieza en ${DateFormat('MMMM y', 'es').format(_firstMonth)}.')
-          : 'Este es el mes actual.');
+              ? l10n.calendarHistoryStartsHere
+              : l10n.calendarHistoryStartsIn(DateFormat.yMMMM(context.languageCode).format(_firstMonth)))
+          : l10n.calendarCurrentMonth);
       return;
     }
     HapticFeedback.selectionClick();
@@ -105,7 +107,7 @@ class _ReadingCalendarState extends State<ReadingCalendar> {
     final theme = Theme.of(context);
     final days = readingByDay(widget.sessions);
     final summary = summarizeMonth(days, _month.year, _month.month);
-    final monthName = toBeginningOfSentenceCase(DateFormat('MMMM y', 'es').format(_month));
+    final monthName = toBeginningOfSentenceCase(DateFormat.yMMMM(context.languageCode).format(_month), context.languageCode);
 
     return GestureDetector(
       // Deslizar a los lados también cambia de mes
@@ -122,20 +124,20 @@ class _ReadingCalendarState extends State<ReadingCalendar> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Calendario', style: theme.textTheme.titleMedium),
+                    Text(context.l10n.calendarTitle, style: theme.textTheme.titleMedium),
                     Text(monthName, style: theme.textTheme.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant)),
                   ],
                 ),
               ),
               // Siempre se pueden tocar: en el límite explican por qué no hay más
               IconButton(
-                tooltip: 'Mes anterior',
+                tooltip: context.l10n.calendarPreviousMonth,
                 onPressed: () => _changeMonth(-1),
                 color: _canGoBack ? null : context.cs.onSurfaceVariant.withValues(alpha: 0.38),
                 icon: const Icon(Icons.chevron_left_rounded),
               ),
               IconButton(
-                tooltip: 'Mes siguiente',
+                tooltip: context.l10n.calendarNextMonth,
                 onPressed: () => _changeMonth(1),
                 color: _canGoForward ? null : context.cs.onSurfaceVariant.withValues(alpha: 0.38),
                 icon: const Icon(Icons.chevron_right_rounded),
@@ -197,7 +199,7 @@ class _ReadingCalendarState extends State<ReadingCalendar> {
   }
 
   Widget _weekdayHeader(BuildContext context) {
-    final letter = DateFormat('EEEEE', 'es');
+    final letter = DateFormat('EEEEE', context.languageCode);
     final monday = DateTime(2024, 1, 1); // un lunes
     return Row(
       children: [
@@ -249,10 +251,11 @@ class _ReadingCalendarState extends State<ReadingCalendar> {
     final isSaved = level == 0 && saved.contains(day);
     final strong = level >= 3;
 
-    final label = DateFormat("EEEE d 'de' MMMM", 'es').format(day);
+    final l10n = context.l10n;
+    final label = DateFormat.MMMMEEEEd(context.languageCode).format(day);
     final description = reading == null || !reading.hasReading
-        ? (isSaved ? '$label, racha salvada' : '$label, sin lectura')
-        : '$label, ${formatReadingDuration(reading.seconds)}, ${reading.pages} páginas';
+        ? (isSaved ? l10n.calendarDaySavedSemantics(label) : l10n.calendarDayNoReadingSemantics(label))
+        : l10n.calendarDayReadingSemantics(label, formatReadingDuration(reading.seconds), reading.pages);
 
     return AspectRatio(
       aspectRatio: 1,
@@ -314,7 +317,7 @@ class _ReadingCalendarState extends State<ReadingCalendar> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Text('Menos', style: style),
+        Text(context.l10n.calendarLegendLess, style: style),
         const SizedBox(width: 6),
         for (var level = 0; level <= 4; level++)
           Container(
@@ -324,7 +327,7 @@ class _ReadingCalendarState extends State<ReadingCalendar> {
             decoration: BoxDecoration(color: _levelColor(context, level), borderRadius: BorderRadius.circular(3)),
           ),
         const SizedBox(width: 6),
-        Text('Más', style: style),
+        Text(context.l10n.calendarLegendMore, style: style),
       ],
     );
   }
@@ -334,8 +337,8 @@ class _ReadingCalendarState extends State<ReadingCalendar> {
     if (summary.daysRead == 0) {
       return Text(
         _month.year == _today.year && _month.month == _today.month
-            ? 'Aún no has leído este mes. Toca un día para ver su detalle.'
-            : 'No hay lecturas este mes.',
+            ? context.l10n.calendarNoReadingYetThisMonth
+            : context.l10n.calendarNoReadingThisMonth,
         style: theme.textTheme.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant),
       );
     }
@@ -345,16 +348,19 @@ class _ReadingCalendarState extends State<ReadingCalendar> {
       children: [
         Row(
           children: [
-            _stat(context, '${summary.daysRead}', summary.daysRead == 1 ? 'día leído' : 'días leídos'),
-            _stat(context, formatReadingDuration(summary.seconds), 'en total'),
-            _stat(context, NumberFormat.decimalPattern('es').format(summary.pages), 'páginas'),
+            _stat(context, '${summary.daysRead}', context.l10n.calendarDaysReadLabel(summary.daysRead)),
+            _stat(context, formatReadingDuration(summary.seconds), context.l10n.calendarTotalLabel),
+            _stat(context, NumberFormat.decimalPattern(context.languageCode).format(summary.pages),
+                context.l10n.calendarPagesLabel(summary.pages)),
           ],
         ),
         if (best != null) ...[
           const SizedBox(height: AppSpace.sm),
           Text(
-            'Tu mejor día: ${DateFormat("d 'de' MMMM", 'es').format(best.day)} · '
-            '${best.seconds > 0 ? formatReadingDuration(best.seconds) : '${best.pages} páginas'}',
+            context.l10n.calendarBestDay(
+              DateFormat.MMMMd(context.languageCode).format(best.day),
+              best.seconds > 0 ? formatReadingDuration(best.seconds) : context.l10n.calendarPagesCount(best.pages),
+            ),
             style: theme.textTheme.bodySmall?.copyWith(color: context.cs.onSurfaceVariant),
           ),
         ],
@@ -377,7 +383,7 @@ class _ReadingCalendarState extends State<ReadingCalendar> {
 
   Widget _dayDetail(BuildContext context, DateTime day, DayReading? reading) {
     final theme = Theme.of(context);
-    final title = toBeginningOfSentenceCase(DateFormat("EEEE d 'de' MMMM", 'es').format(day));
+    final title = toBeginningOfSentenceCase(DateFormat.MMMMEEEEd(context.languageCode).format(day), context.languageCode);
     final booksById = {for (final b in widget.books) b.id: b};
     final saved = widget.savedDays.any((d) => d.year == day.year && d.month == day.month && d.day == day.day);
 
@@ -389,7 +395,7 @@ class _ReadingCalendarState extends State<ReadingCalendar> {
             Expanded(child: Text(title, style: theme.textTheme.titleSmall)),
             if (reading != null && reading.hasReading)
               Text(
-                '${formatReadingDuration(reading.seconds)} · ${reading.pages} págs.',
+                '${formatReadingDuration(reading.seconds)} · ${context.l10n.calendarPagesShort(reading.pages)}',
                 style: theme.textTheme.bodySmall?.copyWith(color: context.cs.onSurfaceVariant),
               ),
           ],
@@ -397,7 +403,7 @@ class _ReadingCalendarState extends State<ReadingCalendar> {
         const SizedBox(height: AppSpace.xs),
         if (reading == null || !reading.hasReading)
           Text(
-            saved ? 'No leíste, pero salvaste tu racha este día.' : 'Este día no leíste.',
+            saved ? context.l10n.calendarDaySavedDetail : context.l10n.calendarDayNoReadingDetail,
             style: theme.textTheme.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant),
           )
         else
@@ -410,7 +416,7 @@ class _ReadingCalendarState extends State<ReadingCalendar> {
                   const SizedBox(width: AppSpace.sm),
                   Expanded(
                     child: Text(
-                      booksById[entry.bookId]?.title ?? 'Libro eliminado',
+                      booksById[entry.bookId]?.title ?? context.l10n.calendarDeletedBook,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
@@ -420,7 +426,7 @@ class _ReadingCalendarState extends State<ReadingCalendar> {
                   Text(
                     [
                       if (entry.seconds > 0) formatReadingDuration(entry.seconds),
-                      if (entry.pages > 0) '${entry.pages} págs.',
+                      if (entry.pages > 0) context.l10n.calendarPagesShort(entry.pages),
                     ].join(' · '),
                     style: theme.textTheme.bodySmall?.copyWith(color: context.cs.onSurfaceVariant),
                   ),

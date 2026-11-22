@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../l10n/l10n.dart';
 import '../services/year_summary.dart';
 import 'year_summary_card.dart';
 
@@ -32,6 +33,7 @@ class _YearSummaryShareDialogState extends State<_YearSummaryShareDialog> {
 
   Future<void> _share() async {
     setState(() => _sharing = true);
+    final shareText = context.l10n.yearSummaryShareText('${widget.summary.year}');
     try {
       // Las portadas deben estar cargadas antes de capturar, o salen en blanco
       for (final book in widget.summary.recentFinished) {
@@ -57,7 +59,7 @@ class _YearSummaryShareDialogState extends State<_YearSummaryShareDialog> {
       HapticFeedback.mediumImpact();
       await SharePlus.instance.share(ShareParams(
         files: [XFile(file.path, mimeType: 'image/png')],
-        text: 'Mi año lector ${widget.summary.year} 📚 #BookTracker',
+        text: shareText,
       ));
       if (mounted) Navigator.pop(context);
     } catch (e) {
@@ -65,7 +67,7 @@ class _YearSummaryShareDialogState extends State<_YearSummaryShareDialog> {
       if (mounted) {
         setState(() => _sharing = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se pudo crear la imagen. Inténtalo de nuevo.'), behavior: SnackBarBehavior.floating),
+          SnackBar(content: Text(context.l10n.yearSummaryShareError), behavior: SnackBarBehavior.floating),
         );
       }
     }
@@ -95,7 +97,7 @@ class _YearSummaryShareDialogState extends State<_YearSummaryShareDialog> {
                 Expanded(
                   child: TextButton(
                     onPressed: _sharing ? null : () => Navigator.pop(context),
-                    child: const Text('Cerrar'),
+                    child: Text(context.l10n.commonClose),
                   ),
                 ),
                 Expanded(
@@ -104,7 +106,7 @@ class _YearSummaryShareDialogState extends State<_YearSummaryShareDialog> {
                     icon: _sharing
                         ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.ios_share_rounded),
-                    label: const Text('Compartir'),
+                    label: Text(context.l10n.yearSummaryShare),
                   ),
                 ),
               ],

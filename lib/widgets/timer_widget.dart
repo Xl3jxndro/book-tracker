@@ -12,6 +12,7 @@ import '../services/timer_persistence.dart';
 import '../services/home_widget_sync.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../theme/app_colors.dart';
+import '../l10n/l10n.dart';
 
 class TimerWidget extends ConsumerStatefulWidget {
   final Book book;
@@ -178,7 +179,7 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 5),
-      content: Text('🎯 ¡Meta de ${goal.minutes} min cumplida! Sigue si quieres o finaliza la lectura.'),
+      content: Text(context.l10n.timerGoalReachedSnack(goal.minutes!)),
     ));
   }
 
@@ -217,13 +218,13 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
       builder: (dialogContext) => StatefulBuilder(builder: (dialogContext, setDialogState) {
         final value = int.tryParse(controller.text);
         final String? error = value == null
-            ? 'Escribe una página'
+            ? dialogContext.l10n.timerEnterPage
             : value <= book.readPages
-                ? 'Ya vas en la pág. ${book.readPages}'
-                : (book.totalPages > 0 && value > book.totalPages ? 'El libro tiene ${book.totalPages} páginas' : null);
+                ? dialogContext.l10n.timerAlreadyOnPage(book.readPages)
+                : (book.totalPages > 0 && value > book.totalPages ? dialogContext.l10n.timerBookHasPages(book.totalPages) : null);
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-          title: const Text('¿Hasta qué página?'),
+          title: Text(dialogContext.l10n.timerUntilWhichPage),
           content: TextField(
             controller: controller,
             autofocus: true,
@@ -231,16 +232,16 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (_) => setDialogState(() {}),
             decoration: InputDecoration(
-              labelText: 'Llegar a la página',
+              labelText: dialogContext.l10n.timerReachPage,
               suffixText: book.totalPages > 0 ? '/ ${book.totalPages}' : null,
               errorText: error,
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(dialogContext.l10n.commonCancel)),
             ElevatedButton(
               onPressed: error != null ? null : () => Navigator.pop(dialogContext, value),
-              child: const Text('Listo'),
+              child: Text(dialogContext.l10n.timerDone),
             ),
           ],
         );
@@ -351,7 +352,7 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                _isPaused ? 'SESIÓN PAUSADA' : 'TIEMPO DE LECTURA', 
+                _isPaused ? context.l10n.timerSessionPaused : context.l10n.timerReadingTime,
                 style: TextStyle(
                   fontSize: 12, 
                   fontWeight: FontWeight.bold, 
@@ -391,7 +392,7 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
                   onPressed: _isRunning ? _pauseTimer : () => _startTimer(),
                   icon: Icon(_isRunning ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded),
                   label: Text(
-                    _isRunning ? 'PAUSAR' : (_isPaused ? 'REANUDAR' : 'COMENZAR'),
+                    _isRunning ? context.l10n.timerPause : (_isPaused ? context.l10n.timerResume : context.l10n.timerStart),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -416,10 +417,10 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                     ),
-                    child: const Text(
-                      'Finalizar lectura',
+                    child: Text(
+                      context.l10n.timerFinishReading,
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
                     ),
                   ),
                 ),
@@ -436,7 +437,7 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
     final controller = TextEditingController(text: widget.book.readPages.toString());
     final int mins = seconds ~/ 60;
     final int secs = seconds % 60;
-    final String timeText = mins > 0 ? '$mins min $secs seg' : '$secs seg';
+    final String timeText = mins > 0 ? context.l10n.timerDurationMinSec(mins, secs) : context.l10n.timerDurationSec(secs);
 
     showDialog(
       context: context,
@@ -448,7 +449,7 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
 
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-            title: const Text('¡Sesión terminada!', style: TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(dialogContext.l10n.timerSessionFinished, style: const TextStyle(fontWeight: FontWeight.bold)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -491,10 +492,10 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
                       fontWeight: isOverLimit ? FontWeight.bold : null,
                     ),
                     decoration: InputDecoration(
-                      labelText: '¿En qué página quedaste?',
+                      labelText: dialogContext.l10n.timerWhatPageStopped,
                       prefixIcon: Icon(Icons.menu_book, color: isOverLimit ? scheme.error : scheme.primary),
                       suffixText: '/ ${widget.book.totalPages}',
-                      errorText: isOverLimit ? 'No puede exceder el total' : null,
+                      errorText: isOverLimit ? dialogContext.l10n.timerCannotExceedTotal : null,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -519,7 +520,7 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
                   }
                   navigator.pop();
                 },
-                child: Text('DESCARTAR', style: TextStyle(color: context.cs.onSurfaceVariant)),
+                child: Text(dialogContext.l10n.timerDiscard, style: TextStyle(color: context.cs.onSurfaceVariant)),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -574,7 +575,7 @@ class _TimerWidgetState extends ConsumerState<TimerWidget>
                   final total = widget.book.totalPages;
                   InterstitialAds.onSessionSaved(finishedBook: total > 0 && newPages >= total);
                 },
-                child: const Text('Guardar'),
+                child: Text(dialogContext.l10n.commonSave),
               ),
             ],
           );
@@ -687,25 +688,25 @@ class _GoalPickerSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            Text('🎯 Meta de esta sesión', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+            Text(context.l10n.timerGoalSheetTitle, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
             Text(
-              'Te aviso al cumplir la meta de tiempo, aunque tengas la pantalla apagada.',
+              context.l10n.timerGoalSheetSubtitle,
               style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 16),
-            Text('Tiempo', style: theme.textTheme.labelLarge),
+            Text(context.l10n.timerGoalTime, style: theme.textTheme.labelLarge),
             const SizedBox(height: 8),
             Wrap(spacing: 8, runSpacing: 8, children: [
-              chip('Libre', const _GoalChoice(null), current == null),
+              chip(context.l10n.timerGoalFree, const _GoalChoice(null), current == null),
               for (final m in SessionGoal.timeOptions)
-                chip('$m min', _GoalChoice(SessionGoal.time(m)), current == SessionGoal.time(m)),
+                chip(context.l10n.timerMinutes(m), _GoalChoice(SessionGoal.time(m)), current == SessionGoal.time(m)),
             ]),
             const SizedBox(height: 16),
-            Text('Páginas', style: theme.textTheme.labelLarge),
+            Text(context.l10n.timerGoalPages, style: theme.textTheme.labelLarge),
             const SizedBox(height: 8),
             chip(
-              current?.untilPage != null ? 'Hasta la pág. ${current!.untilPage}' : 'Hasta la página…',
+              current?.untilPage != null ? context.l10n.timerUntilPageN(current!.untilPage!) : context.l10n.timerUntilPageAsk,
               const _GoalChoice(null, askPage: true),
               current?.untilPage != null,
             ),
@@ -736,13 +737,16 @@ class _GoalRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final g = goal;
+    final l10n = context.l10n;
     final String text;
     if (g == null) {
-      text = 'Meta: libre';
+      text = l10n.timerGoalFreeLabel;
     } else if (g.isTime && active) {
-      text = reached ? '¡Meta de ${g.minutes} min cumplida!' : 'Meta: ${g.timeProgressLabel(seconds)}';
+      text = reached ? l10n.timerGoalReached(g.minutes!) : l10n.timerGoalProgress(seconds ~/ 60, g.minutes!);
+    } else if (g.isTime) {
+      text = l10n.timerGoalTimeLabel(g.minutes!);
     } else {
-      text = 'Meta: ${g.label}';
+      text = l10n.timerGoalPageLabel(g.untilPage!);
     }
     final color = reached ? context.app.statusFinished : scheme.primary;
 
@@ -791,17 +795,18 @@ class _GoalResult extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final bool met;
     final String text;
     if (goal.isTime) {
       met = goal.timeReached(seconds);
       final missing = (goal.remainingSeconds(seconds) / 60).ceil();
-      text = met ? '🎯 Meta de ${goal.minutes} min cumplida' : 'Meta: ${goal.minutes} min · te faltaron $missing min';
+      text = met ? l10n.timerGoalMet(goal.minutes!) : l10n.timerGoalMissed(goal.minutes!, missing);
     } else {
       met = goal.pageReached(page);
       text = met
-          ? '🎯 ¡Llegaste a la pág. ${goal.untilPage}!'
-          : 'Meta: pág. ${goal.untilPage} · te faltan ${goal.untilPage! - page} páginas';
+          ? l10n.timerPageGoalMet(goal.untilPage!)
+          : l10n.timerPageGoalMissed(goal.untilPage!, goal.untilPage! - page);
     }
     final color = met ? context.app.statusFinished : Theme.of(context).colorScheme.onSurfaceVariant;
     return Text(text, textAlign: TextAlign.center, style: TextStyle(color: color, fontWeight: FontWeight.w700));

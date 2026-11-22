@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import '../services/text_scan.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_tokens.dart';
+import '../l10n/l10n.dart';
 
 /// ¿El error es porque Google Play aún no descargó el modelo de texto?
 /// (ML Kit: "Waiting for the text optional module to be downloaded").
@@ -253,12 +254,12 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
     return Scaffold(
       backgroundColor: context.cs.surface,
       appBar: AppBar(
-        title: const Text('Subraya la cita'),
+        title: Text(context.l10n.scanTitle),
         actions: [
           if (hasText)
             TextButton(
               onPressed: _selectAll,
-              child: Text(_selected.length == result.words.length ? 'Ninguna' : 'Todo'),
+              child: Text(_selected.length == result.words.length ? context.l10n.scanSelectNone : context.l10n.scanSelectAll),
             ),
           const SizedBox(width: AppSpace.xs),
         ],
@@ -268,14 +269,14 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
               ? _message(
                   context,
                   icon: Icons.downloading_rounded,
-                  title: 'Preparando el lector de texto',
-                  text: 'Google Play lo está descargando (unos 4 MB). Conéctate a internet e inténtalo en unos minutos.',
+                  title: context.l10n.scanModelDownloadingTitle,
+                  text: context.l10n.scanModelDownloadingText,
                 )
               : _message(
                   context,
                   icon: Icons.error_outline_rounded,
-                  title: 'No se pudo leer la foto',
-                  text: 'Inténtalo de nuevo con otra foto.',
+                  title: context.l10n.scanErrorTitle,
+                  text: context.l10n.scanErrorText,
                 ))
           : result == null
               ? Center(
@@ -284,7 +285,7 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
                     children: [
                       const CircularProgressIndicator(),
                       const SizedBox(height: AppSpace.md),
-                      Text('Leyendo la página…',
+                      Text(context.l10n.scanReading,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant)),
                     ],
                   ),
@@ -293,8 +294,8 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
                   ? _message(
                       context,
                       icon: Icons.text_fields_rounded,
-                      title: 'No encontré texto',
-                      text: 'Prueba con más luz, la página recta y el texto enfocado.',
+                      title: context.l10n.scanNoTextTitle,
+                      text: context.l10n.scanNoTextText,
                     )
                   : Padding(
                       padding: const EdgeInsets.fromLTRB(AppSpace.sm, 0, AppSpace.sm, AppSpace.sm),
@@ -414,14 +415,14 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          tooltip: 'Acercar',
+          tooltip: context.l10n.scanZoomIn,
           style: style(),
           onPressed: _zoom < _maxZoom ? () => _zoomBy(1.6) : null,
           icon: const Icon(Icons.zoom_in_rounded),
         ),
         const SizedBox(height: 6),
         IconButton(
-          tooltip: 'Alejar',
+          tooltip: context.l10n.scanZoomOut,
           style: style(),
           onPressed: _zoom > 1 ? () => _zoomBy(1 / 1.6) : null,
           icon: const Icon(Icons.zoom_out_rounded),
@@ -429,7 +430,7 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
         if (_zoom > 1) ...[
           const SizedBox(height: 6),
           IconButton(
-            tooltip: 'Ver la página entera',
+            tooltip: context.l10n.scanZoomFit,
             style: style(),
             onPressed: _resetZoom,
             icon: const Icon(Icons.fit_screen_rounded),
@@ -462,7 +463,7 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
                         Icon(Icons.gesture_rounded, size: 20, color: context.cs.onSurfaceVariant),
                         const SizedBox(width: AppSpace.xs),
                         Expanded(
-                          child: Text('Desliza un dedo sobre el texto para subrayarlo. Con dos dedos, acerca la foto.',
+                          child: Text(context.l10n.scanHint,
                               style: theme.textTheme.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant)),
                         ),
                       ],
@@ -477,14 +478,14 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
             Row(
               children: [
                 IconButton(
-                  tooltip: 'Deshacer',
+                  tooltip: context.l10n.commonUndo,
                   onPressed: _history.isEmpty ? null : _undo,
                   icon: const Icon(Icons.undo_rounded),
                 ),
                 if (quote.isNotEmpty)
                   TextButton(
                     onPressed: () => _setSelection({}),
-                    child: const Text('Borrar'),
+                    child: Text(context.l10n.scanClear),
                   ),
                 const SizedBox(width: AppSpace.xs),
                 Expanded(
@@ -492,7 +493,7 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
                     onPressed: quote.isEmpty ? null : () => Navigator.pop(context, quote),
                     style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
                     icon: const Icon(Icons.format_quote_rounded),
-                    label: const Text('Usar cita'),
+                    label: Text(context.l10n.scanUseQuote),
                   ),
                 ),
               ],
@@ -517,7 +518,7 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
             const SizedBox(height: AppSpace.xs),
             Text(text, style: theme.textTheme.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant), textAlign: TextAlign.center),
             const SizedBox(height: AppSpace.lg),
-            FilledButton.tonal(onPressed: () => Navigator.pop(context), child: const Text('Volver')),
+            FilledButton.tonal(onPressed: () => Navigator.pop(context), child: Text(context.l10n.commonBack)),
           ],
         ),
       ),

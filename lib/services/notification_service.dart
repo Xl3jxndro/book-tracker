@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+import 'app_language.dart';
 import 'streak.dart';
 
 class NotificationService {
@@ -22,13 +23,18 @@ class NotificationService {
   static const _streakRiskId = 1;
   static const _sessionGoalId = 2;
   static const _sessionChannelId = 'session_goal';
-  static const _sessionChannelName = 'Meta de la sesión';
-  static const _sessionChannelDescription = 'Aviso cuando cumples la meta de tiempo de una sesión de lectura';
+  // Nombres y descripciones de los canales: se ven en los ajustes de Android
+  // (en el idioma de la app; se actualizan al volver a crear el canal)
+  static String get _sessionChannelName => AppLanguage.strings.notifChannelSessionName;
+  static String get _sessionChannelDescription => AppLanguage.strings.notifChannelSessionDescription;
 
   static bool _initialized = false;
   static const _streakChannelId = 'streak_alerts';
-  static const _streakChannelName = 'Racha en riesgo';
-  static const _streakChannelDescription = 'Aviso cuando llevas racha y aún no has leído hoy';
+  static String get _streakChannelName => AppLanguage.strings.notifChannelStreakName;
+  static String get _streakChannelDescription => AppLanguage.strings.notifChannelStreakDescription;
+  static const _remindersChannelId = 'reading_reminders';
+  static String get _remindersChannelName => AppLanguage.strings.notifChannelRemindersName;
+  static String get _remindersChannelDescription => AppLanguage.strings.notifChannelRemindersDescription;
 
   /// Contenido del recordatorio diario: al tocarlo se abre el libro actual.
   static const openCurrentBookPayload = 'open_current_book';
@@ -93,17 +99,17 @@ class NotificationService {
     final androidImplementation = _notificationsPlugin
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
 
-    await androidImplementation?.createNotificationChannel(const AndroidNotificationChannel(
-      'reading_reminders', // Debe coincidir con el ID usado en AndroidNotificationDetails
-      'Recordatorios de Lectura',
-      description: 'Notificaciones diarias para fomentar la lectura',
+    await androidImplementation?.createNotificationChannel(AndroidNotificationChannel(
+      _remindersChannelId, // Debe coincidir con el ID usado en AndroidNotificationDetails
+      _remindersChannelName,
+      description: _remindersChannelDescription,
       importance: Importance.max, // Permite que la notificación "flote" (heads-up)
       playSound: true,
       showBadge: true,
       enableVibration: true,
     ));
 
-    await androidImplementation?.createNotificationChannel(const AndroidNotificationChannel(
+    await androidImplementation?.createNotificationChannel(AndroidNotificationChannel(
       _sessionChannelId,
       _sessionChannelName,
       description: _sessionChannelDescription,
@@ -112,7 +118,7 @@ class NotificationService {
       enableVibration: true,
     ));
 
-    await androidImplementation?.createNotificationChannel(const AndroidNotificationChannel(
+    await androidImplementation?.createNotificationChannel(AndroidNotificationChannel(
       _streakChannelId,
       _streakChannelName,
       description: _streakChannelDescription,
@@ -179,19 +185,19 @@ class NotificationService {
     try {
       await _notificationsPlugin.zonedSchedule(
         id: _dailyReminderId,
-        title: '¡Hora de leer!',
-        body: 'Tu racha te espera. Abre un libro y relájate un momento.',
+        title: AppLanguage.strings.notifDailyTitle,
+        body: AppLanguage.strings.notifDailyBody,
         scheduledDate: _nextInstanceOfTime(hour, minute),
-        notificationDetails: const NotificationDetails(
+        notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
-            'reading_reminders',
-            'Recordatorios de Lectura',
-            channelDescription: 'Notificaciones diarias para fomentar la lectura',
+            _remindersChannelId,
+            _remindersChannelName,
+            channelDescription: _remindersChannelDescription,
             importance: Importance.max, // Máxima importancia
             priority: Priority.high,    // Máxima prioridad
             ticker: 'ticker',
           ),
-          iOS: DarwinNotificationDetails(
+          iOS: const DarwinNotificationDetails(
             presentAlert: true,  // Presentar alerta con app abierta en iOS
             presentBadge: true,
             presentSound: true,
@@ -222,7 +228,7 @@ class NotificationService {
         title: StreakRisk.title(alert.streak),
         body: StreakRisk.body,
         scheduledDate: tz.TZDateTime.from(alert.at, tz.local),
-        notificationDetails: const NotificationDetails(
+        notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
             _streakChannelId,
             _streakChannelName,
@@ -231,7 +237,7 @@ class NotificationService {
             priority: Priority.high,
             styleInformation: BigTextStyleInformation(StreakRisk.body),
           ),
-          iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
+          iOS: const DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
         ),
         androidScheduleMode: await _scheduleMode(requestPermission: false),
         payload: openCurrentBookPayload,
@@ -249,10 +255,10 @@ class NotificationService {
       if (!await Permission.notification.isGranted) return;
       await _notificationsPlugin.zonedSchedule(
         id: _sessionGoalId,
-        title: '🎯 ¡Meta de $minutes min cumplida!',
-        body: 'Puedes seguir leyendo o terminar la sesión y guardar tu página.',
+        title: AppLanguage.strings.notifSessionGoalTitle(minutes),
+        body: AppLanguage.strings.notifSessionGoalBody,
         scheduledDate: tz.TZDateTime.now(tz.local).add(Duration(seconds: inSeconds)),
-        notificationDetails: const NotificationDetails(
+        notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
             _sessionChannelId,
             _sessionChannelName,
@@ -260,7 +266,7 @@ class NotificationService {
             importance: Importance.high,
             priority: Priority.high,
           ),
-          iOS: DarwinNotificationDetails(presentAlert: true, presentSound: true),
+          iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true),
         ),
         androidScheduleMode: await _scheduleMode(requestPermission: false),
         payload: openCurrentBookPayload,
@@ -283,7 +289,7 @@ class NotificationService {
         id: 998,
         title: StreakRisk.title(streak),
         body: StreakRisk.body,
-        notificationDetails: const NotificationDetails(
+        notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
             _streakChannelId,
             _streakChannelName,
@@ -318,18 +324,18 @@ class NotificationService {
   }
 
   static Future<void> showInstantNotification() async {
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'reading_reminders', // Mismo ID de canal para que use la configuración de alta importancia
-      'Recordatorios de Lectura',
-      channelDescription: 'Notificaciones de prueba inmediata',
+    final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      _remindersChannelId, // Mismo ID de canal para que use la configuración de alta importancia
+      _remindersChannelName,
+      channelDescription: _remindersChannelDescription,
       importance: Importance.max,
       priority: Priority.high,
       fullScreenIntent: true, // Esto ayuda a que "salte" en pantalla
     );
 
-    const NotificationDetails notificationDetails = NotificationDetails(
+    final NotificationDetails notificationDetails = NotificationDetails(
       android: androidDetails,
-      iOS: DarwinNotificationDetails(
+      iOS: const DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
@@ -338,8 +344,8 @@ class NotificationService {
 
     await _notificationsPlugin.show(
       id: 999, // ID único para la prueba
-      title: '¡Prueba de Lectura! 📖',
-      body: 'Esto es una notificación instantánea para verificar que todo funciona.',
+      title: AppLanguage.strings.notifTestTitle,
+      body: AppLanguage.strings.notifTestBody,
       notificationDetails: notificationDetails,
       payload: 'test_payload',
     );

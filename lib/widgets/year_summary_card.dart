@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../l10n/l10n.dart';
 import '../services/year_summary.dart';
 
 /// Tarjeta "Mi año lector" para compartir como imagen (formato 9:16, el de
@@ -12,18 +14,9 @@ class YearSummaryCard extends StatelessWidget {
 
   static const size = Size(360, 640);
 
-  static String _thousands(int n) {
-    final s = n.toString();
-    final buffer = StringBuffer();
-    for (var i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buffer.write('.');
-      buffer.write(s[i]);
-    }
-    return buffer.toString();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final s = summary;
     final goal = s.goal;
     final goalDone = goal != null && s.booksFinished >= goal;
@@ -45,7 +38,7 @@ class YearSummaryCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('MI AÑO LECTOR', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: 3, color: Colors.white70)),
+                Text(l10n.yearSummaryHeading, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: 3, color: Colors.white70)),
                 Text('${s.year}', style: const TextStyle(fontSize: 56, fontWeight: FontWeight.w900, height: 1.05)),
                 const SizedBox(height: 20),
                 // Se reduce si el número es muy grande, en vez de desbordarse
@@ -59,7 +52,7 @@ class YearSummaryCard extends StatelessWidget {
                       const SizedBox(width: 10),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
-                        child: Text(s.booksFinished == 1 ? 'libro\nterminado' : 'libros\nterminados',
+                        child: Text(l10n.yearSummaryBooksFinished(s.booksFinished),
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, height: 1.15)),
                       ),
                     ],
@@ -78,22 +71,22 @@ class YearSummaryCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    goalDone ? '🏆 ¡Reto de $goal libros cumplido!' : 'Reto: ${s.booksFinished} de $goal libros',
+                    goalDone ? l10n.yearSummaryGoalDone(goal) : l10n.yearSummaryGoalProgress(s.booksFinished, goal),
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
                   ),
                 ],
                 const SizedBox(height: 22),
                 Row(
                   children: [
-                    _Stat(value: _thousands(s.pagesRead), label: 'páginas'),
-                    _Stat(value: s.readingTimeLabel, label: 'leyendo'),
+                    _Stat(value: NumberFormat.decimalPattern(context.languageCode).format(s.pagesRead), label: l10n.yearSummaryPages),
+                    _Stat(value: s.readingTimeLabel, label: l10n.yearSummaryReadingTime),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    _Stat(value: '${s.readingDays}', label: s.readingDays == 1 ? 'día con lectura' : 'días con lectura'),
-                    _Stat(value: '${s.longestStreak}', label: s.longestStreak == 1 ? 'día de racha' : 'días de racha máx.'),
+                    _Stat(value: '${s.readingDays}', label: l10n.yearSummaryReadingDays(s.readingDays)),
+                    _Stat(value: '${s.longestStreak}', label: l10n.yearSummaryLongestStreak(s.longestStreak)),
                   ],
                 ),
                 if (s.topCategory != null) ...[
@@ -101,12 +94,12 @@ class YearSummaryCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-                    child: Text('Género favorito: ${s.topCategory}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                    child: Text(l10n.yearSummaryFavoriteGenre(s.topCategory!), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
                   ),
                 ],
                 const Spacer(),
                 if (s.recentFinished.isNotEmpty) ...[
-                  const Text('Últimos terminados', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white70)),
+                  Text(l10n.yearSummaryRecentlyFinished, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white70)),
                   const SizedBox(height: 8),
                   Row(
                     children: [

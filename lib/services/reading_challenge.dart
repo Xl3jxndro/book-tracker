@@ -1,4 +1,5 @@
 import '../database/database.dart';
+import 'app_language.dart';
 
 /// Progreso del reto anual de lectura ("leer N libros este año").
 class ChallengeProgress {
@@ -23,11 +24,12 @@ class ChallengeProgress {
 
   /// Mensaje para mostrar bajo el progreso.
   String get message {
-    if (isCompleted) return finished > goal ? '¡Reto superado! +${finished - goal}' : '¡Reto cumplido!';
+    final l10n = AppLanguage.strings;
+    if (isCompleted) return finished > goal ? l10n.challengeExceeded(finished - goal) : l10n.challengeCompleted;
     final ahead = booksAhead;
-    if (ahead >= 1) return 'Vas $ahead ${ahead == 1 ? 'libro' : 'libros'} adelantado';
-    if (ahead <= -1) return 'Vas ${-ahead} ${ahead == -1 ? 'libro' : 'libros'} atrasado';
-    return 'Vas al día';
+    if (ahead >= 1) return l10n.challengeAhead(ahead);
+    if (ahead <= -1) return l10n.challengeBehind(-ahead);
+    return l10n.challengeOnTrack;
   }
 }
 

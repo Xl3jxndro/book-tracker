@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../l10n/l10n.dart';
 import '../services/isbn.dart';
 import '../widgets/isbn_help.dart';
 import '../theme/app_colors.dart';
@@ -73,7 +74,7 @@ class _IsbnScannerScreenState extends State<IsbnScannerScreen> {
       if (raw != _lastRejected) {
         _lastRejected = raw;
         HapticFeedback.lightImpact();
-        _showHint('Ese código no es un ISBN. Busca el que empieza por 978 o 979.');
+        _showHint(context.l10n.isbnNotAnIsbn);
       }
     }
   }
@@ -113,10 +114,10 @@ class _IsbnScannerScreenState extends State<IsbnScannerScreen> {
             top: frame.bottom + 24,
             child: Column(
               children: [
-                const Text(
-                  'Apunta al código de barras de la contraportada',
+                Text(
+                  context.l10n.isbnScanPrompt,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 12),
                 AnimatedOpacity(
@@ -146,14 +147,14 @@ class _IsbnScannerScreenState extends State<IsbnScannerScreen> {
                     child: FilledButton.tonalIcon(
                       onPressed: _typeIsbn,
                       icon: const Icon(Icons.keyboard_rounded),
-                      label: const Text('Escribir el ISBN'),
+                      label: Text(context.l10n.isbnTypeIsbn),
                       style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
                     ),
                   ),
                   TextButton.icon(
                     onPressed: () => showIsbnHelp(context),
                     icon: const Icon(Icons.help_outline_rounded, color: Colors.white70, size: 18),
-                    label: const Text('¿Dónde está el ISBN?', style: TextStyle(color: Colors.white70)),
+                    label: Text(context.l10n.isbnWhereIsIt, style: const TextStyle(color: Colors.white70)),
                   ),
                 ],
               ),
@@ -166,7 +167,7 @@ class _IsbnScannerScreenState extends State<IsbnScannerScreen> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
-                    tooltip: 'Cerrar',
+                    tooltip: context.l10n.commonClose,
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Spacer(),
@@ -177,7 +178,7 @@ class _IsbnScannerScreenState extends State<IsbnScannerScreen> {
                       final on = state.torchState == TorchState.on;
                       return IconButton(
                         icon: Icon(on ? Icons.flash_on_rounded : Icons.flash_off_rounded, color: Colors.white, size: 28),
-                        tooltip: on ? 'Apagar linterna' : 'Encender linterna',
+                        tooltip: on ? context.l10n.isbnTorchOff : context.l10n.isbnTorchOn,
                         onPressed: _controller.toggleTorch,
                       );
                     },
@@ -210,8 +211,8 @@ class _ScannerError extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             denied
-                ? 'Para escanear necesitamos permiso para usar la cámara.'
-                : 'No se pudo abrir la cámara. Puedes buscar el libro escribiendo su título.',
+                ? context.l10n.isbnCameraPermission
+                : context.l10n.isbnCameraError,
             textAlign: TextAlign.center,
             style: const TextStyle(color: Colors.white, fontSize: 16),
           ),
@@ -220,7 +221,7 @@ class _ScannerError extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: openAppSettings,
               icon: const Icon(Icons.settings_rounded),
-              label: const Text('Abrir ajustes'),
+              label: Text(context.l10n.isbnOpenSettings),
             ),
           ],
         ],

@@ -4,18 +4,22 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../database/database.dart';
+import '../l10n/l10n.dart';
+import '../services/app_language.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_tokens.dart';
 import 'add_book_sheet.dart';
 
 /// Texto de estado de un libro ("Leyendo · 11%", "Pendiente · 394 p."...).
-String bookStatusLine(Book book) {
+/// Sin [l10n], en el idioma en uso.
+String bookStatusLine(Book book, [AppLocalizations? l10n]) {
+  final s = l10n ?? AppLanguage.strings;
   final pct = book.totalPages > 0 ? (book.readPages / book.totalPages * 100).clamp(0, 100).toInt() : 0;
   return switch (book.status) {
-    1 => 'Leyendo · $pct%',
-    2 => 'Terminado',
-    3 => 'Abandonado · ${book.readPages}/${book.totalPages} p.',
-    _ => 'Pendiente · ${book.totalPages} p.',
+    1 => s.bookCardStatusReading(pct),
+    2 => s.statusFinished,
+    3 => s.bookCardStatusAbandoned(book.readPages, book.totalPages),
+    _ => s.bookCardStatusPending(book.totalPages),
   };
 }
 
@@ -88,7 +92,7 @@ class BookCard extends StatelessWidget {
                       children: [
                         Flexible(
                           child: Text(
-                            bookStatusLine(book),
+                            bookStatusLine(book, context.l10n),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.labelMedium?.copyWith(color: statusColor),
@@ -116,7 +120,7 @@ class BookCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Editar',
+                tooltip: context.l10n.bookCardEdit,
                 icon: const Icon(Icons.edit_outlined, size: 20),
                 color: cs.onSurfaceVariant,
                 onPressed: () => _openEditSheet(context, book),
@@ -196,7 +200,12 @@ class BookGridTile extends StatelessWidget {
             RatingStars(rating: book.rating!, size: 12)
           else
             Text(
-              switch (book.status) { 1 => bookStatusLine(book), 2 => 'Terminado', 3 => 'Abandonado', _ => 'Pendiente' },
+              switch (book.status) {
+                1 => bookStatusLine(book, context.l10n),
+                2 => context.l10n.statusFinished,
+                3 => context.l10n.statusAbandoned,
+                _ => context.l10n.statusPending,
+              },
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.labelSmall?.copyWith(color: statusColor, letterSpacing: 0.2),

@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../providers/current_book_provider.dart';
 import '../providers/daily_goal_provider.dart';
+import 'app_language.dart';
 import 'session_goal_alarm.dart';
 import 'timer_persistence.dart';
 
@@ -57,6 +58,7 @@ class HomeWidgetSync {
   /// callback en segundo plano del widget.
   static Future<void> refreshSessionOnly() async {
     try {
+      await _writeLabels();
       await _writeSession(await TimerPersistence.getActiveSession());
       await HomeWidget.updateWidget(androidName: _androidName);
     } catch (e) {
@@ -76,6 +78,7 @@ class HomeWidgetSync {
           session = null;
         }
       }
+      await _writeLabels();
       await _writeSession(session);
       await HomeWidget.updateWidget(androidName: _androidName);
     } catch (e) {
@@ -85,6 +88,25 @@ class HomeWidgetSync {
 
   static Future<void> _save(String key, Object? value) =>
       HomeWidget.saveWidgetData<String>(key, value?.toString());
+
+  /// Textos fijos del widget en el idioma de la app (que puede no ser el del
+  /// teléfono). Kotlin los lee con el texto en español como respaldo.
+  /// "Hoy x/y min" se guarda como plantilla con {m} y {g}: los minutos los
+  /// pone Kotlin (si los datos son de otro día, hoy son 0).
+  static Future<void> _writeLabels() async {
+    final s = AppLanguage.strings;
+    await _save('label_empty_title', s.widgetEmptyTitle);
+    await _save('label_empty_subtitle', s.widgetEmptySubtitle);
+    await _save('label_reading', s.widgetSessionReading);
+    await _save('label_paused', s.widgetSessionPaused);
+    await _save('label_pause', s.widgetPause);
+    await _save('label_resume', s.widgetResume);
+    await _save('label_finish', s.widgetFinish);
+    await _save('label_finish_description', s.widgetFinishDescription);
+    await _save('label_cover', s.widgetCover);
+    await _save('label_today', s.widgetToday('{m}'));
+    await _save('label_today_goal', s.widgetTodayGoal('{m}', '{g}'));
+  }
 
   /// Escribe los datos del libro mostrado y devuelve su id (o `null`).
   static Future<int?> _writeBook(AppDatabase db, PersistedSession? session) async {
@@ -113,7 +135,7 @@ class HomeWidgetSync {
     final cover = book.coverUrl;
     await _save('bookCover', (cover != null && cover.isNotEmpty && File(cover).existsSync()) ? cover : null);
     await _save('bookProgress', progress);
-    await _save('pagesInfo', '${book.readPages}/${book.totalPages} pág.');
+    await _save('pagesInfo', AppLanguage.strings.widgetPagesInfo(book.readPages, book.totalPages));
     await _save('bookStatus', _statusLabel(book.status));
     await _save('todayMinutes', todaySeconds ~/ 60);
     await _save('todayDate', _dateKey(now));
@@ -171,10 +193,10 @@ class HomeWidgetSync {
 
   static String _statusLabel(int status) {
     switch (status) {
-      case 0: return 'Por leer';
-      case 1: return 'Leyendo';
-      case 2: return 'Terminado';
-      case 3: return 'Abandonado';
+      case 0: return AppLanguage.strings.widgetStatusToRead;
+      case 1: return AppLanguage.strings.widgetStatusReading;
+      case 2: return AppLanguage.strings.widgetStatusFinished;
+      case 3: return AppLanguage.strings.widgetStatusAbandoned;
       default: return '';
     }
   }
@@ -188,6 +210,12 @@ class HomeWidgetSync {
 @pragma('vm:entry-point')
 Future<void> homeWidgetBackgroundCallback(Uri? uri) async {
   if (uri?.host != WidgetUris.togglePause) return;
+  // Isolate aparte: el idioma de la app aún no está cargado
+  try {
+    await AppLanguage.load();
+  } catch (e) {
+    debugPrint('Idioma desde el widget: $e');
+  }
   await TimerPersistence.togglePause();
   await HomeWidgetSync.refreshSessionOnly();
   // Pausar cancela el aviso de meta de la sesión; reanudar lo reprograma

@@ -35,7 +35,7 @@ class SettingsScreen extends ConsumerWidget {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: settings.hour, minute: settings.minute),
-      helpText: 'Hora del recordatorio',
+      helpText: context.l10n.settingsReminderTimeHelp,
     );
     
     if (picked != null) {
@@ -47,7 +47,7 @@ class SettingsScreen extends ConsumerWidget {
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: settings.hour, minute: settings.minute),
-      helpText: 'Hora del aviso de racha',
+      helpText: context.l10n.settingsStreakRiskTimeHelp,
     );
     if (picked != null) {
       await ref.read(streakRiskProvider.notifier).updateTime(picked.hour, picked.minute);
@@ -73,7 +73,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              '¡No pierdas el hilo!',
+              context.l10n.settingsPermissionTitle,
               textAlign: TextAlign.center,
               style: GoogleFonts.lora(
                 fontSize: 22,
@@ -84,7 +84,7 @@ class SettingsScreen extends ConsumerWidget {
           ],
         ),
         content: Text(
-          'Activamos recordatorios diarios para ayudarte a mantener tu racha de lectura y alcanzar tus metas. ¡Tu refugio digital te espera!',
+          context.l10n.settingsPermissionBody,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 14,
@@ -98,7 +98,7 @@ class SettingsScreen extends ConsumerWidget {
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             style: TextButton.styleFrom(foregroundColor: context.cs.onSurfaceVariant),
-            child: const Text('Ahora no', style: TextStyle(fontWeight: FontWeight.w600)),
+            child: Text(context.l10n.settingsNotNow, style: const TextStyle(fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -109,7 +109,7 @@ class SettingsScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('¡Claro que sí!', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(context.l10n.settingsPermissionAccept, style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -126,6 +126,7 @@ class SettingsScreen extends ConsumerWidget {
     final auth = ref.watch(authProvider);
     final appVersion = ref.watch(appVersionProvider).value ?? '…';
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l = context.l10n;
 
     return Scaffold(
       backgroundColor: context.cs.surface,
@@ -134,22 +135,22 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 0, 4, 20),
-            child: Text('Ajustes', style: Theme.of(context).textTheme.headlineLarge),
+            child: Text(l.settingsTitle, style: Theme.of(context).textTheme.headlineLarge),
           ),
-          _sectionHeader("APARIENCIA", context),
+          _sectionHeader(l.settingsSectionAppearance, context),
           _settingsGroup([
             _settingsTile(
               context,
-              title: 'Tema de la aplicación',
-              subtitle: _getModeName(currentMode),
+              title: l.settingsThemeTitle,
+              subtitle: _getModeName(context, currentMode),
               leadingIcon: currentMode == ThemeMode.dark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
               iconColor: context.cs.primary,
               onTap: () => _showThemePicker(context, ref, isDark),
             ),
             _settingsTile(
               context,
-              title: 'Colores',
-              subtitle: _colorSourceLabel(ref),
+              title: l.settingsColorsTitle,
+              subtitle: _colorSourceLabel(context, ref),
               leadingIcon: Icons.palette_rounded,
               iconColor: context.cs.primary,
               onTap: () => _showColorSourcePicker(context, ref),
@@ -191,14 +192,14 @@ class SettingsScreen extends ConsumerWidget {
           */
           const SizedBox(height: 25),
           
-          _sectionHeader("PREFERENCIAS", context),
+          _sectionHeader(l.settingsSectionPreferences, context),
           _settingsGroup([
             _settingsTile(
               context,
-              title: 'Notificaciones diarias',
-              subtitle: notifSettings.enabled 
-                  ? 'Recordatorio a las ${notifSettings.formattedTime}' 
-                  : 'Desactivadas',
+              title: l.settingsDailyNotificationsTitle,
+              subtitle: notifSettings.enabled
+                  ? l.settingsDailyReminderAt(notifSettings.formattedTime)
+                  : l.settingsDailyNotificationsOff,
               leadingIcon: Icons.notifications_none_rounded,
               iconColor: context.cs.primary,
               onTap: notifSettings.enabled 
@@ -227,12 +228,12 @@ class SettingsScreen extends ConsumerWidget {
             ),
             _settingsTile(
               context,
-              title: 'Aviso de racha en riesgo',
+              title: l.settingsStreakRiskTitle,
               subtitle: !streakRisk.enabled
-                  ? 'Desactivado'
+                  ? l.settingsOff
                   : streakRiskBlocked
-                      ? '⚠️ Falta el permiso de notificaciones. Toca para activarlo.'
-                      : 'Si llevas racha y hoy no has leído, te aviso a las ${streakRisk.formattedTime}',
+                      ? l.settingsStreakRiskNoPermission
+                      : l.settingsStreakRiskSubtitle(streakRisk.formattedTime),
               leadingIcon: Icons.local_fire_department_rounded,
               iconColor: context.cs.primary,
               onTap: !streakRisk.enabled
@@ -252,8 +253,8 @@ class SettingsScreen extends ConsumerWidget {
                   final result = await ref.read(streakRiskProvider.notifier).setEnabled(value);
                   ref.invalidate(notificationPermissionProvider);
                   if (value && !result && context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('Activa las notificaciones de Book Tracker para recibir el aviso.'),
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(context.l10n.settingsStreakRiskNeedsPermission),
                       behavior: SnackBarBehavior.floating,
                     ));
                   }
@@ -264,14 +265,14 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 25),
 
-          _sectionHeader("SEGURIDAD", context),
+          _sectionHeader(l.settingsSectionSecurity, context),
           _settingsGroup([
             _settingsTile(
               context,
-              title: 'Bloqueo de la app',
+              title: l.settingsAppLockTitle,
               subtitle: auth.isLockEnabled
-                  ? 'Pide tu palabra secreta al abrir'
-                  : 'Desactivado: la app abre directamente',
+                  ? l.settingsAppLockOn
+                  : l.settingsAppLockOff,
               leadingIcon: auth.isLockEnabled ? Icons.lock_rounded : Icons.lock_open_rounded,
               iconColor: context.cs.primary,
               trailing: Switch.adaptive(
@@ -282,8 +283,8 @@ class SettingsScreen extends ConsumerWidget {
             if (auth.isPassphraseSet)
               _settingsTile(
                 context,
-                title: 'Cambiar palabra secreta',
-                subtitle: 'Tu "Santo y Seña" para entrar',
+                title: l.settingsChangePassphraseTitle,
+                subtitle: l.settingsChangePassphraseSubtitle,
                 leadingIcon: Icons.vpn_key_rounded,
                 iconColor: context.cs.primary,
                 onTap: () => _changePassphrase(context, ref),
@@ -291,8 +292,8 @@ class SettingsScreen extends ConsumerWidget {
             if (auth.isPassphraseSet || auth.isPinSet)
               _settingsTile(
                 context,
-                title: auth.isPinSet ? 'Cambiar PIN de respaldo' : 'Configurar PIN de respaldo',
-                subtitle: 'Un código de 4 dígitos por si no recuerdas la palabra',
+                title: auth.isPinSet ? l.settingsChangePin : l.settingsSetUpPin,
+                subtitle: l.settingsPinSubtitle,
                 leadingIcon: Icons.dialpad_rounded,
                 iconColor: context.cs.primary,
                 onTap: () => _changePin(context, ref),
@@ -300,8 +301,8 @@ class SettingsScreen extends ConsumerWidget {
             if (auth.isLockEnabled && (auth.isPassphraseSet || auth.isPinSet))
               _settingsTile(
                 context,
-                title: 'Bloquear al salir',
-                subtitle: _autoLockLabel(auth.autoLockMinutes),
+                title: l.settingsAutoLockTitle,
+                subtitle: _autoLockLabel(context, auth.autoLockMinutes),
                 leadingIcon: Icons.timer_outlined,
                 iconColor: context.cs.primary,
                 onTap: () => _showAutoLockPicker(context, ref, isDark),
@@ -310,28 +311,28 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 25),
 
-          _sectionHeader("DATOS", context),
+          _sectionHeader(l.settingsSectionData, context),
           _settingsGroup([
             _settingsTile(
               context,
-              title: 'Respaldar o exportar',
-              subtitle: 'Guarda una copia de tus libros, notas y portadas',
+              title: l.settingsExportTitle,
+              subtitle: l.settingsExportSubtitle,
               leadingIcon: Icons.ios_share_rounded,
               iconColor: context.cs.primary,
               onTap: () => _showExportOptions(context, ref, isDark),
             ),
             _settingsTile(
               context,
-              title: 'Restaurar respaldo',
-              subtitle: 'Desde un respaldo .zip o una exportación .json',
+              title: l.settingsRestoreTitle,
+              subtitle: l.settingsRestoreSubtitle,
               leadingIcon: Icons.settings_backup_restore_rounded,
               iconColor: context.cs.primary,
               onTap: () => restoreFromPickedFile(context, ref),
             ),
             _settingsTile(
               context,
-              title: 'Importar de Goodreads',
-              subtitle: 'Añade tus libros desde el archivo .csv de Goodreads',
+              title: l.goodreadsImportTitle,
+              subtitle: l.settingsGoodreadsSubtitle,
               leadingIcon: Icons.download_rounded,
               iconColor: context.cs.primary,
               onTap: () => importFromGoodreads(context, ref),
@@ -339,8 +340,8 @@ class SettingsScreen extends ConsumerWidget {
             if (ref.watch(autoBackupExistsProvider).value ?? false)
               _settingsTile(
                 context,
-                title: 'Deshacer la última restauración',
-                subtitle: 'Vuelve a la biblioteca que tenías antes',
+                title: l.settingsUndoRestoreTitle,
+                subtitle: l.settingsUndoRestoreSubtitle,
                 leadingIcon: Icons.undo_rounded,
                 iconColor: context.cs.primary,
                 onTap: () => undoLastRestore(context, ref),
@@ -349,24 +350,24 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 25),
 
-          _sectionHeader("SIN ANUNCIOS", context),
+          _sectionHeader(l.settingsSectionNoAds, context),
           const RemoveAdsCard(),
 
           const SizedBox(height: 25),
 
-          _sectionHeader("NOVEDADES", context),
+          _sectionHeader(l.settingsSectionWhatsNew, context),
           _settingsGroup([
             // Versión nueva en Google Play (solo si se instaló desde Play)
             ValueListenableBuilder<UpdateStatus>(
               valueListenable: AppUpdate.status,
               builder: (context, status, _) {
                 final (title, subtitle) = switch (status) {
-                  UpdateStatus.available => ('Hay una versión nueva', 'Toca para actualizar'),
-                  UpdateStatus.downloading => ('Descargando actualización…', 'Puedes seguir usando la app'),
-                  UpdateStatus.downloaded => ('Actualización lista', 'Toca para reiniciar e instalarla'),
-                  UpdateStatus.checking => ('Buscando actualizaciones…', 'Versión $appVersion'),
-                  UpdateStatus.upToDate => ('Buscar actualizaciones', 'Versión $appVersion · Estás al día'),
-                  UpdateStatus.unknown => ('Buscar actualizaciones', 'Versión $appVersion'),
+                  UpdateStatus.available => (l.updateAvailableTitle, l.updateTapToUpdate),
+                  UpdateStatus.downloading => (l.updateDownloadingTitle, l.updateKeepUsing),
+                  UpdateStatus.downloaded => (l.updateReadyTitle, l.updateTapToRestart),
+                  UpdateStatus.checking => (l.updateCheckingTitle, l.settingsVersion(appVersion)),
+                  UpdateStatus.upToDate => (l.updateCheckTitle, l.updateUpToDateSubtitle(appVersion)),
+                  UpdateStatus.unknown => (l.updateCheckTitle, l.settingsVersion(appVersion)),
                 };
                 final highlight = status == UpdateStatus.available || status == UpdateStatus.downloaded;
                 return _settingsTile(
@@ -388,16 +389,16 @@ class SettingsScreen extends ConsumerWidget {
             ),
             _settingsTile(
               context,
-              title: 'Notas de la versión',
-              subtitle: 'Lo nuevo en la versión ${WhatsNew.version} y anteriores',
+              title: l.whatsNewTitle,
+              subtitle: l.settingsReleaseNotesSubtitle(WhatsNew.version),
               leadingIcon: Icons.new_releases_outlined,
               iconColor: context.cs.primary,
               onTap: () => WhatsNew.showHistory(context),
             ),
             _settingsTile(
               context,
-              title: 'Ver la bienvenida de nuevo',
-              subtitle: 'Repasa lo que puedes hacer en Book Tracker',
+              title: l.settingsReplayWelcomeTitle,
+              subtitle: l.settingsReplayWelcomeSubtitle,
               leadingIcon: Icons.waving_hand_rounded,
               iconColor: context.cs.primary,
               onTap: () => ref.read(tutorialProvider.notifier).resetTutorials(),
@@ -406,7 +407,7 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 25),
 
-          _sectionHeader("SOPORTE", context),
+          _sectionHeader(l.settingsSectionSupport, context),
           // Solo donde Google lo exige (p. ej. UE): cambiar el consentimiento de anuncios
           ValueListenableBuilder<bool>(
             valueListenable: AdsConsent.privacyOptionsRequired,
@@ -414,16 +415,16 @@ class SettingsScreen extends ConsumerWidget {
               if (required)
                 _settingsTile(
                   context,
-                  title: 'Opciones de privacidad de anuncios',
-                  subtitle: 'Cambia tu consentimiento para anuncios personalizados',
+                  title: l.settingsAdPrivacyTitle,
+                  subtitle: l.settingsAdPrivacySubtitle,
                   leadingIcon: Icons.privacy_tip_outlined,
                   iconColor: context.cs.primary,
                   onTap: AdsConsent.showPrivacyOptions,
                 ),
               _settingsTile(
                 context,
-                title: 'Acerca de la App',
-                subtitle: 'Versión $appVersion',
+                title: l.aboutTitle,
+                subtitle: l.settingsVersion(appVersion),
                 leadingIcon: Icons.info_outline_rounded,
                 iconColor: context.cs.primary,
                 onTap: () => _showAboutApp(context, isDark, appVersion),
@@ -452,12 +453,12 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(10))),
             const SizedBox(height: 20),
-            const Text('Respaldar o exportar', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+            Text(context.l10n.settingsExportTitle, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
             const SizedBox(height: 12),
             ListTile(
               leading: Icon(Icons.inventory_2_rounded, color: context.app.accent),
-              title: const Text('Respaldo completo (.zip)', style: TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: const Text('Todo, con portadas. Sirve para restaurar en otro teléfono.'),
+              title: Text(context.l10n.settingsExportFullTitle, style: const TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text(context.l10n.settingsExportFullSubtitle),
               onTap: () {
                 Navigator.pop(sheetContext);
                 shareFullBackup(context, ref);
@@ -465,8 +466,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
             ListTile(
               leading: Icon(Icons.data_object_rounded, color: context.app.accent),
-              title: const Text('Datos sin portadas (JSON)', style: TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: const Text('Libros, notas y sesiones de lectura.'),
+              title: Text(context.l10n.settingsExportJsonTitle, style: const TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text(context.l10n.settingsExportJsonSubtitle),
               onTap: () {
                 Navigator.pop(sheetContext);
                 _export(context, ref, ExportFormat.json);
@@ -474,8 +475,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
             ListTile(
               leading: Icon(Icons.table_chart_rounded, color: context.cs.primary),
-              title: const Text('Hoja de cálculo (CSV)', style: TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: const Text('Lista de libros para Excel o Google Sheets.'),
+              title: Text(context.l10n.settingsExportCsvTitle, style: const TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text(context.l10n.settingsExportCsvSubtitle),
               onTap: () {
                 Navigator.pop(sheetContext);
                 _export(context, ref, ExportFormat.csv);
@@ -491,14 +492,14 @@ class SettingsScreen extends ConsumerWidget {
     try {
       final count = await LibraryExportService.exportAndShare(ref.read(databaseProvider), format);
       if (count == 0 && context.mounted) {
-        _showSaved(context, 'Tu biblioteca está vacía: el archivo no tiene libros.');
+        _showSaved(context, context.l10n.settingsExportEmpty);
       }
     } catch (e) {
       debugPrint('Error exportando: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('No se pudo exportar. Inténtalo de nuevo.'),
+            content: Text(context.l10n.settingsExportError),
             backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -522,19 +523,19 @@ class SettingsScreen extends ConsumerWidget {
     if (enable) {
       // Para activar el bloqueo hace falta una palabra secreta
       if (!state.isPassphraseSet && !state.isPinSet) {
-        final phrase = await showNewPassphraseDialog(context, title: 'Crea tu Santo y Seña');
+        final phrase = await showNewPassphraseDialog(context, title: context.l10n.authCreatePassphraseTitle);
         if (phrase == null) return;
         await notifier.savePassphrase(phrase);
       }
       await notifier.setLockEnabled(true);
-      if (context.mounted) _showSaved(context, '🔒 Bloqueo activado');
+      if (context.mounted) _showSaved(context, context.l10n.settingsLockEnabled);
       return;
     }
 
     // Desactivarlo es sensible: confirmar que es el dueño
     if (!await confirmIdentity(context, notifier, state: state)) return;
     await notifier.setLockEnabled(false);
-    if (context.mounted) _showSaved(context, 'Bloqueo desactivado');
+    if (context.mounted) _showSaved(context, context.l10n.settingsLockDisabled);
   }
 
   Future<void> _changePassphrase(BuildContext context, WidgetRef ref) async {
@@ -545,12 +546,12 @@ class SettingsScreen extends ConsumerWidget {
     final phrase = await showNewPassphraseDialog(context);
     if (phrase == null) return;
     await notifier.savePassphrase(phrase);
-    if (context.mounted) _showSaved(context, '✨ Palabra secreta actualizada');
+    if (context.mounted) _showSaved(context, context.l10n.settingsPassphraseUpdated);
   }
 
-  static String _autoLockLabel(int minutes) => minutes == AuthNotifier.autoLockNever
-      ? 'Nunca: solo al abrir la app'
-      : 'Tras $minutes min fuera de la app';
+  static String _autoLockLabel(BuildContext context, int minutes) => minutes == AuthNotifier.autoLockNever
+      ? context.l10n.settingsAutoLockNever
+      : context.l10n.settingsAutoLockAfter(minutes);
 
   void _showAutoLockPicker(BuildContext context, WidgetRef ref, bool isDark) {
     final current = ref.read(authProvider).autoLockMinutes;
@@ -568,19 +569,20 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(10))),
             const SizedBox(height: 20),
-            const Text('Bloquear al salir', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+            Text(context.l10n.settingsAutoLockTitle, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
               child: Text(
-                'Vuelve a pedir tu palabra si sales de la app durante este tiempo. '
-                'Al desbloquear sigues donde estabas.',
+                context.l10n.settingsAutoLockDescription,
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: context.cs.onSurfaceVariant),
               ),
             ),
             for (final minutes in AuthNotifier.autoLockOptions)
               ListTile(
-                title: Text(minutes == AuthNotifier.autoLockNever ? 'Nunca' : 'Tras $minutes min'),
+                title: Text(minutes == AuthNotifier.autoLockNever
+                    ? context.l10n.settingsAutoLockNeverOption
+                    : context.l10n.settingsAutoLockAfterOption(minutes)),
                 trailing: minutes == current ? Icon(Icons.check_circle_rounded, color: context.cs.primary) : null,
                 onTap: () {
                   ref.read(authProvider.notifier).setAutoLockMinutes(minutes);
@@ -601,7 +603,7 @@ class SettingsScreen extends ConsumerWidget {
     final pin = await showNewPinDialog(context);
     if (pin == null) return;
     await notifier.saveNewPin(pin);
-    if (context.mounted) _showSaved(context, 'PIN de respaldo guardado');
+    if (context.mounted) _showSaved(context, context.l10n.settingsPinSaved);
   }
 
   // --- COMPONENTES UI ---
@@ -634,14 +636,14 @@ class SettingsScreen extends ConsumerWidget {
             Text('Book Tracker', 
               style: GoogleFonts.lora(fontSize: 28, fontWeight: FontWeight.bold, color: context.cs.onSurface)
             ),
-            Text('Tu refugio de lectura digital', style: TextStyle(color: context.cs.onSurfaceVariant, fontSize: 14)),
+            Text(context.l10n.aboutTagline, style: TextStyle(color: context.cs.onSurfaceVariant, fontSize: 14)),
             const Spacer(),
             Divider(color: context.cs.outlineVariant),
-            _aboutRow(context, 'Versión', appVersion),
-            _aboutRow(context, 'Desarrollador', 'José Aleandro Buitrago Cárdenas'),
-            _aboutRow(context, 'Licencia', 'MIT'),
+            _aboutRow(context, context.l10n.aboutVersion, appVersion),
+            _aboutRow(context, context.l10n.aboutDeveloper, 'José Aleandro Buitrago Cárdenas'),
+            _aboutRow(context, context.l10n.aboutLicense, 'MIT'),
             const Spacer(),
-            Text('© 2026 - Hecho con ❤️ para lectores', 
+            Text(context.l10n.aboutFooter,
               style: TextStyle(color: context.cs.onSurfaceVariant, fontSize: 12)
             ),
             const SizedBox(height: 20),
@@ -717,11 +719,11 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  String _getModeName(ThemeMode mode) {
+  String _getModeName(BuildContext context, ThemeMode mode) {
     switch (mode) {
-      case ThemeMode.system: return 'Seguir sistema';
-      case ThemeMode.light: return 'Modo Claro';
-      case ThemeMode.dark: return 'Modo Oscuro';
+      case ThemeMode.system: return context.l10n.settingsThemeFollowSystem;
+      case ThemeMode.light: return context.l10n.settingsThemeLight;
+      case ThemeMode.dark: return context.l10n.settingsThemeDark;
     }
   }
 
@@ -740,9 +742,9 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(10))),
             const SizedBox(height: 20),
-            _themeOption(context, ref, 'Sistema', ThemeMode.system, Icons.brightness_auto_rounded),
-            _themeOption(context, ref, 'Modo Claro', ThemeMode.light, Icons.light_mode_rounded),
-            _themeOption(context, ref, 'Modo Oscuro', ThemeMode.dark, Icons.dark_mode_rounded),
+            _themeOption(context, ref, context.l10n.settingsThemeSystem, ThemeMode.system, Icons.brightness_auto_rounded),
+            _themeOption(context, ref, context.l10n.settingsThemeLight, ThemeMode.light, Icons.light_mode_rounded),
+            _themeOption(context, ref, context.l10n.settingsThemeDark, ThemeMode.dark, Icons.dark_mode_rounded),
             const SizedBox(height: 20),
           ],
         ),
@@ -763,10 +765,10 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  String _colorSourceLabel(WidgetRef ref) {
+  String _colorSourceLabel(BuildContext context, WidgetRef ref) {
     final source = ref.watch(colorSourceProvider);
     final available = ref.watch(systemPaletteProvider).value != null;
-    if (source == ColorSource.system && available) return 'Del fondo de pantalla';
+    if (source == ColorSource.system && available) return context.l10n.settingsColorsWallpaper;
     return 'Book Tracker';
   }
 
@@ -829,17 +831,17 @@ class SettingsScreen extends ConsumerWidget {
                 ref,
                 ColorSource.brand,
                 'Book Tracker',
-                'Crema y verde abeto de día, ciruela y ámbar de noche.',
+                context.l10n.settingsColorsBrandDescription,
                 const [Color(0xFFEEE2CB), Color(0xFF1B4532), Color(0xFFC4553A), Color(0xFF2B1C33), Color(0xFFD9D3CC), Color(0xFFFF8C12)],
               ),
               _colorSourceOption(
                 context,
                 ref,
                 ColorSource.system,
-                'Del fondo de pantalla',
+                context.l10n.settingsColorsWallpaper,
                 available
-                    ? 'Material You: los colores de tu fondo de pantalla.'
-                    : 'Disponible en Android 12 o superior.',
+                    ? context.l10n.settingsColorsWallpaperDescription
+                    : context.l10n.settingsColorsUnavailable,
                 null,
                 enabled: available,
               ),

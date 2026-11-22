@@ -1,3 +1,5 @@
+import 'app_language.dart';
+
 /// Racha de lectura: días seguidos con al menos una sesión.
 class ReadingStreak {
   static DateTime _day(DateTime d) => DateTime(d.year, d.month, d.day);
@@ -87,6 +89,6 @@ class StreakRisk {
     return at.isAfter(now) ? StreakRiskAlert(at, streak) : null;
   }
 
-  static String title(int streak) => '🔥 Tu racha de $streak días está en riesgo';
-  static const body = 'Aún no has leído hoy. Lee unos minutos antes de medianoche para no perderla.';
+  static String title(int streak) => AppLanguage.strings.streakRiskTitle(streak);
+  static String get body => AppLanguage.strings.streakRiskBody;
 }

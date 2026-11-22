@@ -6,6 +6,8 @@ import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_language.dart';
+
 /// Acceso a la tienda (Google Play Billing). Separado para poder probar la
 /// lógica de compra con una tienda simulada.
 abstract class PurchaseStore {
@@ -145,7 +147,7 @@ class RemoveAds {
       await _store.buyNonConsumable(product);
       // El resultado llega por purchaseStream
     } catch (e) {
-      lastError = 'No se pudo iniciar la compra.';
+      lastError = AppLanguage.strings.purchaseStartFailed;
       status.value = RemoveAdsStatus.error;
     }
   }
@@ -178,7 +180,7 @@ class RemoveAds {
         case PurchaseStatus.pending:
           status.value = RemoveAdsStatus.pending; // p. ej. pago en efectivo aún sin confirmar
         case PurchaseStatus.error:
-          lastError = p.error?.message ?? 'La compra no se completó.';
+          lastError = p.error?.message ?? AppLanguage.strings.purchaseNotCompleted;
           status.value = RemoveAdsStatus.error;
         case PurchaseStatus.canceled:
           status.value = RemoveAdsStatus.idle;

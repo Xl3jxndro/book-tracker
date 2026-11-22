@@ -1,22 +1,23 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
+import '../l10n/l10n.dart';
 import '../providers/auth_provider.dart';
 import '../services/device_auth_service.dart';
 
 /// Pide una palabra secreta nueva (escrita dos veces). Devuelve `null` si se cancela.
-Future<String?> showNewPassphraseDialog(BuildContext context, {String title = 'Nueva palabra secreta'}) {
+Future<String?> showNewPassphraseDialog(BuildContext context, {String? title}) {
   return showDialog<String>(
     context: context,
-    builder: (_) => _NewSecretDialog(title: title, isPin: false),
+    builder: (_) => _NewSecretDialog(title: title ?? context.l10n.secretNewPassphraseTitle, isPin: false),
   );
 }
 
 /// Pide un PIN nuevo de 4 dígitos (escrito dos veces). Devuelve `null` si se cancela.
-Future<String?> showNewPinDialog(BuildContext context, {String title = 'PIN de respaldo'}) {
+Future<String?> showNewPinDialog(BuildContext context, {String? title}) {
   return showDialog<String>(
     context: context,
-    builder: (_) => _NewSecretDialog(title: title, isPin: true),
+    builder: (_) => _NewSecretDialog(title: title ?? context.l10n.secretPinTitle, isPin: true),
   );
 }
 
@@ -27,8 +28,9 @@ Future<bool> confirmIdentity(BuildContext context, AuthNotifier auth, {required 
   // Sin palabra ni PIN no hay nada que proteger todavía
   if (!state.isPassphraseSet && !state.isPinSet) return true;
 
+  final reason = context.l10n.secretConfirmIdentity;
   if (await DeviceAuthService.isDeviceSecure()) {
-    final ok = await DeviceAuthService.authenticate(reason: 'Confirma que eres tú');
+    final ok = await DeviceAuthService.authenticate(reason: reason);
     if (ok) return true;
   }
   if (!context.mounted) return false;
@@ -66,13 +68,13 @@ class _NewSecretDialogState extends State<_NewSecretDialog> {
   String? get _firstError {
     final v = _first.text.trim();
     if (widget.isPin) {
-      return v.length == AuthNotifier.pinLength ? null : 'Deben ser ${AuthNotifier.pinLength} dígitos';
+      return v.length == AuthNotifier.pinLength ? null : context.l10n.secretPinLengthError(AuthNotifier.pinLength);
     }
-    return v.length >= 3 ? null : 'Al menos 3 caracteres';
+    return v.length >= 3 ? null : context.l10n.secretMinLengthError;
   }
 
   String? get _secondError =>
-      _normalize(_first.text) == _normalize(_second.text) ? null : 'No coinciden';
+      _normalize(_first.text) == _normalize(_second.text) ? null : context.l10n.secretMismatch;
 
   void _submit() {
     setState(() => _submitted = true);
@@ -113,18 +115,18 @@ class _NewSecretDialogState extends State<_NewSecretDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (!isPin)
-            const Padding(
-              padding: EdgeInsets.only(bottom: 16),
-              child: Text('No distingue mayúsculas. Elige algo que recuerdes.', style: TextStyle(fontSize: 13)),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Text(context.l10n.secretCaseHint, style: const TextStyle(fontSize: 13)),
             ),
-          field(_first, isPin ? 'Nuevo PIN' : 'Palabra secreta', _firstError),
+          field(_first, isPin ? context.l10n.secretNewPinLabel : context.l10n.secretPassphraseLabel, _firstError),
           const SizedBox(height: 12),
-          field(_second, isPin ? 'Repite el PIN' : 'Repite la palabra', _secondError, last: true),
+          field(_second, isPin ? context.l10n.secretRepeatPin : context.l10n.secretRepeatPassphrase, _secondError, last: true),
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-        ElevatedButton(onPressed: _submit, child: const Text('Guardar')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.commonCancel)),
+        ElevatedButton(onPressed: _submit, child: Text(context.l10n.commonSave)),
       ],
     );
   }
@@ -169,7 +171,7 @@ class _VerifySecretDialogState extends State<_VerifySecretDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      title: const Text('Confirma que eres tú'),
+      title: Text(context.l10n.secretConfirmIdentity),
       content: TextField(
         controller: _controller,
         autofocus: true,
@@ -179,14 +181,14 @@ class _VerifySecretDialogState extends State<_VerifySecretDialog> {
         },
         onSubmitted: (_) => _check(),
         decoration: InputDecoration(
-          labelText: 'Palabra secreta o PIN',
-          errorText: _wrong ? 'No es correcta' : null,
+          labelText: context.l10n.secretPassphraseOrPin,
+          errorText: _wrong ? context.l10n.secretWrong : null,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-        ElevatedButton(onPressed: _checking ? null : _check, child: const Text('Confirmar')),
+        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.l10n.commonCancel)),
+        ElevatedButton(onPressed: _checking ? null : _check, child: Text(context.l10n.secretConfirm)),
       ],
     );
   }

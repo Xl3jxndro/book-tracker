@@ -24,6 +24,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_tokens.dart';
 import '../providers/daily_goal_provider.dart';
 import '../widgets/skeleton_loader.dart';
+import '../l10n/l10n.dart';
 
 class StatsScreen extends ConsumerStatefulWidget {
   const StatsScreen({super.key});
@@ -54,7 +55,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     if (summary.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
-        content: Text('Aún no hay lecturas en $year para compartir. ¡Empieza un libro!'),
+        content: Text(context.l10n.statsShareEmpty(year)),
       ));
       return;
     }
@@ -75,10 +76,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
         data: (books) => sessionsAsync.when(
           data: (sessions) => _buildMainLayout(books, sessions, isDark),
           loading: () => const SingleChildScrollView(child: StatsSkeleton()),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          error: (e, _) => Center(child: Text(context.l10n.statsError('$e'))),
         ),
         loading: () => const SingleChildScrollView(child: StatsSkeleton()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text(context.l10n.statsError('$e'))),
       ),
     );
   }
@@ -103,10 +104,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
       children: [
         Row(
           children: [
-            Expanded(child: Text('Estadísticas', style: theme.textTheme.headlineLarge)),
+            Expanded(child: Text(context.l10n.statsTitle, style: theme.textTheme.headlineLarge)),
             // Compartir "Mi año lector" como imagen
             IconButton(
-              tooltip: 'Compartir mi año lector',
+              tooltip: context.l10n.statsShareTooltip,
               icon: const Icon(Icons.ios_share_rounded, size: 22),
               style: IconButton.styleFrom(
                 fixedSize: const Size(44, 44),
@@ -124,15 +125,15 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
           children: [
             Expanded(child: _buildTodayTile(theme)),
             const SizedBox(width: AppSpace.sm),
-            Expanded(child: _smallTile('Libros leídos', '$completedBooks', theme)),
+            Expanded(child: _smallTile(context.l10n.statsBooksRead, '$completedBooks', theme)),
           ],
         ),
         const SizedBox(height: AppSpace.sm),
         Row(
           children: [
-            Expanded(child: _smallTile('Páginas', NumberFormat.decimalPattern('es').format(totalPagesRead), theme)),
+            Expanded(child: _smallTile(context.l10n.statsPages, NumberFormat.decimalPattern(context.languageCode).format(totalPagesRead), theme)),
             const SizedBox(width: AppSpace.sm),
-            Expanded(child: _smallTile('Tiempo total', _formatReadingTime(totalSeconds), theme)),
+            Expanded(child: _smallTile(context.l10n.statsTotalTime, _formatReadingTime(totalSeconds), theme)),
           ],
         ),
         const SizedBox(height: AppSpace.sm),
@@ -153,14 +154,14 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Géneros favoritos', style: theme.textTheme.titleMedium),
+              Text(context.l10n.statsFavoriteGenres, style: theme.textTheme.titleMedium),
               const SizedBox(height: AppSpace.md),
               _buildGenreSection(books, isDark),
             ],
           ),
         ),
         const SizedBox(height: AppSpace.xxl),
-        Text('Logros y desafíos', style: theme.textTheme.headlineSmall),
+        Text(context.l10n.statsAchievementsTitle, style: theme.textTheme.headlineSmall),
         const SizedBox(height: AppSpace.sm),
         _buildAchievements(completedBooks, totalPagesRead, totalSeconds, streak, isDark),
         NativeAdCard(adUnitId: AdHelper.statsNativeAdUnitId, margin: const EdgeInsets.only(top: AppSpace.md)),
@@ -182,7 +183,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     final days = ReadingStreak.daysOf(readingDays);
     final today = DateUtils.dateOnly(DateTime.now());
     final week = [for (var i = 6; i >= 0; i--) DateTime(today.year, today.month, today.day - i)];
-    final letter = DateFormat('EEEEE', 'es');
+    final letter = DateFormat('EEEEE', context.languageCode);
 
     return GestureDetector(
       // Solo en versiones de prueba: ver la oferta de "salvar racha"
@@ -200,11 +201,11 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Racha actual', style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-                      Text(streak == 1 ? '1 día' : '$streak días',
+                      Text(context.l10n.streakCurrent, style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                      Text(context.l10n.streakDays(streak),
                           style: theme.textTheme.displaySmall?.copyWith(fontFamily: theme.textTheme.titleMedium?.fontFamily, fontWeight: FontWeight.w700, color: cs.onSurface)),
                       if (best > 0)
-                        Text('Tu mejor racha: ${best == 1 ? '1 día' : '$best días'}',
+                        Text(context.l10n.streakBest(best),
                             style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
                     ],
                   ),
@@ -257,8 +258,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     final minutes = seconds ~/ 60;
     final progress = goal > 0 ? (minutes / goal).clamp(0.0, 1.0) : 0.0;
     return _smallTile(
-      'Hoy',
-      '$minutes de $goal min',
+      context.l10n.statsToday,
+      context.l10n.statsTodayProgress(minutes, goal),
       theme,
       trailing: SizedBox(
         width: 28,
@@ -317,7 +318,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
           Padding(
             padding: const EdgeInsets.only(left: 45, bottom: 25),
             child: Text(
-              DateFormat('MMMM yyyy', 'es').format(now).toUpperCase(),
+              DateFormat.yMMMM(context.languageCode).format(now).toUpperCase(),
               style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: context.app.accent, letterSpacing: 1),
             ),
           ),
@@ -331,7 +332,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   children: [
                     RotatedBox(
                       quarterTurns: 3,
-                      child: Text("MINUTOS", style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: context.cs.onSurfaceVariant.withValues(alpha: 0.6), letterSpacing: 1.5)),
+                      child: Text(context.l10n.statsChartMinutes, style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: context.cs.onSurfaceVariant.withValues(alpha: 0.6), letterSpacing: 1.5)),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -408,7 +409,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                                         child: Padding(
                                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                                           child: Text(
-                                            "$mins m",
+                                            context.l10n.statsChartBarMinutes(mins),
                                             style: TextStyle(color: context.cs.surface, fontSize: 9, fontWeight: FontWeight.bold),
                                           ),
                                         ),
@@ -442,7 +443,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
             child: Padding(
               padding: const EdgeInsets.only(top: 12),
               child: Text(
-                "DÍA DEL MES",
+                context.l10n.statsChartDayOfMonth,
                 style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 2.5, color: context.cs.onSurfaceVariant),
               ),
             ),
@@ -494,27 +495,28 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
   // --- LOGROS DESAFIANTES (CORTO, MEDIO Y LARGO PLAZO) ---
   Widget _buildAchievements(int completed, int pages, int seconds, int streak, bool isDark) {
     final totalHours = seconds / 3600;
+    final l10n = context.l10n;
 
     return Column(
       children: [
-        _achievementCategory("Disciplina Temprana", isDark),
-        _achievementRow("Hábito Formado", "Racha de 21 días", streak, 21, Icons.auto_awesome, isDark),
-        _achievementRow("Velocista", "500 páginas leídas", pages, 500, Icons.bolt_rounded, isDark),
+        _achievementCategory(l10n.achievementCategoryEarly, isDark),
+        _achievementRow(l10n.achievementHabitFormedName, l10n.achievementHabitFormedDesc, streak, 21, Icons.auto_awesome, isDark),
+        _achievementRow(l10n.achievementSprinterName, l10n.achievementSprinterDesc, pages, 500, Icons.bolt_rounded, isDark),
         
         const SizedBox(height: 20),
         
-        _achievementCategory("Compromiso Serio", isDark),
-        _achievementRow("Lector Voraz", "50 libros terminados", completed, 50, Icons.menu_book_rounded, isDark),
-        _achievementRow("Medio Maratón", "250 horas de lectura", totalHours.toInt(), 250, Icons.timer_outlined, isDark),
-        _achievementRow("Constancia Pura", "Racha de 100 días", streak, 100, Icons.local_fire_department_rounded, isDark),
+        _achievementCategory(l10n.achievementCategorySerious, isDark),
+        _achievementRow(l10n.achievementVoraciousReaderName, l10n.achievementVoraciousReaderDesc, completed, 50, Icons.menu_book_rounded, isDark),
+        _achievementRow(l10n.achievementHalfMarathonName, l10n.achievementHalfMarathonDesc, totalHours.toInt(), 250, Icons.timer_outlined, isDark),
+        _achievementRow(l10n.achievementPureConsistencyName, l10n.achievementPureConsistencyDesc, streak, 100, Icons.local_fire_department_rounded, isDark),
 
         const SizedBox(height: 20),
 
-        _achievementCategory("Nivel Erudito (3 años+)", isDark),
-        _achievementRow("Bibliófilo de Oro", "100,000 páginas leídas", pages, 100000, Icons.whatshot, isDark, isLegendary: true),
-        _achievementRow("Vida Entre Libros", "1,000 horas de lectura", totalHours.toInt(), 1000, Icons.import_contacts, isDark, isLegendary: true),
-        _achievementRow("Inquebrantable", "Racha de 365 días", streak, 365, Icons.verified_user, isDark, isLegendary: true),
-        _achievementRow("Maestro de Biblioteca", "250 libros completados", completed, 250, Icons.account_balance, isDark, isLegendary: true),
+        _achievementCategory(l10n.achievementCategoryScholar, isDark),
+        _achievementRow(l10n.achievementGoldenBibliophileName, l10n.achievementGoldenBibliophileDesc, pages, 100000, Icons.whatshot, isDark, isLegendary: true),
+        _achievementRow(l10n.achievementLifeAmongBooksName, l10n.achievementLifeAmongBooksDesc, totalHours.toInt(), 1000, Icons.import_contacts, isDark, isLegendary: true),
+        _achievementRow(l10n.achievementUnbreakableName, l10n.achievementUnbreakableDesc, streak, 365, Icons.verified_user, isDark, isLegendary: true),
+        _achievementRow(l10n.achievementLibraryMasterName, l10n.achievementLibraryMasterDesc, completed, 250, Icons.account_balance, isDark, isLegendary: true),
       ],
     );
   }

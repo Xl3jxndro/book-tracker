@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../database/database.dart';
+import '../l10n/l10n.dart';
 import '../providers/today_provider.dart';
 import '../providers/yearly_goal_provider.dart';
 import '../services/reading_challenge.dart';
@@ -51,7 +52,7 @@ class ReadingChallengeCard extends ConsumerWidget {
   void _showBooksByYear(BuildContext context) {
     final byYear = ReadingChallenge.finishedByYear(books);
     final withoutDate = ReadingChallenge.finishedWithoutDate(books);
-    final fmt = DateFormat("d MMM", 'es');
+    final fmt = DateFormat.MMMd(context.languageCode);
 
     showModalBottomSheet(
       context: context,
@@ -68,16 +69,16 @@ class ReadingChallengeCard extends ConsumerWidget {
           children: [
             Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(10)))),
             const SizedBox(height: 20),
-            const Text('Libros terminados', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
+            Text(context.l10n.challengeFinishedBooksTitle, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
             if (byYear.isEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 24),
-                child: Text('Aún no hay libros terminados con fecha.', style: TextStyle(color: context.cs.onSurfaceVariant)),
+                child: Text(context.l10n.challengeNoDatedBooks, style: TextStyle(color: context.cs.onSurfaceVariant)),
               ),
             for (final entry in byYear.entries) ...[
               Padding(
                 padding: const EdgeInsets.only(top: 24, bottom: 8),
-                child: Text('${entry.key} · ${entry.value.length} ${entry.value.length == 1 ? 'libro' : 'libros'}',
+                child: Text(context.l10n.challengeYearHeader('${entry.key}', entry.value.length),
                     style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1, color: Theme.of(context).colorScheme.primary)),
               ),
               for (final book in entry.value)
@@ -94,8 +95,7 @@ class ReadingChallengeCard extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 24),
                 child: Text(
-                  '$withoutDate ${withoutDate == 1 ? 'libro terminado no tiene' : 'libros terminados no tienen'} fecha de fin. '
-                  'Puedes añadirla en el detalle de cada libro para que cuente en su año.',
+                  context.l10n.challengeUndatedBooks(withoutDate),
                   style: TextStyle(color: context.cs.onSurfaceVariant, fontSize: 12),
                 ),
               ),
@@ -122,22 +122,22 @@ class _NoGoal extends StatelessWidget {
           children: [
             Icon(Icons.emoji_events_outlined, color: context.app.rating),
             const SizedBox(width: 10),
-            Text('Reto de lectura $year', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+            Text(context.l10n.challengeTitleWithYear('$year'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
           ],
         ),
         const SizedBox(height: 8),
         Text(
           finished == 0
-              ? 'Ponte una meta de libros para este año.'
-              : 'Llevas $finished ${finished == 1 ? 'libro terminado' : 'libros terminados'} este año. ¿Te pones una meta?',
+              ? context.l10n.challengeSetGoalPrompt
+              : context.l10n.challengeFinishedSoFar(finished),
           style: TextStyle(color: context.cs.onSurfaceVariant, fontSize: 13),
         ),
         const SizedBox(height: 16),
         Row(
           children: [
-            ElevatedButton.icon(onPressed: onCreate, icon: const Icon(Icons.flag_rounded), label: const Text('Crear reto')),
+            ElevatedButton.icon(onPressed: onCreate, icon: const Icon(Icons.flag_rounded), label: Text(context.l10n.challengeCreate)),
             const SizedBox(width: 8),
-            if (finished > 0) TextButton(onPressed: onShowBooks, child: const Text('Ver libros')),
+            if (finished > 0) TextButton(onPressed: onShowBooks, child: Text(context.l10n.challengeShowBooks)),
           ],
         ),
       ],
@@ -181,7 +181,7 @@ class _Progress extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text('${progress.finished}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 26)),
-                        Text('de ${progress.goal}', style: TextStyle(color: context.cs.onSurfaceVariant, fontSize: 11)),
+                        Text(context.l10n.challengeOfGoal(progress.goal), style: TextStyle(color: context.cs.onSurfaceVariant, fontSize: 11)),
                       ],
                     ),
             ],
@@ -194,17 +194,19 @@ class _Progress extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text('Reto ${progress.year}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17))),
+                  Expanded(child: Text(context.l10n.challengeShortTitle('${progress.year}'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17))),
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     icon: const Icon(Icons.tune_rounded, size: 20),
-                    tooltip: 'Cambiar meta',
+                    tooltip: context.l10n.challengeChangeGoal,
                     onPressed: onEdit,
                   ),
                 ],
               ),
               Text(
-                done ? '${progress.finished} de ${progress.goal} libros' : '${progress.goal - progress.finished} por leer para tu meta',
+                done
+                    ? context.l10n.challengeDoneCount(progress.finished, progress.goal)
+                    : context.l10n.challengeRemaining(progress.goal - progress.finished),
                 style: TextStyle(color: context.cs.onSurfaceVariant, fontSize: 13),
               ),
               const SizedBox(height: 6),
@@ -214,7 +216,7 @@ class _Progress extends StatelessWidget {
                 child: TextButton(
                   style: TextButton.styleFrom(padding: EdgeInsets.zero, visualDensity: VisualDensity.compact),
                   onPressed: onShowBooks,
-                  child: const Text('Ver libros terminados'),
+                  child: Text(context.l10n.challengeShowFinished),
                 ),
               ),
             ],
@@ -258,12 +260,12 @@ class _GoalDialogState extends State<_GoalDialog> {
     final value = _value;
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      title: Text('Reto de lectura ${widget.year}'),
+      title: Text(context.l10n.challengeTitleWithYear('${widget.year}')),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('¿Cuántos libros quieres leer este año?'),
+          Text(context.l10n.challengeDialogQuestion),
           const SizedBox(height: 16),
           TextField(
             controller: _controller,
@@ -272,8 +274,8 @@ class _GoalDialogState extends State<_GoalDialog> {
             inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)],
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              suffixText: 'libros',
-              errorText: value == null ? 'Entre 1 y ${YearlyGoalNotifier.maxGoal}' : null,
+              suffixText: context.l10n.challengeBooksSuffix,
+              errorText: value == null ? context.l10n.challengeGoalRange(YearlyGoalNotifier.maxGoal) : null,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
             ),
           ),
@@ -295,12 +297,12 @@ class _GoalDialogState extends State<_GoalDialog> {
         if (widget.current != null)
           TextButton(
             onPressed: () => Navigator.pop(context, const _GoalResult(null)),
-            child: Text('Quitar reto', style: TextStyle(color: context.cs.error)),
+            child: Text(context.l10n.challengeRemove, style: TextStyle(color: context.cs.error)),
           ),
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.commonCancel)),
         ElevatedButton(
           onPressed: value == null ? null : () => Navigator.pop(context, _GoalResult(value)),
-          child: const Text('Guardar'),
+          child: Text(context.l10n.commonSave),
         ),
       ],
     );

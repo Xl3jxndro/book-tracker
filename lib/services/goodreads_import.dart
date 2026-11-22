@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 
 import '../database/database.dart';
+import 'app_language.dart';
 import 'book_api_service.dart';
 import 'csv_parser.dart';
 import 'isbn.dart';
@@ -88,16 +89,13 @@ class GoodreadsImport {
   /// No toca la base de datos. Omite los libros que ya están en [existing].
   static GoodreadsPreview parse(String csv, {List<Book> existing = const []}) {
     final rows = parseCsv(csv);
-    if (rows.isEmpty) throw const GoodreadsImportException('El archivo está vacío.');
+    if (rows.isEmpty) throw GoodreadsImportException(AppLanguage.strings.importFileEmpty);
 
     final header = [for (final h in rows.first) h.trim().toLowerCase()];
     int col(String name) => header.indexOf(name);
     final titleCol = col('title'), authorCol = col('author'), shelfCol = col('exclusive shelf');
     if (titleCol < 0 || authorCol < 0 || shelfCol < 0) {
-      throw const GoodreadsImportException(
-        'Este archivo no parece una exportación de Goodreads. '
-        'Descárgala desde goodreads.com → Mis libros → Importar y exportar → Exportar biblioteca.',
-      );
+      throw GoodreadsImportException(AppLanguage.strings.importNotGoodreads);
     }
     final isbnCol = col('isbn'), isbn13Col = col('isbn13'), ratingCol = col('my rating');
     final pagesCol = col('number of pages'), dateReadCol = col('date read'), dateAddedCol = col('date added');
@@ -116,7 +114,7 @@ class GoodreadsImport {
         continue;
       }
       final authorRaw = _truncate(cell(row, authorCol), _maxText);
-      final author = authorRaw.isEmpty ? 'Desconocido' : authorRaw;
+      final author = authorRaw.isEmpty ? AppLanguage.strings.importUnknownAuthor : authorRaw;
 
       if (!seen.add(duplicateKey(title, author))) {
         duplicates++;

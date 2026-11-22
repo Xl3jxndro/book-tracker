@@ -1,6 +1,5 @@
 {
   "@@locale": "es",
-
   "commonCancel": "Cancelar",
   "commonSave": "Guardar",
   "commonClose": "Cerrar",
@@ -8,10 +7,1848 @@
   "commonUndo": "Deshacer",
   "commonBack": "Volver",
   "commonAccept": "Aceptar",
-
   "settingsLanguage": "Idioma",
   "languageSystem": "Automático",
   "languageSystemSubtitle": "El idioma de tu teléfono",
   "languageSpanish": "Español",
-  "languageEnglish": "English"
+  "languageEnglish": "English",
+  "detailsShareText": "📖 *Estoy leyendo:* {title}\n✍️ *Autor:* {author}\n📊 *Progreso:* {readPages}/{totalPages} pág.\n\n✨ Compartido desde {appName}",
+  "@detailsShareText": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "author": {
+        "type": "String"
+      },
+      "readPages": {
+        "type": "int"
+      },
+      "totalPages": {
+        "type": "int"
+      },
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "detailsTimeNow": "Ahora",
+  "detailsTimeMinutesAgo": "Hace {minutes}m",
+  "@detailsTimeMinutesAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "detailsTimeToday": "Hoy",
+  "detailsTimeYesterday": "Ayer",
+  "detailsShare": "Compartir",
+  "detailsMoreOptions": "Más opciones",
+  "detailsEditBook": "Editar libro",
+  "detailsNotesEmptyTitle": "Sin notas aún",
+  "detailsNotesEmptyDescription": "Guarda aquí tus citas y pensamientos.",
+  "detailsNewNote": "Nueva nota",
+  "detailsFavoritesEmptyHint": "Toca la ☆ de una nota para guardarla en tus citas favoritas.",
+  "detailsShareAsImage": "Compartir como imagen",
+  "detailsRemoveFavorite": "Quitar de favoritas",
+  "detailsAddFavorite": "Guardar en favoritas",
+  "detailsCopy": "Copiar",
+  "detailsCopied": "Copiado",
+  "detailsNotePage": "Página {page}",
+  "@detailsNotePage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "detailsReadingSession": "Sesión de lectura",
+  "detailsNotesAndQuotes": "Notas y citas",
+  "detailsAdd": "Añadir",
+  "detailsFilterRecent": "Recientes",
+  "detailsFilterPage": "Página",
+  "detailsFilterLength": "Longitud",
+  "detailsFilterFavorites": "★ Favoritas",
+  "detailsYourProgress": "Tu progreso",
+  "detailsPagesOfTotal": "{read} de {total} páginas",
+  "@detailsPagesOfTotal": {
+    "placeholders": {
+      "read": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "detailsReread": "Releer",
+  "detailsUpdate": "Actualizar",
+  "detailsStartAddDate": "Inicio: añadir fecha",
+  "detailsStartedOn": "Empezado el {date}",
+  "@detailsStartedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "detailsFinishAddDate": "Fin: añadir fecha",
+  "detailsFinishedOn": "Terminado el {date}",
+  "@detailsFinishedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "detailsFinishedOnDays": "Terminado el {date} · {days, plural, =1{1 día} other{{days} días}}",
+  "@detailsFinishedOnDays": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "detailsWhenStarted": "¿Cuándo lo empezaste?",
+  "detailsWhenFinished": "¿Cuándo lo terminaste?",
+  "detailsDurationHoursMinutes": "{hours} h {minutes} min",
+  "@detailsDurationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "detailsDurationMinutes": "{minutes} min",
+  "@detailsDurationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "detailsPacePerMinute": "{pace} pág/min",
+  "@detailsPacePerMinute": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
+  "detailsPacePerHour": "{pages} pág/h",
+  "@detailsPacePerHour": {
+    "placeholders": {
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "detailsPace": "Ritmo",
+  "detailsTimeLeft": "Faltan",
+  "detailsTimeRead": "Leído",
+  "detailsDailyGoal": "Meta diaria",
+  "detailsDailyGoalProgress": "{minutes} de {goal} min hoy",
+  "@detailsDailyGoalProgress": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "detailsChangeDailyGoal": "Cambiar meta diaria",
+  "detailsReadingCompleted": "¡Lectura completada!",
+  "detailsRatingStars": "{stars} de 5",
+  "@detailsRatingStars": {
+    "placeholders": {
+      "stars": {
+        "type": "int"
+      }
+    }
+  },
+  "detailsWriteReview": "Escribir reseña",
+  "detailsEditReview": "Editar reseña",
+  "detailsFavoriteRemoved": "Quitada de favoritas",
+  "detailsFavoriteAdded": "Guardada en favoritas ★",
+  "detailsNoteDeleted": "Nota eliminada",
+  "detailsUndoAction": "DESHACER",
+  "detailsEnterPageNumber": "Escribe un número de página",
+  "detailsPageCannotExceed": "No puede superar {total}",
+  "@detailsPageCannotExceed": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "detailsUpdateProgressTitle": "Actualizar Progreso",
+  "detailsWhatPage": "¿En qué página vas?",
+  "detailsDeleteBookTitle": "¿Eliminar libro?",
+  "detailsDeleteBookMessage": "Se perderán todas tus notas.",
+  "detailsDailyGoalTitle": "Meta Diaria",
+  "detailsRereadTitle": "¿Nueva lectura?",
+  "detailsRereadConfirm": "¡Vamos!",
+  "detailsTutorialProgressTitle": "📈​ Tu Progreso",
+  "detailsTutorialProgressDesc": "Visualiza cuántas páginas llevas leídas.",
+  "detailsTutorialGoalTitle": "🏆​ Meta Diaria",
+  "detailsTutorialGoalDesc": "Configura tus minutos de lectura diarios.",
+  "detailsTutorialTimerTitle": "📖​ Sesión de Lectura",
+  "detailsTutorialTimerDesc": "Inicia el cronómetro para medir tu tiempo.",
+  "detailsTutorialNotesTitle": "​📜​ ​Añadir Notas",
+  "detailsTutorialNotesDesc": "Guarda tus citas favoritas aquí.",
+  "timerGoalReachedSnack": "🎯 ¡Meta de {minutes} min cumplida! Sigue si quieres o finaliza la lectura.",
+  "@timerGoalReachedSnack": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "timerEnterPage": "Escribe una página",
+  "timerAlreadyOnPage": "Ya vas en la pág. {page}",
+  "@timerAlreadyOnPage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "timerBookHasPages": "{count, plural, =1{El libro tiene 1 página} other{El libro tiene {count} páginas}}",
+  "@timerBookHasPages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timerUntilWhichPage": "¿Hasta qué página?",
+  "timerReachPage": "Llegar a la página",
+  "timerDone": "Listo",
+  "timerSessionPaused": "SESIÓN PAUSADA",
+  "timerReadingTime": "TIEMPO DE LECTURA",
+  "timerPause": "PAUSAR",
+  "timerResume": "REANUDAR",
+  "timerStart": "COMENZAR",
+  "timerFinishReading": "Finalizar lectura",
+  "timerDurationMinSec": "{minutes} min {seconds} seg",
+  "@timerDurationMinSec": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "timerDurationSec": "{seconds} seg",
+  "@timerDurationSec": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "timerSessionFinished": "¡Sesión terminada!",
+  "timerWhatPageStopped": "¿En qué página quedaste?",
+  "timerCannotExceedTotal": "No puede exceder el total",
+  "timerDiscard": "DESCARTAR",
+  "timerGoalSheetTitle": "🎯 Meta de esta sesión",
+  "timerGoalSheetSubtitle": "Te aviso al cumplir la meta de tiempo, aunque tengas la pantalla apagada.",
+  "timerGoalTime": "Tiempo",
+  "timerGoalFree": "Libre",
+  "timerMinutes": "{minutes} min",
+  "@timerMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "timerGoalPages": "Páginas",
+  "timerUntilPageN": "Hasta la pág. {page}",
+  "@timerUntilPageN": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "timerUntilPageAsk": "Hasta la página…",
+  "timerGoalFreeLabel": "Meta: libre",
+  "timerGoalReached": "¡Meta de {minutes} min cumplida!",
+  "@timerGoalReached": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "timerGoalProgress": "Meta: {elapsed} / {total} min",
+  "@timerGoalProgress": {
+    "placeholders": {
+      "elapsed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "timerGoalTimeLabel": "Meta: {minutes} min",
+  "@timerGoalTimeLabel": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "timerGoalPageLabel": "Meta: hasta la pág. {page}",
+  "@timerGoalPageLabel": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "timerGoalMet": "🎯 Meta de {minutes} min cumplida",
+  "@timerGoalMet": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "timerGoalMissed": "Meta: {minutes} min · te faltaron {missing} min",
+  "@timerGoalMissed": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "missing": {
+        "type": "int"
+      }
+    }
+  },
+  "timerPageGoalMet": "🎯 ¡Llegaste a la pág. {page}!",
+  "@timerPageGoalMet": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "timerPageGoalMissed": "Meta: pág. {page} · {left, plural, =1{te falta 1 página} other{te faltan {left} páginas}}",
+  "@timerPageGoalMissed": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "left": {
+        "type": "int"
+      }
+    }
+  },
+  "sessionGoalLabelTime": "{minutes} min",
+  "@sessionGoalLabelTime": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "sessionGoalLabelPage": "hasta la pág. {page}",
+  "@sessionGoalLabelPage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "sessionGoalTimeProgress": "{elapsed} / {total} min",
+  "@sessionGoalTimeProgress": {
+    "placeholders": {
+      "elapsed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "noteCameraError": "No se pudo abrir la cámara. Revisa el permiso en los ajustes del teléfono.",
+  "noteSaveError": "No se pudo guardar la nota. Inténtalo de nuevo.",
+  "noteNewTitle": "Nueva Anotación",
+  "noteEditTitle": "Editar anotación",
+  "noteListening": "Escuchando voz...",
+  "noteSubtitle": "Escribe, dicta o escanea",
+  "noteScanTooltip": "Escanear texto con la cámara",
+  "noteContentHint": "Comienza a hablar o escribir...",
+  "notePageLabel": "Página del libro",
+  "noteSave": "Guardar nota",
+  "noteSaveChanges": "Guardar cambios",
+  "scanSourceTitle": "Escanear una cita",
+  "scanSourcePrivacy": "El texto se reconoce en tu teléfono: la foto no se envía a ningún sitio.",
+  "scanSourceCamera": "Tomar foto de la página",
+  "scanSourceGallery": "Elegir de la galería",
+  "scanTitle": "Subraya la cita",
+  "scanSelectNone": "Ninguna",
+  "scanSelectAll": "Todo",
+  "scanModelDownloadingTitle": "Preparando el lector de texto",
+  "scanModelDownloadingText": "Google Play lo está descargando (unos 4 MB). Conéctate a internet e inténtalo en unos minutos.",
+  "scanErrorTitle": "No se pudo leer la foto",
+  "scanErrorText": "Inténtalo de nuevo con otra foto.",
+  "scanReading": "Leyendo la página…",
+  "scanNoTextTitle": "No encontré texto",
+  "scanNoTextText": "Prueba con más luz, la página recta y el texto enfocado.",
+  "scanZoomIn": "Acercar",
+  "scanZoomOut": "Alejar",
+  "scanZoomFit": "Ver la página entera",
+  "scanHint": "Desliza un dedo sobre el texto para subrayarlo. Con dos dedos, acerca la foto.",
+  "scanClear": "Borrar",
+  "scanUseQuote": "Usar cita",
+  "reviewSummaryDays": "{count, plural, =1{en 1 día} other{en {count} días}}",
+  "@reviewSummaryDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewSummaryMinutes": "{minutes} min de lectura",
+  "@reviewSummaryMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewSummaryHours": "{hours} h de lectura",
+  "@reviewSummaryHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewSummaryHoursMinutes": "{hours} h {minutes} min de lectura",
+  "@reviewSummaryHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewSummaryPages": "{count, plural, =1{1 página} other{{count} páginas}}",
+  "@reviewSummaryPages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewRating1": "No me gustó",
+  "reviewRating2": "Regular",
+  "reviewRating3": "Bueno",
+  "reviewRating4": "Muy bueno",
+  "reviewRating5": "¡Me encantó!",
+  "reviewSaved": "Reseña guardada en tus notas ✍️",
+  "reviewDeleted": "Reseña eliminada",
+  "reviewRatingSaved": "Calificación guardada ⭐",
+  "reviewFinishedTitle": "¡Terminaste {title}!",
+  "@reviewFinishedTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewYourReviewTitle": "Tu reseña de {title}",
+  "@reviewYourReviewTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewTitle": "Reseña de {title}",
+  "@reviewTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewAbandonedSubtitle": "Lo dejaste sin terminar",
+  "reviewHowRate": "¿Cómo lo calificas?",
+  "reviewStarsTooltip": "{count, plural, =1{1 estrella} other{{count} estrellas}}",
+  "@reviewStarsTooltip": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewHintAbandoned": "¿Por qué lo dejaste? (opcional)",
+  "reviewHint": "¿Qué te pareció? Una frase basta (opcional)",
+  "reviewNotNow": "Ahora no",
+  "quotesGeneratingCard": "Generando tarjeta...",
+  "quotesShareText": "📖 {title}\n✨ Compartido desde Book Tracker",
+  "@quotesShareText": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "quotesImageError": "No se pudo crear la imagen. Inténtalo de nuevo.",
+  "quotesCardPage": "Página {page}",
+  "@quotesCardPage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "quotesCardFooter": "Leído en Book Tracker",
+  "quotesTitle": "Mis citas",
+  "quotesLoadError": "No se pudieron cargar las citas: {error}",
+  "@quotesLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "quotesEmptyTitle": "Aún no tienes citas",
+  "quotesEmptyDescription": "Guarda frases y pensamientos desde la sección \"Notas y Citas\" de cada libro. Aparecerán todas aquí.",
+  "quotesSearchHint": "Buscar en citas, títulos o autores",
+  "quotesClearSearch": "Borrar búsqueda",
+  "quotesFilterAll": "Todas ({count})",
+  "@quotesFilterAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quotesFilterFavorites": "Favoritas ({count})",
+  "@quotesFilterFavorites": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quotesNoFavorites": "Aún no tienes favoritas.\nToca la ☆ de una cita para guardarla aquí.",
+  "quotesNoMatches": "Ninguna cita coincide con la búsqueda.",
+  "quotesPageShort": "pág. {page}",
+  "@quotesPageShort": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "quotesRemoveFavorite": "Quitar de favoritas",
+  "quotesMarkFavorite": "Marcar como favorita",
+  "quotesShareAsImage": "Compartir como imagen",
+  "quotesCopy": "Copiar",
+  "quotesCopied": "Cita copiada",
+  "statusPending": "Pendiente",
+  "statusReading": "Leyendo",
+  "statusFinished": "Terminado",
+  "statusAbandoned": "Abandonado",
+  "homeLoadError": "Error: {error}",
+  "@homeLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "homeTitle": "Mi biblioteca",
+  "homeEmptyTitle": "Tu biblioteca está vacía",
+  "homeEmptyDescription": "Parece un buen momento para empezar una nueva aventura.",
+  "homeAddFirstBook": "Añadir mi primer libro",
+  "homeNoMatchesTitle": "Sin coincidencias",
+  "homeNoMatchesDescription": "No encontramos nada que coincida con tus filtros.",
+  "homeShowAllBooks": "Ver todos los libros",
+  "homeSearchHint": "Título o autor…",
+  "homeCloseSearch": "Cerrar búsqueda",
+  "homeSearch": "Buscar",
+  "homeMyQuotes": "Mis citas",
+  "homeSort": "Ordenar",
+  "homeSortTitle": "Ordenar libros",
+  "homeSortRecentlyAdded": "Añadido recientemente",
+  "homeSortMostProgress": "Mayor progreso",
+  "homeSortLongest": "Libros más largos",
+  "homeSortAlphabetical": "Orden alfabético",
+  "homeSortShortRecent": "Recientes",
+  "homeSortShortLongest": "Más largos",
+  "homeSortShortAlphabetical": "A–Z",
+  "homeFilterAll": "Todos",
+  "homeFilterPending": "Pendientes",
+  "homeFilterFinished": "Terminados",
+  "homeFilterAbandoned": "Abandonados",
+  "homeBookCountSorted": "{count, plural, =1{1 libro · {sort}} other{{count} libros · {sort}}}",
+  "@homeBookCountSorted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "sort": {
+        "type": "String"
+      }
+    }
+  },
+  "homeListView": "Vista de lista",
+  "homeGridView": "Vista de cuadrícula",
+  "homeDeleteBookTitle": "¿Eliminar libro?",
+  "homeDeleteBookMessage": "Esta acción borrará \"{title}\" permanentemente.",
+  "@homeDeleteBookMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "homeQuickStart": "Empezar a leer",
+  "homeQuickFinish": "Terminado",
+  "homeQuickResume": "Retomar",
+  "homeQuickStartedSnack": "Empezaste \"{title}\"",
+  "@homeQuickStartedSnack": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "homeQuickFinishedSnack": "Terminaste \"{title}\"",
+  "@homeQuickFinishedSnack": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "homeQuickResumedSnack": "Retomaste \"{title}\"",
+  "@homeQuickResumedSnack": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "homeTutorialSearchTitle": "🔍 Encuentra tus libros",
+  "homeTutorialSearchDescription": "Busca rápidamente cualquier título o autor en tu colección.",
+  "homeTutorialQuotesTitle": "❝ Mis citas",
+  "homeTutorialQuotesDescription": "Todas las frases y notas de tus libros en un solo lugar: búscalas, marca favoritas y compártelas.",
+  "homeTutorialSortTitle": "↕️ Organiza tu biblioteca",
+  "homeTutorialSortDescription": "Ordena tus libros por progreso, tamaño o fecha de añadido.",
+  "homeTutorialAddTitle": "📚 Nueva aventura",
+  "homeTutorialAddDescription": "Toca aquí para registrar un nuevo libro y empezar a leer.",
+  "homeContinueInSession": "SESIÓN EN CURSO",
+  "homeContinueStart": "EMPEZAR A LEER",
+  "homeContinueReading": "CONTINUAR LEYENDO",
+  "homeContinueProgress": "{percent}% · {read} de {total} páginas",
+  "@homeContinueProgress": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "read": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "homeContinuePages": "{pages, plural, =1{1 página} other{{pages} páginas}}",
+  "@homeContinuePages": {
+    "placeholders": {
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "homeContinueViewSession": "Ver la sesión",
+  "navBooks": "Libros",
+  "navStats": "Stats",
+  "navSettings": "Ajustes",
+  "navTutorialStatsTitle": "📊​ Analiza tu progreso",
+  "navTutorialStatsDescription": "Mira estadísticas detalladas sobre tus lecturas.",
+  "navTutorialSettingsTitle": "⚙️​ Configuración",
+  "navTutorialSettingsDescription": "Personaliza el tema y gestiona tus datos.",
+  "onboardingSkip": "Saltar",
+  "onboardingNext": "Siguiente",
+  "onboardingImportGoodreads": "Importar de Goodreads",
+  "onboardingExploreFirst": "Explorar primero",
+  "onboardingPage1Title": "Tu biblioteca, en un toque",
+  "onboardingPage1Subtitle": "Añade libros sin escribir de más.",
+  "onboardingPage1Point1": "Escanea el código de barras (ISBN) o escríbelo a mano",
+  "onboardingPage1Point2": "Búscalo por título y trae portada y páginas",
+  "onboardingPage1Point3": "¿Vienes de Goodreads? Importa toda tu biblioteca",
+  "onboardingPage2Title": "Lee con foco",
+  "onboardingPage2Subtitle": "Mide tus sesiones y ponte una meta.",
+  "onboardingPage2Point1": "Cronómetro de lectura que guarda tu página al terminar",
+  "onboardingPage2Point2": "Meta por sesión: te aviso al cumplirla, aunque bloquees el teléfono",
+  "onboardingPage2Point3": "Widget en tu pantalla de inicio para pausar sin abrir la app",
+  "onboardingPage3Title": "Guarda lo que te marca",
+  "onboardingPage3Subtitle": "Tus frases favoritas, siempre a mano.",
+  "onboardingPage3Point1": "Notas y citas con la página, también dictadas por voz",
+  "onboardingPage3Point2": "Mis citas: búscalas todas y compártelas como imagen",
+  "onboardingPage3Point3": "Califica y escribe tu reseña al terminar cada libro",
+  "onboardingPage4Title": "Hazlo hábito",
+  "onboardingPage4Subtitle": "Pequeños pasos, todos los días.",
+  "onboardingPage4Point1": "Racha diaria y aviso si está en riesgo",
+  "onboardingPage4Point2": "Reto anual: cuántos libros quieres leer este año",
+  "onboardingPage4Point3": "Tu año lector en una tarjeta para compartir",
+  "isbnNotAnIsbn": "Ese código no es un ISBN. Busca el que empieza por 978 o 979.",
+  "isbnScanPrompt": "Apunta al código de barras de la contraportada",
+  "isbnTypeIsbn": "Escribir el ISBN",
+  "isbnWhereIsIt": "¿Dónde está el ISBN?",
+  "isbnTorchOn": "Encender linterna",
+  "isbnTorchOff": "Apagar linterna",
+  "isbnCameraPermission": "Para escanear necesitamos permiso para usar la cámara.",
+  "isbnCameraError": "No se pudo abrir la cámara. Puedes buscar el libro escribiendo su título.",
+  "isbnOpenSettings": "Abrir ajustes",
+  "isbnHelpTitle": "¿Dónde encuentro el ISBN?",
+  "isbnHelpIntro": "Es el número que identifica cada edición de un libro.",
+  "isbnHelpBackCoverTitle": "En la contraportada",
+  "isbnHelpBackCoverText": "Encima o debajo del código de barras, precedido de \"ISBN\". Puedes escanear el código de barras directamente.",
+  "isbnHelpCreditsTitle": "En la página de créditos",
+  "isbnHelpCreditsText": "Una de las primeras páginas del libro (donde aparecen la editorial y los derechos de autor).",
+  "isbnHelpDigitsTitle": "13 o 10 dígitos",
+  "isbnHelpDigitsText": "Desde 2007 tiene 13 dígitos y empieza por 978 o 979. Los libros más antiguos usan 10 dígitos, y el último puede ser una X. Puedes escribirlo con o sin guiones.",
+  "isbnPartPrefix": "Prefijo",
+  "isbnPartCountry": "País o idioma",
+  "isbnPartPublisher": "Editorial",
+  "isbnPartBook": "Libro",
+  "isbnPartCheck": "Control",
+  "isbnLengthError": "Debe tener 10 o 13 dígitos (llevas {count})",
+  "@isbnLengthError": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "isbnChecksumError": "Revisa los números: el último dígito no coincide",
+  "isbnManualTitle": "Escribe el ISBN",
+  "isbnManualHelper": "13 dígitos (empieza por 978 o 979) o 10 dígitos en libros antiguos.",
+  "isbnManualWhere": "¿Dónde lo encuentro?",
+  "isbnManualSearch": "Buscar",
+  "addBookTooltip": "Añadir libro",
+  "addBookIsbnNotFound": "No encontramos el ISBN {isbn}. Escribe los datos a mano.",
+  "@addBookIsbnNotFound": {
+    "placeholders": {
+      "isbn": {
+        "type": "String"
+      }
+    }
+  },
+  "addBookIsbnFound": "Encontrado por ISBN {isbn}",
+  "@addBookIsbnFound": {
+    "placeholders": {
+      "isbn": {
+        "type": "String"
+      }
+    }
+  },
+  "addBookIsbnSearchFailed": "No se pudo buscar el ISBN. Escribe los datos a mano.",
+  "addBookTitleRequired": "El título es obligatorio",
+  "addBookAuthorRequired": "El autor es obligatorio",
+  "addBookMaxChars": "Máximo {max} caracteres",
+  "@addBookMaxChars": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "addBookPagesRequired": "Indica las páginas",
+  "addBookInvalidNumber": "Número no válido",
+  "addBookAlreadyRead": "Ya leíste {pages}",
+  "@addBookAlreadyRead": {
+    "placeholders": {
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "addBookChangeCover": "Cambiar portada",
+  "addBookCamera": "Cámara",
+  "addBookGallery": "Galería",
+  "addBookSaveError": "No se pudo guardar el libro. Inténtalo de nuevo.",
+  "addBookScanBarcode": "Escanear código de barras",
+  "addBookTitleLabel": "Título del libro",
+  "addBookAuthorLabel": "Autor",
+  "addBookDetails": "Detalles del libro",
+  "addBookCategoryLabel": "Categoría",
+  "addBookPagesLabel": "Páginas",
+  "addBookReadingStatus": "Estado de lectura",
+  "addBookAddToCollection": "Añadir a la Colección",
+  "addBookUpdateLibrary": "Actualizar Biblioteca",
+  "addBookStatusRead": "Leído",
+  "addBookStatusDnf": "DNF",
+  "searchHint": "Buscar libro (título, autor o ISBN)",
+  "searchFailed": "No se pudo buscar. Puedes escribir los datos a mano.",
+  "searchIsbnNotFound": "No encontramos el ISBN {isbn}. Revisa el número o escribe los datos a mano.",
+  "@searchIsbnNotFound": {
+    "placeholders": {
+      "isbn": {
+        "type": "String"
+      }
+    }
+  },
+  "searchNotFound": "No lo encontramos. Escribe los datos a mano.",
+  "searchIsbnResult": "Resultado por ISBN {isbn}",
+  "@searchIsbnResult": {
+    "placeholders": {
+      "isbn": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPageCount": "{count} pág.",
+  "@searchPageCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookCardStatusReading": "Leyendo · {percent}%",
+  "@bookCardStatusReading": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "bookCardStatusAbandoned": "Abandonado · {read}/{total} p.",
+  "@bookCardStatusAbandoned": {
+    "placeholders": {
+      "read": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "bookCardStatusPending": "Pendiente · {total} p.",
+  "@bookCardStatusPending": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "bookCardEdit": "Editar",
+  "notifChannelRemindersName": "Recordatorios de Lectura",
+  "notifChannelRemindersDescription": "Notificaciones diarias para fomentar la lectura",
+  "notifChannelSessionName": "Meta de la sesión",
+  "notifChannelSessionDescription": "Aviso cuando cumples la meta de tiempo de una sesión de lectura",
+  "notifChannelStreakName": "Racha en riesgo",
+  "notifChannelStreakDescription": "Aviso cuando llevas racha y aún no has leído hoy",
+  "notifDailyTitle": "¡Hora de leer!",
+  "notifDailyBody": "Tu racha te espera. Abre un libro y relájate un momento.",
+  "notifSessionGoalTitle": "🎯 ¡Meta de {minutes} min cumplida!",
+  "@notifSessionGoalTitle": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "notifSessionGoalBody": "Puedes seguir leyendo o terminar la sesión y guardar tu página.",
+  "notifTestTitle": "¡Prueba de Lectura! 📖",
+  "notifTestBody": "Esto es una notificación instantánea para verificar que todo funciona.",
+  "widgetEmptyTitle": "Añade tu primer libro",
+  "widgetEmptySubtitle": "Toca para empezar",
+  "widgetSessionReading": "LEYENDO",
+  "widgetSessionPaused": "EN PAUSA",
+  "widgetPause": "Pausar",
+  "widgetResume": "Reanudar",
+  "widgetFinish": "Finalizar",
+  "widgetFinishDescription": "Finalizar la sesión",
+  "widgetCover": "Portada",
+  "widgetToday": "Hoy {minutes} min",
+  "@widgetToday": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetTodayGoal": "Hoy {minutes}/{goal} min",
+  "@widgetTodayGoal": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetPagesInfo": "{read}/{total} pág.",
+  "@widgetPagesInfo": {
+    "placeholders": {
+      "read": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetStatusToRead": "Por leer",
+  "widgetStatusReading": "Leyendo",
+  "widgetStatusFinished": "Terminado",
+  "widgetStatusAbandoned": "Abandonado",
+  "backupSvcReadFailed": "No se pudo leer el archivo.",
+  "backupSvcZipDamaged": "El archivo .zip está dañado.",
+  "backupSvcZipNotBackup": "Este .zip no es un respaldo de Book Tracker.",
+  "backupSvcNotBackup": "El archivo no es un respaldo de Book Tracker.",
+  "backupSvcUnknownFormat": "El respaldo tiene un formato desconocido.",
+  "backupSvcNewerVersion": "Este respaldo es de una versión más nueva de la app. Actualízala y vuelve a intentarlo.",
+  "backupSvcNoBooks": "El respaldo está incompleto: no contiene libros.",
+  "backupSvcDamagedBook": "El respaldo tiene datos dañados (libro {number}). No se cambió nada.",
+  "@backupSvcDamagedBook": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "backupSvcCoversFailed": "No se pudieron copiar las portadas. No se cambió nada.",
+  "backupSvcRestoreFailed": "No se pudo restaurar el respaldo. Tu biblioteca no cambió.",
+  "exportShareSubject": "Mi biblioteca de Book Tracker",
+  "importFileEmpty": "El archivo está vacío.",
+  "importNotGoodreads": "Este archivo no parece una exportación de Goodreads. Descárgala desde goodreads.com → Mis libros → Importar y exportar → Exportar biblioteca.",
+  "importUnknownAuthor": "Desconocido",
+  "bookApiRateLimit": "Demasiadas búsquedas seguidas. Inténtalo en un minuto.",
+  "bookApiNetwork": "Sin conexión. Puedes escribir los datos a mano.",
+  "bookApiServer": "El buscador no respondió. Inténtalo de nuevo.",
+  "bookApiUnknownAuthor": "Autor desconocido",
+  "purchaseStartFailed": "No se pudo iniciar la compra.",
+  "purchaseNotCompleted": "La compra no se completó.",
+  "settingsTitle": "Ajustes",
+  "settingsReminderTimeHelp": "Hora del recordatorio",
+  "settingsStreakRiskTimeHelp": "Hora del aviso de racha",
+  "settingsPermissionTitle": "¡No pierdas el hilo!",
+  "settingsPermissionBody": "Activamos recordatorios diarios para ayudarte a mantener tu racha de lectura y alcanzar tus metas. ¡Tu refugio digital te espera!",
+  "settingsNotNow": "Ahora no",
+  "settingsPermissionAccept": "¡Claro que sí!",
+  "settingsGotIt": "Entendido",
+  "settingsSectionAppearance": "APARIENCIA",
+  "settingsThemeTitle": "Tema de la aplicación",
+  "settingsThemeFollowSystem": "Seguir sistema",
+  "settingsThemeSystem": "Sistema",
+  "settingsThemeLight": "Modo Claro",
+  "settingsThemeDark": "Modo Oscuro",
+  "settingsColorsTitle": "Colores",
+  "settingsColorsWallpaper": "Del fondo de pantalla",
+  "settingsColorsBrandDescription": "Crema y verde abeto de día, ciruela y ámbar de noche.",
+  "settingsColorsWallpaperDescription": "Material You: los colores de tu fondo de pantalla.",
+  "settingsColorsUnavailable": "Disponible en Android 12 o superior.",
+  "settingsSectionPreferences": "PREFERENCIAS",
+  "settingsDailyNotificationsTitle": "Notificaciones diarias",
+  "settingsDailyReminderAt": "Recordatorio a las {time}",
+  "@settingsDailyReminderAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsDailyNotificationsOff": "Desactivadas",
+  "settingsOff": "Desactivado",
+  "settingsStreakRiskTitle": "Aviso de racha en riesgo",
+  "settingsStreakRiskNoPermission": "⚠️ Falta el permiso de notificaciones. Toca para activarlo.",
+  "settingsStreakRiskSubtitle": "Si llevas racha y hoy no has leído, te aviso a las {time}",
+  "@settingsStreakRiskSubtitle": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsStreakRiskNeedsPermission": "Activa las notificaciones de Book Tracker para recibir el aviso.",
+  "settingsSectionSecurity": "SEGURIDAD",
+  "settingsAppLockTitle": "Bloqueo de la app",
+  "settingsAppLockOn": "Pide tu palabra secreta al abrir",
+  "settingsAppLockOff": "Desactivado: la app abre directamente",
+  "settingsChangePassphraseTitle": "Cambiar palabra secreta",
+  "settingsChangePassphraseSubtitle": "Tu \"Santo y Seña\" para entrar",
+  "settingsChangePin": "Cambiar PIN de respaldo",
+  "settingsSetUpPin": "Configurar PIN de respaldo",
+  "settingsPinSubtitle": "Un código de 4 dígitos por si no recuerdas la palabra",
+  "settingsAutoLockTitle": "Bloquear al salir",
+  "settingsAutoLockNever": "Nunca: solo al abrir la app",
+  "settingsAutoLockAfter": "Tras {minutes} min fuera de la app",
+  "@settingsAutoLockAfter": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsAutoLockDescription": "Vuelve a pedir tu palabra si sales de la app durante este tiempo. Al desbloquear sigues donde estabas.",
+  "settingsAutoLockNeverOption": "Nunca",
+  "settingsAutoLockAfterOption": "Tras {minutes} min",
+  "@settingsAutoLockAfterOption": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsLockEnabled": "🔒 Bloqueo activado",
+  "settingsLockDisabled": "Bloqueo desactivado",
+  "settingsPassphraseUpdated": "✨ Palabra secreta actualizada",
+  "settingsPinSaved": "PIN de respaldo guardado",
+  "settingsSectionData": "DATOS",
+  "settingsExportTitle": "Respaldar o exportar",
+  "settingsExportSubtitle": "Guarda una copia de tus libros, notas y portadas",
+  "settingsExportFullTitle": "Respaldo completo (.zip)",
+  "settingsExportFullSubtitle": "Todo, con portadas. Sirve para restaurar en otro teléfono.",
+  "settingsExportJsonTitle": "Datos sin portadas (JSON)",
+  "settingsExportJsonSubtitle": "Libros, notas y sesiones de lectura.",
+  "settingsExportCsvTitle": "Hoja de cálculo (CSV)",
+  "settingsExportCsvSubtitle": "Lista de libros para Excel o Google Sheets.",
+  "settingsExportEmpty": "Tu biblioteca está vacía: el archivo no tiene libros.",
+  "settingsExportError": "No se pudo exportar. Inténtalo de nuevo.",
+  "settingsRestoreTitle": "Restaurar respaldo",
+  "settingsRestoreSubtitle": "Desde un respaldo .zip o una exportación .json",
+  "settingsGoodreadsSubtitle": "Añade tus libros desde el archivo .csv de Goodreads",
+  "settingsUndoRestoreTitle": "Deshacer la última restauración",
+  "settingsUndoRestoreSubtitle": "Vuelve a la biblioteca que tenías antes",
+  "settingsSectionNoAds": "SIN ANUNCIOS",
+  "settingsSectionWhatsNew": "NOVEDADES",
+  "settingsVersion": "Versión {version}",
+  "@settingsVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsReleaseNotesSubtitle": "Lo nuevo en la versión {version} y anteriores",
+  "@settingsReleaseNotesSubtitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsReplayWelcomeTitle": "Ver la bienvenida de nuevo",
+  "settingsReplayWelcomeSubtitle": "Repasa lo que puedes hacer en Book Tracker",
+  "settingsSectionSupport": "SOPORTE",
+  "settingsAdPrivacyTitle": "Opciones de privacidad de anuncios",
+  "settingsAdPrivacySubtitle": "Cambia tu consentimiento para anuncios personalizados",
+  "aboutTitle": "Acerca de la App",
+  "aboutTagline": "Tu refugio de lectura digital",
+  "aboutVersion": "Versión",
+  "aboutDeveloper": "Desarrollador",
+  "aboutLicense": "Licencia",
+  "aboutFooter": "© 2026 - Hecho con ❤️ para lectores",
+  "updateAvailableTitle": "Hay una versión nueva",
+  "updateTapToUpdate": "Toca para actualizar",
+  "updateDownloadingTitle": "Descargando actualización…",
+  "updateKeepUsing": "Puedes seguir usando la app",
+  "updateReadyTitle": "Actualización lista",
+  "updateTapToRestart": "Toca para reiniciar e instalarla",
+  "updateCheckingTitle": "Buscando actualizaciones…",
+  "updateCheckTitle": "Buscar actualizaciones",
+  "updateUpToDateSubtitle": "Versión {version} · Estás al día",
+  "@updateUpToDateSubtitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateDownloaded": "Actualización descargada",
+  "updateRestart": "Reiniciar",
+  "updateDownloadingNew": "Descargando la versión nueva…",
+  "updateLatest": "Tienes la última versión",
+  "updateCheckFailed": "No se pudo comprobar. Las actualizaciones llegan desde Google Play.",
+  "updatePromptBody": "Actualiza para tener las últimas mejoras. Se descarga mientras sigues usando la app.",
+  "updateButton": "Actualizar",
+  "backupPreparing": "Preparando el respaldo…",
+  "backupShareSubject": "Respaldo de Book Tracker",
+  "backupCreateError": "No se pudo crear el respaldo. Inténtalo de nuevo.",
+  "backupPickTitle": "Elige tu respaldo",
+  "backupReading": "Leyendo el respaldo…",
+  "backupRestoring": "Restaurando tu biblioteca…",
+  "backupBooksCount": "{count, plural, =1{1 libro} other{{count} libros}}",
+  "@backupBooksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupNotesCount": "{count, plural, =1{1 nota} other{{count} notas}}",
+  "@backupNotesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupSessionsCount": "{count, plural, =1{1 sesión de lectura} other{{count} sesiones de lectura}}",
+  "@backupSessionsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupCoversCount": "{count, plural, =0{Sin portadas} =1{1 portada} other{{count} portadas}}",
+  "@backupCoversCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupUndoDone": "Biblioteca anterior recuperada: {books}.",
+  "@backupUndoDone": {
+    "placeholders": {
+      "books": {
+        "type": "String"
+      }
+    }
+  },
+  "backupRestoreDone": "Biblioteca restaurada: {books}, {notes}.",
+  "@backupRestoreDone": {
+    "placeholders": {
+      "books": {
+        "type": "String"
+      },
+      "notes": {
+        "type": "String"
+      }
+    }
+  },
+  "backupRestoreError": "No se pudo restaurar el respaldo. Tu biblioteca no cambió.",
+  "backupUndoConfirmTitle": "¿Deshacer la última restauración?",
+  "backupRestoreConfirmTitle": "¿Restaurar este respaldo?",
+  "backupSavedOn": "Biblioteca guardada el {date}",
+  "@backupSavedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "backupFrom": "Respaldo del {date}",
+  "@backupFrom": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "backupReplaceWarning": "Reemplazará tu biblioteca actual ({books}). Antes guardaremos una copia para que puedas deshacerlo.",
+  "@backupReplaceWarning": {
+    "placeholders": {
+      "books": {
+        "type": "String"
+      }
+    }
+  },
+  "backupUndoButton": "DESHACER",
+  "backupRestoreButton": "RESTAURAR",
+  "backupErrorTitle": "No se pudo completar",
+  "goodreadsImportTitle": "Importar de Goodreads",
+  "goodreadsPickTitle": "Elige el CSV de Goodreads",
+  "goodreadsFileTooLarge": "El archivo es demasiado grande para ser una exportación de Goodreads.",
+  "goodreadsReadErrorTitle": "No se pudo leer el archivo",
+  "goodreadsReadErrorBody": "Asegúrate de elegir el archivo .csv que descargaste de Goodreads.",
+  "goodreadsNothingNewTitle": "Nada nuevo que importar",
+  "goodreadsAllDuplicates": "{count, plural, =1{El libro del archivo ya está en tu biblioteca.} other{Los {count} libros del archivo ya están en tu biblioteca.}}",
+  "@goodreadsAllDuplicates": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goodreadsNoBooks": "El archivo no tiene libros.",
+  "goodreadsImportErrorTitle": "No se pudo importar",
+  "goodreadsImportErrorBody": "No se añadió ningún libro. Inténtalo de nuevo.",
+  "goodreadsImported": "{count, plural, =1{1 libro importado de Goodreads 📚} other{{count} libros importados de Goodreads 📚}}",
+  "@goodreadsImported": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goodreadsUndo": "DESHACER",
+  "goodreadsUndone": "Importación deshecha",
+  "goodreadsNoCovers": "No se encontraron portadas en Open Library. Puedes añadirlas editando cada libro.",
+  "goodreadsCoversFound": "Portadas encontradas: {found} de {total}.",
+  "@goodreadsCoversFound": {
+    "placeholders": {
+      "found": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "goodreadsHowToIntro": "Primero descarga tu biblioteca desde Goodreads:",
+  "goodreadsHowToStep1": "1. Entra a goodreads.com en el navegador (la app de Goodreads no permite exportar).",
+  "goodreadsHowToStep2": "2. Ve a Mis libros → Importar y exportar (Import and export).",
+  "goodreadsHowToStep3": "3. Toca \"Exportar biblioteca\" (Export Library) y descarga el archivo .csv cuando esté listo.",
+  "goodreadsHowToNote": "Tus libros actuales no se borran: solo se añaden los que faltan.",
+  "goodreadsChooseFile": "Elegir archivo",
+  "goodreadsCountRead": "{count, plural, =1{1 leído} other{{count} leídos}}",
+  "@goodreadsCountRead": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goodreadsCountReading": "{count} leyendo",
+  "@goodreadsCountReading": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goodreadsCountToRead": "{count} por leer",
+  "@goodreadsCountToRead": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goodreadsCountAbandoned": "{count, plural, =1{1 abandonado} other{{count} abandonados}}",
+  "@goodreadsCountAbandoned": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goodreadsCountNotes": "{count, plural, =1{1 reseña o nota (se guarda como nota)} other{{count} reseñas y notas (se guardan como notas)}}",
+  "@goodreadsCountNotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goodreadsConfirmTitle": "{count, plural, =1{¿Importar 1 libro?} other{¿Importar {count} libros?}}",
+  "@goodreadsConfirmTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goodreadsSkippedDuplicates": "{count, plural, =1{Se omite 1 que ya está en tu biblioteca.} other{Se omiten {count} que ya están en tu biblioteca.}}",
+  "@goodreadsSkippedDuplicates": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goodreadsSkippedInvalid": "{count, plural, =1{Se omite 1 fila sin título.} other{Se omiten {count} filas sin título.}}",
+  "@goodreadsSkippedInvalid": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goodreadsNoReadingTime": "Goodreads no guarda el tiempo de lectura, así que la racha y el mapa de calor no cambian. Los leídos con fecha cuentan en el reto de su año.",
+  "goodreadsFetchCovers": "Buscar portadas",
+  "goodreadsFetchCoversSubtitle": "{count, plural, =1{1 libro con ISBN · usa internet} other{{count} libros con ISBN · usa internet}}",
+  "@goodreadsFetchCoversSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goodreadsImportButton": "Importar",
+  "authCreatePassphraseTitle": "Crea tu Santo y Seña",
+  "secretNewPassphraseTitle": "Nueva palabra secreta",
+  "secretPinTitle": "PIN de respaldo",
+  "secretConfirmIdentity": "Confirma que eres tú",
+  "secretPinLengthError": "Deben ser {length} dígitos",
+  "@secretPinLengthError": {
+    "placeholders": {
+      "length": {
+        "type": "int"
+      }
+    }
+  },
+  "secretMinLengthError": "Al menos 3 caracteres",
+  "secretMismatch": "No coinciden",
+  "secretCaseHint": "No distingue mayúsculas. Elige algo que recuerdes.",
+  "secretNewPinLabel": "Nuevo PIN",
+  "secretPassphraseLabel": "Palabra secreta",
+  "secretRepeatPin": "Repite el PIN",
+  "secretRepeatPassphrase": "Repite la palabra",
+  "secretPassphraseOrPin": "Palabra secreta o PIN",
+  "secretWrong": "No es correcta",
+  "secretConfirm": "Confirmar",
+  "removeAdsPurchaseFailed": "La compra no se completó.",
+  "removeAdsPending": "Tu pago está pendiente. Los anuncios se quitarán cuando Google Play lo confirme.",
+  "removeAdsActiveTitle": "Sin anuncios",
+  "removeAdsThanks": "¡Gracias por apoyar Book Tracker! 💜",
+  "removeAdsTitle": "Quitar anuncios",
+  "removeAdsDescription": "Pago único, para siempre. Sin anuncios en la biblioteca, estadísticas ni citas, y \"Salvar racha\" gratis. Se mantiene si reinstalas o cambias de teléfono con la misma cuenta de Google.",
+  "removeAdsUnavailable": "No disponible por ahora",
+  "removeAdsBuy": "Comprar",
+  "removeAdsBuyFor": "Comprar por {price}",
+  "@removeAdsBuyFor": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "removeAdsRestore": "Restaurar",
+  "loginPassphraseSavedTitle": "✨ Palabra Guardada",
+  "loginOfferPinBody": "¿Quieres un PIN de 4 dígitos como respaldo? Podrás configurarlo después en Ajustes.",
+  "loginSetUpPin": "Configurar PIN",
+  "loginSkipLockTitle": "¿Usar sin bloqueo?",
+  "loginSkipLockBody": "Cualquiera con acceso a tu teléfono podrá abrir tu biblioteca. Puedes activar el bloqueo cuando quieras en Ajustes → Seguridad.",
+  "loginSkipLock": "Usar sin bloqueo",
+  "loginWrongPassphrase": "Esa no es la palabra mágica...",
+  "loginTooManyAttemptsWait": "Demasiados intentos. Espera {time} para volver a probar.",
+  "@loginTooManyAttemptsWait": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "loginWait": "Espera {time} para volver a probar.",
+  "@loginWait": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "loginWrongPin": "El PIN no es correcto.",
+  "loginBiometricReason": "Acceso rápido a tu biblioteca",
+  "loginCannotVerifyTitle": "No podemos verificar que eres tú",
+  "loginCannotVerifyBody": "Para recuperar el acceso, activa un bloqueo de pantalla (PIN, patrón o huella) en los ajustes de tu teléfono y vuelve a intentarlo. Tus libros siguen a salvo.",
+  "loginRecoverReason": "Verifica que eres tú para elegir una palabra nueva",
+  "loginChooseNewPassphrase": "Elige una palabra nueva",
+  "loginSetupTitle": "Crea tu Santo y Seña para iniciar la aventura",
+  "loginPinTitle": "Introduce tu PIN de respaldo",
+  "loginPassphraseTitle": "Di la palabra mágica para entrar",
+  "loginUsePassphrase": "Usar Santo y Seña",
+  "loginUsePin": "Usar PIN de respaldo",
+  "loginForgotPin": "¿Olvidaste tu PIN?",
+  "loginForgotPassphrase": "¿Olvidaste tu palabra secreta?",
+  "loginLockoutBanner": "Demasiados intentos. Podrás volver a probar en {time}.\nMientras, puedes usar la huella o «¿Olvidaste…?».",
+  "@loginLockoutBanner": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "loginSetupBody": "Una palabra secreta protege tu biblioteca. Si la olvidas, podrás recuperarla con el bloqueo de tu teléfono.",
+  "loginCreatePassphrase": "Crear palabra secreta",
+  "loginPassphraseHint": "Escribe la palabra...",
+  "loginUseFingerprint": "Usar huella",
+  "loginReveal": "Revelar biblioteca",
+  "whatsNewTitle": "Notas de la versión",
+  "whatsNewHistorySubtitle": "Lo que ha cambiado en cada versión de Book Tracker.",
+  "whatsNewHeadline": "Lo nuevo en Book Tracker",
+  "whatsNewStart": "Empezar",
+  "whatsNewLatestLabel": "NOVEDADES · {version}",
+  "@whatsNewLatestLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "whatsNewVersionLabel": "VERSIÓN {version}",
+  "@whatsNewVersionLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "whatsNew141CameraQuotesTitle": "Citas con la cámara",
+  "whatsNew141CameraQuotesText": "Fotografía una página y subraya con el dedo la frase que quieres guardar. Con zoom y lupa para más precisión.",
+  "whatsNew141OnDeviceTitle": "Todo en tu teléfono",
+  "whatsNew141OnDeviceText": "El texto se reconoce en tu dispositivo: la foto no se envía a ningún sitio.",
+  "whatsNew141CalendarTitle": "Calendario de lectura",
+  "whatsNew141CalendarText": "Cada día coloreado según cuánto leíste. Toca un día para ver qué libros leíste.",
+  "whatsNew141MonthlyChartTitle": "Gráfico mensual más claro",
+  "whatsNew141MonthlyChartText": "Escala redonda y barras que nacen en el cero.",
+  "whatsNew140RedesignTitle": "Diseño renovado",
+  "whatsNew140RedesignText": "Más limpio y tranquilo, con nuevos colores, tipografía y modo oscuro.",
+  "whatsNew140PhoneColorsTitle": "Colores de tu teléfono",
+  "whatsNew140PhoneColorsText": "En Ajustes > Colores puedes usar la paleta de tu fondo de pantalla.",
+  "whatsNew140ContinueReadingTitle": "Continuar leyendo",
+  "whatsNew140ContinueReadingText": "Tu libro actual arriba de la biblioteca: retoma la sesión en un toque.",
+  "whatsNew140ListGridTitle": "Lista o cuadrícula",
+  "whatsNew140ListGridText": "Elige cómo ver tu biblioteca y filtra por estado o categoría.",
+  "whatsNew140SwipeTitle": "Desliza para actuar",
+  "whatsNew140SwipeText": "A la derecha: empezar o terminar un libro, con Deshacer. A la izquierda: borrar.",
+  "whatsNew140BookDetailTitle": "Detalle del libro",
+  "whatsNew140BookDetailText": "Rediseñado, con tu ritmo, lo que falta y tus notas como citas.",
+  "whatsNew140StatsTilesTitle": "Estadísticas en mosaico",
+  "whatsNew140StatsTilesText": "Racha, tu mejor racha y la semana de un vistazo.",
+  "whatsNew140BackGestureTitle": "Gesto atrás",
+  "whatsNew140BackGestureText": "Desliza para volver y mira a dónde vas; \"atrás\" vuelve a Libros antes de salir.",
+  "whatsNew140UpdateAlertsTitle": "Avisos de actualización",
+  "whatsNew140UpdateAlertsText": "Te avisamos cuando haya una versión nueva y la instalas sin salir de la app.",
+  "whatsNew140ReleaseNotesTitle": "Notas de la versión",
+  "whatsNew140ReleaseNotesText": "Consulta las novedades cuando quieras en Ajustes > Novedades.",
+  "whatsNew130FasterTitle": "Más rápida y ligera",
+  "whatsNew130FasterText": "La app ocupa menos y abre antes.",
+  "whatsNew130SaferTitle": "Más segura",
+  "whatsNew130SaferText": "Tu palabra secreta se guarda con el almacenamiento seguro más reciente.",
+  "whatsNew130PurchasesTitle": "Compras más fiables",
+  "whatsNew130PurchasesText": "\"Quitar anuncios\" reconoce mejor las compras pendientes y los reembolsos.",
+  "whatsNew121RemoveAdsTitle": "Quitar anuncios",
+  "whatsNew121RemoveAdsText": "Un único pago para usar la app sin anuncios, para siempre.",
+  "whatsNew120IsbnScannerTitle": "Escáner de ISBN",
+  "whatsNew120IsbnScannerText": "Añade un libro escaneando su código de barras o escribiendo el ISBN.",
+  "whatsNew120MyQuotesTitle": "Mis citas",
+  "whatsNew120MyQuotesText": "Todas tus notas en un lugar: búscalas, marca favoritas y compártelas.",
+  "whatsNew120ChallengeTitle": "Reto anual y fechas",
+  "whatsNew120ChallengeText": "Fechas de inicio y fin de cada libro y tu meta de libros del año.",
+  "whatsNew120SessionGoalTitle": "Meta por sesión",
+  "whatsNew120SessionGoalText": "Elige 15–60 min o una página y te aviso al cumplirla.",
+  "whatsNew120ReviewsTitle": "Reseñas",
+  "whatsNew120ReviewsText": "Califica y reseña al terminar un libro (o cuando quieras).",
+  "whatsNew120StreakRiskTitle": "Racha en riesgo",
+  "whatsNew120StreakRiskText": "Un aviso por la noche si aún no has leído y llevas racha.",
+  "whatsNew120WidgetTitle": "Widget renovado",
+  "whatsNew120WidgetText": "Con la portada de tu libro y pausa en un toque.",
+  "whatsNew120ReadingYearTitle": "Mi año lector",
+  "whatsNew120ReadingYearText": "Comparte una tarjeta con tus estadísticas del año.",
+  "whatsNew120GoodreadsTitle": "Goodreads y respaldos",
+  "whatsNew120GoodreadsText": "Importa tu biblioteca de Goodreads y guarda una copia completa con portadas.",
+  "statsTitle": "Estadísticas",
+  "statsShareTooltip": "Compartir mi año lector",
+  "statsShareEmpty": "Aún no hay lecturas en {year} para compartir. ¡Empieza un libro!",
+  "@statsShareEmpty": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "statsError": "Error: {error}",
+  "@statsError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "statsToday": "Hoy",
+  "statsTodayProgress": "{minutes} de {goal} min",
+  "@statsTodayProgress": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "statsBooksRead": "Libros leídos",
+  "statsPages": "Páginas",
+  "statsTotalTime": "Tiempo total",
+  "statsFavoriteGenres": "Géneros favoritos",
+  "statsAchievementsTitle": "Logros y desafíos",
+  "statsChartMinutes": "MINUTOS",
+  "statsChartDayOfMonth": "DÍA DEL MES",
+  "statsChartBarMinutes": "{minutes} m",
+  "@statsChartBarMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "streakCurrent": "Racha actual",
+  "streakDays": "{count, plural, =1{1 día} other{{count} días}}",
+  "@streakDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "streakBest": "Tu mejor racha: {count, plural, =1{1 día} other{{count} días}}",
+  "@streakBest": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "streakRiskTitle": "🔥 Tu racha de {count, plural, =1{1 día} other{{count} días}} está en riesgo",
+  "@streakRiskTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "streakRiskBody": "Aún no has leído hoy. Lee unos minutos antes de medianoche para no perderla.",
+  "streakSaveSuccess": "🔥 ¡Racha salvada! Sigues con {count, plural, =1{1 día} other{{count} días}}. Lee hoy para mantenerla.",
+  "@streakSaveSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "streakSaveAdIncomplete": "Hay que ver el anuncio completo para salvar la racha.",
+  "streakSaveAdUnavailable": "Ahora no hay anuncios disponibles. Revisa tu conexión e inténtalo de nuevo.",
+  "streakSaveTitle": "Tu racha de {count, plural, =1{1 día} other{{count} días}} se rompió",
+  "@streakSaveTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "streakSaveBodyFree": "Ayer no registraste lectura. Como usuario sin anuncios, puedes recuperarla gratis: ayer contará para tu racha.",
+  "streakSaveBodyAd": "Ayer no registraste lectura. Mira un anuncio corto y la recuperamos: ayer contará para tu racha.",
+  "streakSaveOncePerWeek": "Puedes hacerlo una vez por semana.",
+  "streakSaveLoadingAd": "Cargando anuncio…",
+  "streakSaveFreeButton": "Salvar mi racha",
+  "streakSaveWatchAdButton": "Ver anuncio y salvar mi racha",
+  "streakSaveNotNow": "Ahora no",
+  "calendarTitle": "Calendario",
+  "calendarPreviousMonth": "Mes anterior",
+  "calendarNextMonth": "Mes siguiente",
+  "calendarHistoryStartsHere": "Tu historial empieza aquí: aún no hay meses anteriores con lecturas.",
+  "calendarHistoryStartsIn": "Tu historial empieza en {month}.",
+  "@calendarHistoryStartsIn": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarCurrentMonth": "Este es el mes actual.",
+  "calendarDaySavedSemantics": "{day}, racha salvada",
+  "@calendarDaySavedSemantics": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarDayNoReadingSemantics": "{day}, sin lectura",
+  "@calendarDayNoReadingSemantics": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarDayReadingSemantics": "{day}, {duration}, {pages, plural, =1{1 página} other{{pages} páginas}}",
+  "@calendarDayReadingSemantics": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      },
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarLegendLess": "Menos",
+  "calendarLegendMore": "Más",
+  "calendarNoReadingYetThisMonth": "Aún no has leído este mes. Toca un día para ver su detalle.",
+  "calendarNoReadingThisMonth": "No hay lecturas este mes.",
+  "calendarDaysReadLabel": "{count, plural, =1{día leído} other{días leídos}}",
+  "@calendarDaysReadLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarTotalLabel": "en total",
+  "calendarPagesLabel": "{count, plural, =1{página} other{páginas}}",
+  "@calendarPagesLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarPagesCount": "{count, plural, =1{1 página} other{{count} páginas}}",
+  "@calendarPagesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarPagesShort": "{count, plural, =1{1 pág.} other{{count} págs.}}",
+  "@calendarPagesShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarBestDay": "Tu mejor día: {date} · {amount}",
+  "@calendarBestDay": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarDaySavedDetail": "No leíste, pero salvaste tu racha este día.",
+  "calendarDayNoReadingDetail": "Este día no leíste.",
+  "calendarDeletedBook": "Libro eliminado",
+  "challengeFinishedBooksTitle": "Libros terminados",
+  "challengeNoDatedBooks": "Aún no hay libros terminados con fecha.",
+  "challengeYearHeader": "{year} · {count, plural, =1{1 libro} other{{count} libros}}",
+  "@challengeYearHeader": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeUndatedBooks": "{count, plural, =1{1 libro terminado no tiene fecha de fin.} other{{count} libros terminados no tienen fecha de fin.}} Puedes añadirla en el detalle de cada libro para que cuente en su año.",
+  "@challengeUndatedBooks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeTitleWithYear": "Reto de lectura {year}",
+  "@challengeTitleWithYear": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeSetGoalPrompt": "Ponte una meta de libros para este año.",
+  "challengeFinishedSoFar": "Llevas {count, plural, =1{1 libro terminado} other{{count} libros terminados}} este año. ¿Te pones una meta?",
+  "@challengeFinishedSoFar": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeCreate": "Crear reto",
+  "challengeShowBooks": "Ver libros",
+  "challengeOfGoal": "de {goal}",
+  "@challengeOfGoal": {
+    "placeholders": {
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeShortTitle": "Reto {year}",
+  "@challengeShortTitle": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeChangeGoal": "Cambiar meta",
+  "challengeDoneCount": "{finished} de {goal} libros",
+  "@challengeDoneCount": {
+    "placeholders": {
+      "finished": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeRemaining": "{count} por leer para tu meta",
+  "@challengeRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeShowFinished": "Ver libros terminados",
+  "challengeDialogQuestion": "¿Cuántos libros quieres leer este año?",
+  "challengeBooksSuffix": "libros",
+  "challengeGoalRange": "Entre 1 y {max}",
+  "@challengeGoalRange": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeRemove": "Quitar reto",
+  "challengeCompleted": "¡Reto cumplido!",
+  "challengeExceeded": "¡Reto superado! +{extra}",
+  "@challengeExceeded": {
+    "placeholders": {
+      "extra": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeAhead": "Vas {count, plural, =1{1 libro} other{{count} libros}} adelantado",
+  "@challengeAhead": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeBehind": "Vas {count, plural, =1{1 libro} other{{count} libros}} atrasado",
+  "@challengeBehind": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengeOnTrack": "Vas al día",
+  "yearSummaryHeading": "MI AÑO LECTOR",
+  "yearSummaryBooksFinished": "{count, plural, =1{libro\nterminado} other{libros\nterminados}}",
+  "@yearSummaryBooksFinished": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "yearSummaryGoalDone": "🏆 ¡Reto de {goal} libros cumplido!",
+  "@yearSummaryGoalDone": {
+    "placeholders": {
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "yearSummaryGoalProgress": "Reto: {finished} de {goal} libros",
+  "@yearSummaryGoalProgress": {
+    "placeholders": {
+      "finished": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "yearSummaryPages": "páginas",
+  "yearSummaryReadingTime": "leyendo",
+  "yearSummaryReadingDays": "{count, plural, =1{día con lectura} other{días con lectura}}",
+  "@yearSummaryReadingDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "yearSummaryLongestStreak": "{count, plural, =1{día de racha} other{días de racha máx.}}",
+  "@yearSummaryLongestStreak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "yearSummaryFavoriteGenre": "Género favorito: {genre}",
+  "@yearSummaryFavoriteGenre": {
+    "placeholders": {
+      "genre": {
+        "type": "String"
+      }
+    }
+  },
+  "yearSummaryRecentlyFinished": "Últimos terminados",
+  "yearSummaryShareText": "Mi año lector {year} 📚 #BookTracker",
+  "@yearSummaryShareText": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "yearSummaryShareError": "No se pudo crear la imagen. Inténtalo de nuevo.",
+  "yearSummaryShare": "Compartir",
+  "achievementCategoryEarly": "Disciplina Temprana",
+  "achievementCategorySerious": "Compromiso Serio",
+  "achievementCategoryScholar": "Nivel Erudito (3 años+)",
+  "achievementHabitFormedName": "Hábito Formado",
+  "achievementHabitFormedDesc": "Racha de 21 días",
+  "achievementSprinterName": "Velocista",
+  "achievementSprinterDesc": "500 páginas leídas",
+  "achievementVoraciousReaderName": "Lector Voraz",
+  "achievementVoraciousReaderDesc": "50 libros terminados",
+  "achievementHalfMarathonName": "Medio Maratón",
+  "achievementHalfMarathonDesc": "250 horas de lectura",
+  "achievementPureConsistencyName": "Constancia Pura",
+  "achievementPureConsistencyDesc": "Racha de 100 días",
+  "achievementGoldenBibliophileName": "Bibliófilo de Oro",
+  "achievementGoldenBibliophileDesc": "100.000 páginas leídas",
+  "achievementLifeAmongBooksName": "Vida Entre Libros",
+  "achievementLifeAmongBooksDesc": "1.000 horas de lectura",
+  "achievementUnbreakableName": "Inquebrantable",
+  "achievementUnbreakableDesc": "Racha de 365 días",
+  "achievementLibraryMasterName": "Maestro de Biblioteca",
+  "achievementLibraryMasterDesc": "250 libros completados"
 }

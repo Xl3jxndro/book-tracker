@@ -1,4 +1,5 @@
 import 'package:book_tracker/database/database.dart';
+import 'package:book_tracker/services/app_language.dart';
 import 'package:book_tracker/services/quick_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -14,7 +15,7 @@ void main() {
     expect(r.status, 1);
     expect(r.startedAt, now);
     expect(r.readPages, 0);
-    expect(quickStatusAction(_b(0))!.label, 'Empezar a leer');
+    expect(quickStatusAction(_b(0))!.label(AppLanguage.strings), 'Empezar a leer');
   });
 
   test('leyendo → terminado: completa las páginas y pone fecha de fin', () {
@@ -30,7 +31,7 @@ void main() {
     final r = applyQuickStatus(_b(3, read: 40), now)!;
     expect(r.status, 1);
     expect(r.readPages, 40);
-    expect(quickStatusAction(_b(3))!.label, 'Retomar');
+    expect(quickStatusAction(_b(3))!.label(AppLanguage.strings), 'Retomar');
   });
 
   test('un libro terminado no tiene acción rápida', () {

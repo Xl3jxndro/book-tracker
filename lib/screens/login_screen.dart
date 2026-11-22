@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../providers/auth_provider.dart';
 import '../services/device_auth_service.dart';
 import '../widgets/secret_dialogs.dart';
@@ -127,7 +128,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   // --- Configuración inicial ---
 
   Future<void> _createPassphrase() async {
-    final phrase = await showNewPassphraseDialog(context, title: 'Crea tu Santo y Seña');
+    final phrase = await showNewPassphraseDialog(context, title: context.l10n.authCreatePassphraseTitle);
     if (phrase == null || !mounted) return;
 
     final auth = ref.read(authProvider.notifier);
@@ -138,13 +139,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text("✨ Palabra Guardada"),
-        content: const Text(
-          "¿Quieres un PIN de 4 dígitos como respaldo? Podrás configurarlo después en Ajustes.",
-        ),
+        title: Text(context.l10n.loginPassphraseSavedTitle),
+        content: Text(context.l10n.loginOfferPinBody),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Ahora no")),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text("Configurar PIN")),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.l10n.settingsNotNow)),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: Text(context.l10n.loginSetUpPin)),
         ],
       ),
     );
@@ -162,14 +161,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('¿Usar sin bloqueo?'),
-        content: const Text(
-          'Cualquiera con acceso a tu teléfono podrá abrir tu biblioteca. '
-          'Puedes activar el bloqueo cuando quieras en Ajustes → Seguridad.',
-        ),
+        title: Text(context.l10n.loginSkipLockTitle),
+        content: Text(context.l10n.loginSkipLockBody),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Usar sin bloqueo')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.l10n.commonCancel)),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: Text(context.l10n.loginSkipLock)),
         ],
       ),
     );
@@ -186,7 +182,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
 
     final result = await ref.read(authProvider.notifier).verifyPassphrase(phrase);
     if (!mounted) return;
-    _handleResult(result, "Esa no es la palabra mágica...");
+    _handleResult(result, context.l10n.loginWrongPassphrase);
   }
 
   void _handleResult(LoginResult result, String wrongMessage) {
@@ -196,11 +192,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
       case LoginResult.wrong:
         _syncLockTimer();
         _handleError(_isLockedOut
-            ? 'Demasiados intentos. Espera $_remainingText para volver a probar.'
+            ? context.l10n.loginTooManyAttemptsWait(_remainingText)
             : wrongMessage);
       case LoginResult.locked:
         _syncLockTimer();
-        _handleError('Espera $_remainingText para volver a probar.');
+        _handleError(context.l10n.loginWait(_remainingText));
     }
   }
 
@@ -211,7 +207,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     if (_currentPin.length == AuthNotifier.pinLength) {
       final result = await ref.read(authProvider.notifier).verifyPin(_currentPin);
       if (!mounted) return;
-      _handleResult(result, "El PIN no es correcto.");
+      _handleResult(result, context.l10n.loginWrongPin);
     }
   }
 
@@ -219,7 +215,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     if (_isAuthenticating) return;
     setState(() => _isAuthenticating = true);
     final didAuth = await DeviceAuthService.authenticate(
-      reason: 'Acceso rápido a tu biblioteca',
+      reason: context.l10n.loginBiometricReason,
       biometricOnly: true,
     );
     if (!mounted) return;
@@ -237,25 +233,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('No podemos verificar que eres tú'),
-          content: const Text(
-            'Para recuperar el acceso, activa un bloqueo de pantalla (PIN, patrón o huella) '
-            'en los ajustes de tu teléfono y vuelve a intentarlo. Tus libros siguen a salvo.',
-          ),
+          title: Text(context.l10n.loginCannotVerifyTitle),
+          content: Text(context.l10n.loginCannotVerifyBody),
           actions: [
-            ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text('Entendido')),
+            ElevatedButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.settingsGotIt)),
           ],
         ),
       );
       return;
     }
 
+    if (!mounted) return;
     final verified = await DeviceAuthService.authenticate(
-      reason: 'Verifica que eres tú para elegir una palabra nueva',
+      reason: context.l10n.loginRecoverReason,
     );
     if (!verified || !mounted) return;
 
-    final phrase = await showNewPassphraseDialog(context, title: 'Elige una palabra nueva');
+    final phrase = await showNewPassphraseDialog(context, title: context.l10n.loginChooseNewPassphrase);
     if (phrase == null) return;
     HapticFeedback.lightImpact();
     await ref.read(authProvider.notifier).resetPassphrase(phrase);
@@ -270,8 +264,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     final isSetup = !authState.isPassphraseSet && !authState.isPinSet;
 
     final String title = isSetup
-        ? "Crea tu Santo y Seña para iniciar la aventura"
-        : (_showPinField ? "Introduce tu PIN de respaldo" : "Di la palabra mágica para entrar");
+        ? context.l10n.loginSetupTitle
+        : (_showPinField ? context.l10n.loginPinTitle : context.l10n.loginPassphraseTitle);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -326,12 +320,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                             _currentPin = "";
                           }),
                           icon: Icon(_showPinField ? Icons.auto_fix_high : Icons.dialpad),
-                          label: Text(_showPinField ? "Usar Santo y Seña" : "Usar PIN de respaldo"),
+                          label: Text(_showPinField ? context.l10n.loginUsePassphrase : context.l10n.loginUsePin),
                         ),
                       TextButton(
                         onPressed: _recoverAccess,
                         child: Text(
-                          _showPinField ? '¿Olvidaste tu PIN?' : '¿Olvidaste tu palabra secreta?',
+                          _showPinField ? context.l10n.loginForgotPin : context.l10n.loginForgotPassphrase,
                           style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                         ),
                       ),
@@ -360,8 +354,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Demasiados intentos. Podrás volver a probar en $_remainingText.\n'
-              'Mientras, puedes usar la huella o «¿Olvidaste…?».',
+              context.l10n.loginLockoutBanner(_remainingText),
               style: TextStyle(color: theme.colorScheme.onErrorContainer, fontSize: 13),
             ),
           ),
@@ -376,8 +369,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
       child: Column(
         children: [
           Text(
-            'Una palabra secreta protege tu biblioteca. Si la olvidas, podrás recuperarla '
-            'con el bloqueo de tu teléfono.',
+            context.l10n.loginSetupBody,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium,
           ),
@@ -385,14 +377,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           ElevatedButton.icon(
             onPressed: _createPassphrase,
             icon: const Icon(Icons.vpn_key_rounded),
-            label: const Text("Crear palabra secreta"),
+            label: Text(context.l10n.loginCreatePassphrase),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 56),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
           ),
           const SizedBox(height: 12),
-          TextButton(onPressed: _skipLock, child: const Text('Usar sin bloqueo')),
+          TextButton(onPressed: _skipLock, child: Text(context.l10n.loginSkipLock)),
         ],
       ),
     );
@@ -411,12 +403,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             style: const TextStyle(letterSpacing: 1.5, fontSize: 18),
             onChanged: (value) => setState(() {}),
             decoration: InputDecoration(
-              hintText: "Escribe la palabra...",
+              hintText: context.l10n.loginPassphraseHint,
               prefixIcon: const Icon(Icons.vpn_key_rounded),
               suffixIcon: _canUseBiometrics
                   ? IconButton(
                       icon: Icon(Icons.fingerprint, color: theme.colorScheme.primary),
-                      tooltip: 'Usar huella',
+                      tooltip: context.l10n.loginUseFingerprint,
                       onPressed: _authenticateWithBiometrics,
                     )
                   : null,
@@ -433,7 +425,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             child: ElevatedButton.icon(
               onPressed: hasText ? _submitPassphrase : null,
               icon: const Icon(Icons.auto_fix_high),
-              label: const Text("Revelar biblioteca"),
+              label: Text(context.l10n.loginReveal),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

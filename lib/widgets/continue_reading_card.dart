@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../l10n/l10n.dart';
 import '../providers/continue_reading_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_tokens.dart';
@@ -23,9 +24,10 @@ class ContinueReadingCard extends StatelessWidget {
     final book = item.book;
     final progress = book.totalPages > 0 ? (book.readPages / book.totalPages).clamp(0.0, 1.0) : 0.0;
     final pct = (progress * 100).toInt();
+    final l10n = context.l10n;
     final label = item.inSession
-        ? 'SESIÓN EN CURSO'
-        : (book.status == 0 ? 'EMPEZAR A LEER' : 'CONTINUAR LEYENDO');
+        ? l10n.homeContinueInSession
+        : (book.status == 0 ? l10n.homeContinueStart : l10n.homeContinueReading);
 
     return Material(
       color: cs.surfaceContainerLow,
@@ -63,7 +65,9 @@ class ContinueReadingCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      book.totalPages > 0 ? '$pct% · ${book.readPages} de ${book.totalPages} páginas' : '${book.readPages} páginas',
+                      book.totalPages > 0
+                          ? l10n.homeContinueProgress(pct, book.readPages, book.totalPages)
+                          : l10n.homeContinuePages(book.readPages),
                       style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                     ),
                   ],
@@ -71,7 +75,7 @@ class ContinueReadingCard extends StatelessWidget {
               ),
               const SizedBox(width: AppSpace.sm),
               IconButton(
-                tooltip: item.inSession ? 'Ver la sesión' : 'Empezar a leer',
+                tooltip: item.inSession ? l10n.homeContinueViewSession : l10n.homeQuickStart,
                 onPressed: () {
                   HapticFeedback.mediumImpact();
                   onStart();

@@ -24,6 +24,7 @@ import '../services/quick_status.dart';
 import 'book_details_screen.dart';
 import 'quotes_screen.dart';
 import '../database/database.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_tokens.dart';
 
@@ -290,7 +291,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           );
         },
         loading: () => _buildLoadingSkeleton(context),
-        error: (err, _) => Center(child: Text('Error: $err')),
+        error: (err, _) => Center(child: Text(context.l10n.homeLoadError('$err'))),
       ),
     );
   }
@@ -299,7 +300,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   /// Cabecera: fecha y "Mi biblioteca" con sus acciones, o el buscador.
   Widget _buildHeader(BuildContext context, WidgetRef ref, bool isSearching, ThemeData theme) {
-    final today = DateFormat("EEEE, d 'de' MMMM", 'es').format(DateTime.now());
+    final code = context.languageCode;
+    final today = toBeginningOfSentenceCase(DateFormat.MMMMEEEEd(code).format(DateTime.now()), code);
     return SliverToBoxAdapter(
       child: Padding(
         padding: EdgeInsets.fromLTRB(AppSpace.screen + 4, MediaQuery.of(context).padding.top + AppSpace.md, AppSpace.screen, AppSpace.xs),
@@ -323,11 +325,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            today[0].toUpperCase() + today.substring(1),
+                            today,
                             style: theme.textTheme.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant),
                           ),
                           const SizedBox(height: 2),
-                          Text('Mi biblioteca', style: theme.textTheme.headlineLarge),
+                          Text(context.l10n.homeTitle, style: theme.textTheme.headlineLarge),
                         ],
                       ),
                     ),
@@ -349,9 +351,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         hasScrollBody: false,
         child: EmptyStateWidget(
           icon: Icons.auto_stories_rounded,
-          title: 'Tu biblioteca está vacía',
-          description: 'Parece un buen momento para empezar una nueva aventura.',
-          actionLabel: 'Añadir mi primer libro',
+          title: context.l10n.homeEmptyTitle,
+          description: context.l10n.homeEmptyDescription,
+          actionLabel: context.l10n.homeAddFirstBook,
           onAction: () => _showAddBook(context),
         ),
       );
@@ -362,9 +364,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         hasScrollBody: false,
         child: EmptyStateWidget(
           icon: Icons.search_off_rounded,
-          title: 'Sin coincidencias',
-          description: 'No encontramos nada que coincida con tus filtros.',
-          actionLabel: 'Ver todos los libros',
+          title: context.l10n.homeNoMatchesTitle,
+          description: context.l10n.homeNoMatchesDescription,
+          actionLabel: context.l10n.homeShowAllBooks,
           onAction: () {
             ref.read(selectedFilterProvider.notifier).set(null);
             ref.read(searchQueryProvider.notifier).set('');
@@ -451,7 +453,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       textInputAction: TextInputAction.search,
       style: theme.textTheme.bodyLarge,
       decoration: InputDecoration(
-        hintText: 'Título o autor…',
+        hintText: context.l10n.homeSearchHint,
         prefixIcon: const Icon(Icons.search_rounded),
         border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppRadius.pill)), borderSide: BorderSide.none),
         enabledBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppRadius.pill)), borderSide: BorderSide.none),
@@ -483,7 +485,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return _headerButton(
       key: _searchButtonKey,
       icon: isSearching ? Icons.close_rounded : Icons.search_rounded,
-      tooltip: isSearching ? 'Cerrar búsqueda' : 'Buscar',
+      tooltip: isSearching ? context.l10n.homeCloseSearch : context.l10n.homeSearch,
       onPressed: () {
         HapticFeedback.selectionClick();
         ref.read(isSearchingProvider.notifier).set(!isSearching);
@@ -496,7 +498,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return _headerButton(
       key: _quotesButtonKey,
       icon: Icons.format_quote_rounded,
-      tooltip: 'Mis citas',
+      tooltip: context.l10n.homeMyQuotes,
       onPressed: () {
         HapticFeedback.selectionClick();
         Navigator.push(context, MaterialPageRoute(builder: (_) => const QuotesScreen()));
@@ -508,17 +510,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return _headerButton(
       key: _sortButtonKey,
       icon: Icons.sort_rounded,
-      tooltip: 'Ordenar',
+      tooltip: context.l10n.homeSort,
       onPressed: () => _showSortSheet(context, ref, theme),
     );
   }
 
-  static const _sortLabels = {
-    BookSortOption.recentlyAdded: 'Recientes',
-    BookSortOption.mostProgress: 'Mayor progreso',
-    BookSortOption.longest: 'Más largos',
-    BookSortOption.alphabetical: 'A–Z',
-  };
+  /// Nombre corto del orden (fila "N libros · orden").
+  String _sortLabel(AppLocalizations l10n, BookSortOption option) => switch (option) {
+        BookSortOption.recentlyAdded => l10n.homeSortShortRecent,
+        BookSortOption.mostProgress => l10n.homeSortMostProgress,
+        BookSortOption.longest => l10n.homeSortShortLongest,
+        BookSortOption.alphabetical => l10n.homeSortShortAlphabetical,
+      };
 
   void _showSortSheet(BuildContext context, WidgetRef ref, ThemeData theme) {
     final currentSort = ref.read(sortOptionProvider);
@@ -532,12 +535,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: AppSpace.lg),
-              Text('Ordenar libros', style: theme.textTheme.headlineSmall),
+              Text(context.l10n.homeSortTitle, style: theme.textTheme.headlineSmall),
               const SizedBox(height: AppSpace.md),
-              _sortTile(ref, context, 'Añadido recientemente', BookSortOption.recentlyAdded, Icons.history_rounded, currentSort),
-              _sortTile(ref, context, 'Mayor progreso', BookSortOption.mostProgress, Icons.auto_graph_rounded, currentSort),
-              _sortTile(ref, context, 'Libros más largos', BookSortOption.longest, Icons.format_list_numbered_rounded, currentSort),
-              _sortTile(ref, context, 'Orden alfabético', BookSortOption.alphabetical, Icons.sort_by_alpha_rounded, currentSort),
+              _sortTile(ref, context, context.l10n.homeSortRecentlyAdded, BookSortOption.recentlyAdded, Icons.history_rounded, currentSort),
+              _sortTile(ref, context, context.l10n.homeSortMostProgress, BookSortOption.mostProgress, Icons.auto_graph_rounded, currentSort),
+              _sortTile(ref, context, context.l10n.homeSortLongest, BookSortOption.longest, Icons.format_list_numbered_rounded, currentSort),
+              _sortTile(ref, context, context.l10n.homeSortAlphabetical, BookSortOption.alphabetical, Icons.sort_by_alpha_rounded, currentSort),
             ],
           ),
         ),
@@ -565,7 +568,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _chipRow(ref, ['Todos', 'Pendientes', 'Leyendo', 'Terminados', 'Abandonados'],
+          _chipRow(
+              ref,
+              [
+                context.l10n.homeFilterAll,
+                context.l10n.homeFilterPending,
+                context.l10n.statusReading,
+                context.l10n.homeFilterFinished,
+                context.l10n.homeFilterAbandoned,
+              ],
               [null, 'status_0', 'status_1', 'status_2', 'status_3'], selectedFilter, theme, counts),
           // Categorías: solo si hay más de una (con una sola no filtran nada)
           if (tags.length > 1) ...[
@@ -660,13 +671,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           Expanded(
             child: Text(
-              '$count ${count == 1 ? 'libro' : 'libros'} · ${_sortLabels[ref.watch(sortOptionProvider)]}',
+              context.l10n.homeBookCountSorted(count, _sortLabel(context.l10n, ref.watch(sortOptionProvider))),
               style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
             ),
           ),
-          toggle(false, Icons.view_agenda_outlined, 'Vista de lista'),
+          toggle(false, Icons.view_agenda_outlined, context.l10n.homeListView),
           const SizedBox(width: 4),
-          toggle(true, Icons.grid_view_rounded, 'Vista de cuadrícula'),
+          toggle(true, Icons.grid_view_rounded, context.l10n.homeGridView),
         ],
       ),
     );
@@ -716,8 +727,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         dismissThresholds: const {DismissDirection.startToEnd: 0.3, DismissDirection.endToStart: 0.4},
         background: quick == null
             ? const SizedBox.shrink()
-            : _swipeBackground(context, quick.icon, quick.label, context.app.accent, context.app.onAccent, Alignment.centerLeft),
-        secondaryBackground: _swipeBackground(context, Icons.delete_sweep_rounded, 'Eliminar', cs.error, cs.onError, Alignment.centerRight),
+            : _swipeBackground(context, quick.icon, quick.label(context.l10n), context.app.accent, context.app.onAccent, Alignment.centerLeft),
+        secondaryBackground: _swipeBackground(context, Icons.delete_sweep_rounded, context.l10n.commonDelete, cs.error, cs.onError, Alignment.centerRight),
         confirmDismiss: (direction) async {
           if (direction == DismissDirection.startToEnd) {
             await _applyQuickStatus(ref, book, quick!);
@@ -727,14 +738,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           return await showDialog(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('¿Eliminar libro?'),
-              content: Text('Esta acción borrará "${book.title}" permanentemente.'),
+              title: Text(context.l10n.homeDeleteBookTitle),
+              content: Text(context.l10n.homeDeleteBookMessage(book.title)),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+                TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.l10n.commonCancel)),
                 FilledButton(
                   style: FilledButton.styleFrom(backgroundColor: context.cs.error, foregroundColor: context.cs.onError),
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Eliminar'),
+                  child: Text(context.l10n.commonDelete),
                 ),
               ],
             ),
@@ -775,11 +786,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(SnackBar(
-      content: Text('${action.done} "${book.title}"'),
+      content: Text(action.doneMessage(context.l10n, book.title)),
       duration: const Duration(seconds: 5),
       // Por encima de la barra de navegación flotante
       margin: EdgeInsets.fromLTRB(16, 0, 16, 64 + 24 + 12 + MediaQuery.of(context).padding.bottom),
-      action: SnackBarAction(label: 'Deshacer', onPressed: () => db.updateBook(book)),
+      action: SnackBarAction(label: context.l10n.commonUndo, onPressed: () => db.updateBook(book)),
     ));
   }
 
@@ -796,6 +807,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // --- DEFINICIÓN DE TARGETS PARA TUTORIAL ---
   List<TargetFocus> _createTargets() {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return [
       TargetFocus(
         identify: "search_button", 
@@ -806,8 +818,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             align: ContentAlign.bottom, 
             builder: (context, controller) => _buildTutorialBalloon(
               theme: theme, 
-              title: "🔍 Encuentra tus libros", 
-              description: "Busca rápidamente cualquier título o autor en tu colección."
+              title: l10n.homeTutorialSearchTitle,
+              description: l10n.homeTutorialSearchDescription
             )
           ),
         ]
@@ -821,8 +833,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             align: ContentAlign.bottom,
             builder: (context, controller) => _buildTutorialBalloon(
               theme: theme,
-              title: "❝ Mis citas",
-              description: "Todas las frases y notas de tus libros en un solo lugar: búscalas, marca favoritas y compártelas."
+              title: l10n.homeTutorialQuotesTitle,
+              description: l10n.homeTutorialQuotesDescription
             )
           ),
         ]
@@ -836,8 +848,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             align: ContentAlign.bottom, 
             builder: (context, controller) => _buildTutorialBalloon(
               theme: theme, 
-              title: "↕️ Organiza tu biblioteca", 
-              description: "Ordena tus libros por progreso, tamaño o fecha de añadido."
+              title: l10n.homeTutorialSortTitle,
+              description: l10n.homeTutorialSortDescription
             )
           ),
         ]
@@ -851,8 +863,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             align: ContentAlign.top, 
             builder: (context, controller) => _buildTutorialBalloon(
               theme: theme, 
-              title: "📚 Nueva aventura", 
-              description: "Toca aquí para registrar un nuevo libro y empezar a leer."
+              title: l10n.homeTutorialAddTitle,
+              description: l10n.homeTutorialAddDescription
             )
           ),
         ]

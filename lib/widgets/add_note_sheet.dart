@@ -8,6 +8,7 @@ import '../services/voice_service.dart';
 import '../screens/scan_quote_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import '../theme/app_colors.dart';
+import '../l10n/l10n.dart';
 
 class AddNoteSheet extends ConsumerStatefulWidget {
   final int bookId;
@@ -142,8 +143,8 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
     } catch (e) {
       debugPrint('Foto para escanear: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('No se pudo abrir la cámara. Revisa el permiso en los ajustes del teléfono.'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(context.l10n.noteCameraError),
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -189,7 +190,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('No se pudo guardar la nota. Inténtalo de nuevo.'),
+            content: Text(context.l10n.noteSaveError),
             backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -231,7 +232,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.noteToEdit == null ? 'Nueva Anotación' : 'Editar anotación',
+                      widget.noteToEdit == null ? context.l10n.noteNewTitle : context.l10n.noteEditTitle,
                       style: TextStyle(
                         fontSize: 22, 
                         fontWeight: FontWeight.w800, 
@@ -240,7 +241,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
                       )
                     ),
                     Text(
-                      _isListening ? 'Escuchando voz...' : 'Escribe, dicta o escanea',
+                      _isListening ? context.l10n.noteListening : context.l10n.noteSubtitle,
                       style: TextStyle(
                         fontSize: 14, 
                         color: _isListening ? scheme.primary : scheme.onSurfaceVariant,
@@ -253,7 +254,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
               
               // Escanear una cita con la cámara
               IconButton(
-                tooltip: 'Escanear texto con la cámara',
+                tooltip: context.l10n.noteScanTooltip,
                 onPressed: _scanText,
                 style: IconButton.styleFrom(
                   fixedSize: const Size(48, 48),
@@ -332,7 +333,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
             autofocus: true,
             style: const TextStyle(fontSize: 17, height: 1.4),
             decoration: InputDecoration(
-              hintText: 'Comienza a hablar o escribir...',
+              hintText: context.l10n.noteContentHint,
               hintStyle: TextStyle(color: scheme.onSurfaceVariant.withValues(alpha: 0.4)),
               filled: true,
               fillColor: scheme.surfaceContainerHigh,
@@ -351,7 +352,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: InputDecoration(
               prefixIcon: Icon(Icons.bookmark_outline_rounded, size: 20, color: scheme.primary),
-              labelText: 'Página del libro',
+              labelText: context.l10n.notePageLabel,
               labelStyle: TextStyle(color: scheme.onSurfaceVariant),
               filled: true,
               fillColor: Colors.transparent,
@@ -394,7 +395,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
                 borderRadius: BorderRadius.circular(30),
                 child: Center(
                   child: Text(
-                    widget.noteToEdit == null ? 'Guardar nota' : 'Guardar cambios',
+                    widget.noteToEdit == null ? context.l10n.noteSave : context.l10n.noteSaveChanges,
                     style: TextStyle(
                       color: _isEmpty ? scheme.onSurfaceVariant : scheme.onPrimary,
                       fontWeight: FontWeight.bold,
@@ -442,25 +443,25 @@ class _ScanSourceSheet extends StatelessWidget {
               const SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text('Escanear una cita', style: theme.textTheme.titleLarge),
+                child: Text(context.l10n.scanSourceTitle, style: theme.textTheme.titleLarge),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
                 child: Text(
-                  'El texto se reconoce en tu teléfono: la foto no se envía a ningún sitio.',
+                  context.l10n.scanSourcePrivacy,
                   style: theme.textTheme.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant),
                 ),
               ),
               ListTile(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 leading: Icon(Icons.photo_camera_outlined, color: context.app.accent),
-                title: const Text('Tomar foto de la página'),
+                title: Text(context.l10n.scanSourceCamera),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
               ListTile(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 leading: Icon(Icons.photo_library_outlined, color: context.app.accent),
-                title: const Text('Elegir de la galería'),
+                title: Text(context.l10n.scanSourceGallery),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
             ],
