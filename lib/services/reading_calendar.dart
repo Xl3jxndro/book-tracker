@@ -111,6 +111,17 @@ MonthSummary summarizeMonth(Map<DateTime, DayReading> days, int year, int month)
   return MonthSummary(daysRead, seconds, pages, best);
 }
 
+/// Tope redondo del eje de minutos de un gráfico: el primer valor de
+/// 10, 20, 30, 60, 90, 120, 180, 240 que alcance [maxMinutes] (y luego de
+/// hora en hora). Sin lecturas, 30. Siempre par: su mitad es entera.
+int chartAxisMax(int maxMinutes) {
+  if (maxMinutes <= 0) return 30;
+  for (final step in const [10, 20, 30, 60, 90, 120, 180, 240]) {
+    if (maxMinutes <= step) return step;
+  }
+  return ((maxMinutes + 59) ~/ 60) * 60;
+}
+
 /// "1 h 5 min", "45 min" o "0 min".
 String formatReadingDuration(int seconds) {
   final minutes = seconds ~/ 60;

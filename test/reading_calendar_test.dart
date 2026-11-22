@@ -81,6 +81,19 @@ void main() {
       expect(summarizeMonth(days, 2026, 9).daysRead, 0);
     });
 
+    test('tope redondo del eje del gráfico', () {
+      expect(chartAxisMax(0), 30, reason: 'sin lecturas');
+      expect(chartAxisMax(1), 10);
+      expect(chartAxisMax(25), 30);
+      expect(chartAxisMax(31), 60);
+      expect(chartAxisMax(200), 240);
+      expect(chartAxisMax(250), 300);
+      for (final m in [0, 1, 7, 25, 31, 61, 95, 130, 200, 250, 401]) {
+        final top = chartAxisMax(m);
+        expect(top >= m && top.isEven, isTrue, reason: '$m → $top');
+      }
+    });
+
     test('formato del tiempo', () {
       expect(formatReadingDuration(0), '0 min');
       expect(formatReadingDuration(45 * 60), '45 min');
@@ -146,20 +159,40 @@ void main() {
       expect(find.text('Este día no leíste.'), findsOneWidget);
     });
 
-    testWidgets('se navega entre meses solo dentro de lo que hay', (tester) async {
+    testWidgets('se navega entre meses dentro de lo que hay y avisa en los límites', (tester) async {
       await pump(tester, [_s(DateTime(2026, 10, 5), minutes: 30), _s(DateTime(2026, 11, 3), minutes: 10)]);
-      final next = find.byTooltip('Mes siguiente');
-      final prev = find.byTooltip('Mes anterior');
-      expect(tester.widget<IconButton>(find.ancestor(of: find.byIcon(Icons.chevron_right_rounded), matching: find.byType(IconButton))).onPressed, isNull,
-          reason: 'no hay meses futuros');
-      expect(next, findsOneWidget);
 
-      await tester.tap(prev);
+      await tester.tap(find.byTooltip('Mes siguiente'));
+      await tester.pump();
+      expect(find.text('Noviembre 2026'), findsOneWidget, reason: 'no hay meses futuros');
+      expect(find.text('Este es el mes actual.'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Mes anterior'));
       await tester.pumpAndSettle();
       expect(find.text('Octubre 2026'), findsOneWidget);
       expect(find.text('día leído'), findsOneWidget);
-      expect(tester.widget<IconButton>(find.ancestor(of: find.byIcon(Icons.chevron_left_rounded), matching: find.byType(IconButton))).onPressed, isNull,
-          reason: 'no hay lecturas antes de octubre');
+
+      await tester.tap(find.byTooltip('Mes anterior'));
+      await tester.pump();
+      expect(find.text('Octubre 2026'), findsOneWidget);
+      expect(find.text('Tu historial empieza en octubre 2026.'), findsOneWidget);
+
+      // El aviso se va solo
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      expect(find.text('Tu historial empieza en octubre 2026.'), findsNothing);
+    });
+
+    testWidgets('deslizar a los lados cambia de mes', (tester) async {
+      await pump(tester, [_s(DateTime(2026, 10, 5), minutes: 30), _s(DateTime(2026, 11, 3), minutes: 10)]);
+      // Hacia la derecha: mes anterior
+      await tester.fling(find.text('15'), const Offset(300, 0), 1000);
+      await tester.pumpAndSettle();
+      expect(find.text('Octubre 2026'), findsOneWidget);
+      // Hacia la izquierda: vuelve a noviembre
+      await tester.fling(find.text('15'), const Offset(-300, 0), 1000);
+      await tester.pumpAndSettle();
+      expect(find.text('Noviembre 2026'), findsOneWidget);
     });
 
     testWidgets('sin lecturas este mes lo dice', (tester) async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
@@ -57,12 +59,44 @@ class _ReadingCalendarState extends State<ReadingCalendar> {
   bool get _canGoBack => _month.isAfter(_firstMonth);
   bool get _canGoForward => _month.isBefore(DateTime(_today.year, _today.month));
 
+  /// Hacia dónde se movió el último cambio de mes (para la animación).
+  int _direction = 0;
+
+  /// Aviso breve al intentar pasar del primer mes con lecturas o del actual.
+  String? _limitMessage;
+  Timer? _limitTimer;
+
+  @override
+  void dispose() {
+    _limitTimer?.cancel();
+    super.dispose();
+  }
+
   void _changeMonth(int delta) {
-    if (delta < 0 && !_canGoBack || delta > 0 && !_canGoForward) return;
+    if (delta < 0 && !_canGoBack || delta > 0 && !_canGoForward) {
+      HapticFeedback.lightImpact();
+      _showLimit(delta < 0
+          ? (widget.sessions.isEmpty
+              ? 'Tu historial empieza aquí: aún no hay meses anteriores con lecturas.'
+              : 'Tu historial empieza en ${DateFormat('MMMM y', 'es').format(_firstMonth)}.')
+          : 'Este es el mes actual.');
+      return;
+    }
     HapticFeedback.selectionClick();
+    _limitTimer?.cancel();
     setState(() {
+      _direction = delta;
       _month = DateTime(_month.year, _month.month + delta);
       _selected = null;
+      _limitMessage = null;
+    });
+  }
+
+  void _showLimit(String message) {
+    _limitTimer?.cancel();
+    setState(() => _limitMessage = message);
+    _limitTimer = Timer(const Duration(milliseconds: 2500), () {
+      if (mounted) setState(() => _limitMessage = null);
     });
   }
 
@@ -93,22 +127,60 @@ class _ReadingCalendarState extends State<ReadingCalendar> {
                   ],
                 ),
               ),
+              // Siempre se pueden tocar: en el límite explican por qué no hay más
               IconButton(
                 tooltip: 'Mes anterior',
-                onPressed: _canGoBack ? () => _changeMonth(-1) : null,
+                onPressed: () => _changeMonth(-1),
+                color: _canGoBack ? null : context.cs.onSurfaceVariant.withValues(alpha: 0.38),
                 icon: const Icon(Icons.chevron_left_rounded),
               ),
               IconButton(
                 tooltip: 'Mes siguiente',
-                onPressed: _canGoForward ? () => _changeMonth(1) : null,
+                onPressed: () => _changeMonth(1),
+                color: _canGoForward ? null : context.cs.onSurfaceVariant.withValues(alpha: 0.38),
                 icon: const Icon(Icons.chevron_right_rounded),
               ),
             ],
           ),
+          AnimatedSize(
+            duration: AppMotion.fast,
+            alignment: Alignment.topCenter,
+            child: _limitMessage == null
+                ? const SizedBox(width: double.infinity)
+                : Padding(
+                    padding: const EdgeInsets.only(top: AppSpace.xxs),
+                    child: Text(
+                      _limitMessage!,
+                      style: theme.textTheme.bodySmall?.copyWith(color: context.app.accentText),
+                    ),
+                  ),
+          ),
           const SizedBox(height: AppSpace.sm),
           _weekdayHeader(context),
           const SizedBox(height: AppSpace.xs),
-          _grid(context, days),
+          ClipRect(
+            child: AnimatedSwitcher(
+              duration: AppMotion.medium,
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              layoutBuilder: (current, previous) => Stack(
+                alignment: Alignment.topCenter,
+                children: [...previous, ?current],
+              ),
+              transitionBuilder: (child, animation) {
+                final incoming = child.key == ValueKey(_month);
+                final dx = _direction == 0 ? 0.0 : (incoming ? _direction * 0.25 : -_direction * 0.25);
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(begin: Offset(dx, 0), end: Offset.zero).animate(animation),
+                    child: child,
+                  ),
+                );
+              },
+              child: KeyedSubtree(key: ValueKey(_month), child: _grid(context, days)),
+            ),
+          ),
           const SizedBox(height: AppSpace.sm),
           _legend(context),
           const SizedBox(height: AppSpace.md),

@@ -8,6 +8,7 @@ import '../providers/database_provider.dart';
 import '../providers/today_provider.dart';
 import '../widgets/reading_challenge_card.dart';
 import '../widgets/reading_calendar.dart';
+import '../services/reading_calendar.dart' show chartAxisMax;
 import '../widgets/share_year_summary.dart';
 import '../widgets/streak_save_sheet.dart';
 import '../widgets/native_ad_card.dart';
@@ -304,8 +305,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
       }
     }
 
-    final maxSec = dailySeconds.values.fold(1, (p, c) => c > p ? c : p).toDouble();
-    final maxMin = (maxSec / 60).ceil();
+    // Escala del eje redonda (10, 20, 30, 60… min); sin lecturas, 0–30
+    final maxMin = chartAxisMax((dailySeconds.values.fold(0, (p, c) => c > p ? c : p) / 60).ceil());
+    final maxSec = maxMin * 60.0;
 
     return Padding(
       padding: EdgeInsets.zero,
@@ -337,7 +339,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('$maxMin', style: TextStyle(fontSize: 9, color: context.cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
-                          Text('${(maxMin / 2).round()}', style: TextStyle(fontSize: 9, color: context.cs.onSurfaceVariant)),
+                          Text('${maxMin ~/ 2}', style: TextStyle(fontSize: 9, color: context.cs.onSurfaceVariant)),
                           Text('0', style: TextStyle(fontSize: 9, color: context.cs.onSurfaceVariant)),
                         ],
                       ),
@@ -355,7 +357,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: List.generate(3, (i) => Container(height: 0.5, color: context.cs.outlineVariant)),
                       ),
-                      Row(
+                      // Ocupa todo el alto: las barras nacen en la línea del 0
+                      Positioned.fill(
+                        child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: List.generate(daysInMonth, (index) {
@@ -364,7 +368,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                           final mins = (sec / 60).round();
                           final isToday = day == now.day;
                           final isSelected = selectedDayIndex == index;
-                          final double barHeight = (sec / maxSec * 130).clamp(5.0, 130.0);
+                          // Días sin lectura: un punto en la base; con lectura, al menos visible
+                          final double barHeight = sec <= 0 ? 4.0 : (sec / maxSec * 150).clamp(6.0, 150.0);
 
                           return Expanded(
                             child: GestureDetector(
@@ -414,6 +419,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                             ),
                           );
                         }),
+                      ),
                       ),
                     ],
                   ),
