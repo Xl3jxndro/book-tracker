@@ -19,6 +19,11 @@ class WhatsNew {
 
   /// Todas las notas, de la más reciente a la más antigua, en el idioma de [l].
   static List<ReleaseNotes> historyFor(AppLocalizations l) => [
+        ReleaseNotes('1.4.2', [
+          (Icons.translate_rounded, l.whatsNew142EnglishTitle, l.whatsNew142EnglishText),
+          (Icons.language_rounded, l.whatsNew142LanguageTitle, l.whatsNew142LanguageText),
+          (Icons.spellcheck_rounded, l.whatsNew142PluralsTitle, l.whatsNew142PluralsText),
+        ]),
         ReleaseNotes('1.4.1', [
           (Icons.document_scanner_outlined, l.whatsNew141CameraQuotesTitle, l.whatsNew141CameraQuotesText),
           (Icons.lock_outline_rounded, l.whatsNew141OnDeviceTitle, l.whatsNew141OnDeviceText),

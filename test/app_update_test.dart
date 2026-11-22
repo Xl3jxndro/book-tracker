@@ -46,7 +46,10 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('Notas de la versión'), findsOneWidget);
       expect(find.text('NOVEDADES · ${WhatsNew.version}'), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('VERSIÓN 1.2.0'), 300, scrollable: find.byType(Scrollable).first);
+      // La versión más antigua, al final de la lista
+      final list = find.byType(Scrollable).first;
+      await tester.scrollUntilVisible(find.text('Escáner de ISBN'), 200, scrollable: list);
+      expect(find.text('VERSIÓN 1.2.0'), findsOneWidget);
       expect(find.text('Escáner de ISBN'), findsOneWidget);
       expect(find.text('Cerrar'), findsOneWidget);
     });

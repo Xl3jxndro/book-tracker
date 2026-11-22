@@ -2231,6 +2231,27 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get whatsNew142EnglishTitle => 'Book Tracker in English';
+
+  @override
+  String get whatsNew142EnglishText =>
+      'The app is now available in English and Spanish, with dates and numbers in your language.';
+
+  @override
+  String get whatsNew142LanguageTitle => 'Choose your language';
+
+  @override
+  String get whatsNew142LanguageText =>
+      'In Settings > Appearance > Language: automatic (your phone\'s language), Spanish or English.';
+
+  @override
+  String get whatsNew142PluralsTitle => 'Polished wording';
+
+  @override
+  String get whatsNew142PluralsText =>
+      'Correct singular and plural forms (\"1 page\", \"1 book\") and clearer dates.';
+
+  @override
   String get whatsNew141CameraQuotesTitle => 'Quotes from the camera';
 
   @override

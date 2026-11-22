@@ -3698,6 +3698,42 @@ abstract class AppLocalizations {
   /// **'VERSIÓN {version}'**
   String whatsNewVersionLabel(String version);
 
+  /// No description provided for @whatsNew142EnglishTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Book Tracker en inglés'**
+  String get whatsNew142EnglishTitle;
+
+  /// No description provided for @whatsNew142EnglishText.
+  ///
+  /// In es, this message translates to:
+  /// **'La app está disponible en español e inglés, con fechas y números en tu idioma.'**
+  String get whatsNew142EnglishText;
+
+  /// No description provided for @whatsNew142LanguageTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige el idioma'**
+  String get whatsNew142LanguageTitle;
+
+  /// No description provided for @whatsNew142LanguageText.
+  ///
+  /// In es, this message translates to:
+  /// **'En Ajustes > Apariencia > Idioma: automático (el de tu teléfono), español o inglés.'**
+  String get whatsNew142LanguageText;
+
+  /// No description provided for @whatsNew142PluralsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Textos más cuidados'**
+  String get whatsNew142PluralsTitle;
+
+  /// No description provided for @whatsNew142PluralsText.
+  ///
+  /// In es, this message translates to:
+  /// **'Plurales correctos (\"1 página\", \"1 libro\") y fechas más claras.'**
+  String get whatsNew142PluralsText;
+
   /// No description provided for @whatsNew141CameraQuotesTitle.
   ///
   /// In es, this message translates to:
