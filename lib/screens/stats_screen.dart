@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../providers/database_provider.dart';
 import '../providers/today_provider.dart';
 import '../widgets/reading_challenge_card.dart';
+import '../widgets/reading_calendar.dart';
 import '../widgets/share_year_summary.dart';
 import '../widgets/streak_save_sheet.dart';
 import '../widgets/native_ad_card.dart';
@@ -138,7 +139,13 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
         const SizedBox(height: AppSpace.sm),
         _tile(child: _buildMonthlyActivityChart(sessions, isDark)),
         const SizedBox(height: AppSpace.sm),
-        _tile(child: ReadingHeatMap(sessions: sessions)),
+        _tile(
+          child: ReadingCalendar(
+            sessions: sessions,
+            books: books,
+            savedDays: ref.watch(streakSaveProvider).savedDays,
+          ),
+        ),
         NativeAdCard(adUnitId: AdHelper.statsNativeAdUnitId, margin: const EdgeInsets.only(top: AppSpace.sm)),
         const SizedBox(height: AppSpace.sm),
         _tile(
@@ -599,80 +606,6 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class ReadingHeatMap extends StatelessWidget {
-  final List<ReadingSession> sessions;
-  const ReadingHeatMap({super.key, required this.sessions});
-
-  @override
-  Widget build(BuildContext context) {
-    final Map<DateTime, int> data = {};
-    final Set<DateTime> daysWithTime = {};
-    for (var s in sessions) {
-      final date = DateTime(s.date.year, s.date.month, s.date.day);
-      data[date] = (data[date] ?? 0) + s.pagesRead;
-      if (s.seconds > 0) daysWithTime.add(date);
-    }
-
-    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-    final startDate = today.subtract(const Duration(days: 7 * 8)); 
-
-    return Column(
-      children: [
-        const Text("Constancia", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
-        const SizedBox(height: 20),
-        Center(
-          child: Column(
-            children: [
-              Wrap(
-                spacing: 4, runSpacing: 4,
-                children: List.generate(9, (weekIndex) {
-                  return Column(
-                    children: List.generate(7, (dayIndex) {
-                      final date = startDate.add(Duration(days: (weekIndex * 7) + dayIndex));
-                      final p = data[date] ?? 0;
-                      // Un día con tiempo de lectura pero 0 páginas también cuenta como activo
-                      final isActive = p > 0 || daysWithTime.contains(date);
-                      final isFuture = date.isAfter(today);
-                      return Container(
-                        width: 12, height: 12, margin: const EdgeInsets.all(1),
-                        decoration: BoxDecoration(
-                          color: isFuture ? Colors.transparent : (!isActive ? (context.cs.outlineVariant) : context.app.accent.withValues(alpha: (p/30).clamp(0.2, 1.0))),
-                          borderRadius: BorderRadius.circular(2.5),
-                        ),
-                      );
-                    }),
-                  );
-                }),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Menos", style: TextStyle(fontSize: 10, color: context.cs.onSurfaceVariant)),
-                  const SizedBox(width: 8),
-                  _buildLegendSquare(context.cs.outlineVariant),
-                  _buildLegendSquare(context.app.accent.withValues(alpha: 0.3)),
-                  _buildLegendSquare(context.app.accent.withValues(alpha: 0.6)),
-                  _buildLegendSquare(context.app.accent),
-                  const SizedBox(width: 8),
-                  Text("Más", style: TextStyle(fontSize: 10, color: context.cs.onSurfaceVariant)),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLegendSquare(Color color) {
-    return Container(
-      width: 10, height: 10, margin: const EdgeInsets.symmetric(horizontal: 2),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
     );
   }
 }
