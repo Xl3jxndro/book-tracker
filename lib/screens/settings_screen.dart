@@ -21,6 +21,10 @@ import '../theme/app_colors.dart';
 import '../services/app_update.dart';
 import '../widgets/app_update_actions.dart';
 import '../widgets/whats_new_sheet.dart';
+import '../l10n/l10n.dart';
+import '../providers/language_provider.dart';
+import '../services/app_language.dart';
+import 'package:flutter/services.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -149,6 +153,14 @@ class SettingsScreen extends ConsumerWidget {
               leadingIcon: Icons.palette_rounded,
               iconColor: context.cs.primary,
               onTap: () => _showColorSourcePicker(context, ref),
+            ),
+            _settingsTile(
+              context,
+              title: context.l10n.settingsLanguage,
+              subtitle: _languageLabel(context, ref.watch(languageProvider)),
+              leadingIcon: Icons.translate_rounded,
+              iconColor: context.cs.primary,
+              onTap: () => _showLanguagePicker(context, ref),
             ),
           ], context),
           /*
@@ -756,6 +768,48 @@ class SettingsScreen extends ConsumerWidget {
     final available = ref.watch(systemPaletteProvider).value != null;
     if (source == ColorSource.system && available) return 'Del fondo de pantalla';
     return 'Book Tracker';
+  }
+
+  String _languageLabel(BuildContext context, LanguageSetting setting) => switch (setting) {
+        LanguageSetting.system => context.l10n.languageSystem,
+        LanguageSetting.spanish => context.l10n.languageSpanish,
+        LanguageSetting.english => context.l10n.languageEnglish,
+      };
+
+  void _showLanguagePicker(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) {
+        final current = ref.read(languageProvider);
+        Widget option(LanguageSetting value, String title, {String? subtitle}) => ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+              title: Text(title, style: TextStyle(fontWeight: current == value ? FontWeight.w700 : FontWeight.w500)),
+              subtitle: subtitle == null ? null : Text(subtitle),
+              trailing: current == value ? Icon(Icons.check_circle_rounded, color: context.app.accent) : null,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                ref.read(languageProvider.notifier).set(value);
+                Navigator.pop(sheetContext);
+              },
+            );
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(0, 20, 0, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(width: 40, height: 4, decoration: BoxDecoration(color: context.cs.outline, borderRadius: BorderRadius.circular(10))),
+                const SizedBox(height: 16),
+                option(LanguageSetting.system, context.l10n.languageSystem, subtitle: context.l10n.languageSystemSubtitle),
+                // Cada idioma con su propio nombre, para encontrarlo aunque no se entienda el actual
+                option(LanguageSetting.spanish, 'Español'),
+                option(LanguageSetting.english, 'English'),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _showColorSourcePicker(BuildContext context, WidgetRef ref) {

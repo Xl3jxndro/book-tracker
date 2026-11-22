@@ -1,0 +1,17 @@
+{
+  "@@locale": "en",
+
+  "commonCancel": "Cancel",
+  "commonSave": "Save",
+  "commonClose": "Close",
+  "commonDelete": "Delete",
+  "commonUndo": "Undo",
+  "commonBack": "Back",
+  "commonAccept": "OK",
+
+  "settingsLanguage": "Language",
+  "languageSystem": "Automatic",
+  "languageSystemSubtitle": "Your phone's language",
+  "languageSpanish": "Español",
+  "languageEnglish": "English"
+}

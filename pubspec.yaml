@@ -10,7 +10,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
+  flutter_localizations:      # Idiomas: español e inglés
+    sdk: flutter
+
   cupertino_icons: ^2.0.0
   
   # Gestión de Estado
@@ -104,6 +106,7 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
+  generate: true # textos traducidos (lib/l10n, ver l10n.yaml)
 
   assets:
     - assets/images/

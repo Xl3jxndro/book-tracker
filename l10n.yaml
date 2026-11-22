@@ -1,0 +1,8 @@
+# Textos de la app en varios idiomas (flutter gen-l10n).
+# El español es la plantilla: cada texto nuevo se añade primero en
+# app_es.arb y luego su traducción en app_en.arb.
+arb-dir: lib/l10n
+template-arb-file: app_es.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false

@@ -26,11 +26,21 @@ import 'services/remove_ads.dart';
 import 'services/home_widget_sync.dart';
 import 'services/session_goal_alarm.dart';
 import 'widgets/app_lock_route.dart';
+import 'l10n/app_localizations.dart';
+import 'providers/language_provider.dart';
+import 'services/app_language.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // De borde a borde: la app dibuja detrás de las barras del sistema
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  // Idioma antes que nada: las notificaciones se reprograman con sus textos
+  try {
+    LanguageNotifier.initial = await AppLanguage.load();
+  } catch (e) {
+    debugPrint('Idioma: $e');
+  }
 
   try {
     await NotificationService.init();
@@ -40,6 +50,7 @@ void main() async {
     await HomeWidget.registerInteractivityCallback(homeWidgetBackgroundCallback);
     await initializeDateFormatting('es_ES', null);
     await initializeDateFormatting('es', null);
+    await initializeDateFormatting('en', null);
   } catch (e) {
     debugPrint("Error durante el arranque: $e");
   }
@@ -195,10 +206,19 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
           lockScreenBuilder: (_) => const LoginScreen(),
         ));
 
+    // Idioma: el elegido en Ajustes o, en "Automático", el del teléfono
+    // (español si está en español; si no, inglés)
+    final language = ref.watch(languageProvider);
+
     return MaterialApp(
       navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'Book Tracker',
+      supportedLocales: AppLanguage.supported,
+      localizationsDelegates: const [AppLocalizations.delegate, ...GlobalMaterialLocalizations.delegates],
+      locale: language == LanguageSetting.system ? null : AppLanguage.resolve(language, const []),
+      localeListResolutionCallback: (deviceLocales, _) =>
+          AppLanguage.resolve(LanguageSetting.system, deviceLocales ?? const []),
       themeMode: mode,
       theme: systemPalette == null ? AppTheme.light : AppTheme.fromSystem(systemPalette, Brightness.light),
       darkTheme: systemPalette == null ? AppTheme.dark : AppTheme.fromSystem(systemPalette, Brightness.dark),
@@ -208,18 +228,21 @@ class _BookTrackerAppState extends ConsumerState<BookTrackerApp> with WidgetsBin
         ? const Scaffold(body: Center(child: CircularProgressIndicator()))
         : ((auth.canEnterApp || _hasEnteredApp) ? const MainWrapper() : const LoginScreen()),
 
-      builder: (context, child) =>
-          // Puente temporal de material_ui: librerías que aún usan
-          // package:flutter/material.dart (tooltips del tutorial, tarjeta de
-          // "Mi año lector") reciben el tema de la app. Quitar cuando migren.
-          // ignore: deprecated_member_use
-          MaterialUiCompatibilityBridge(
-        // Barras del sistema transparentes, con iconos según el modo
-        child: AnnotatedRegion<SystemUiOverlayStyle>(
-          value: _systemBars(Theme.of(context).brightness),
-          child: child!,
-        ),
-      ),
+      builder: (context, child) {
+        // Idioma en uso también para fechas, números, notificaciones y widget
+        AppLanguage.apply(Localizations.localeOf(context));
+        // Puente temporal de material_ui: librerías que aún usan
+        // package:flutter/material.dart (tooltips del tutorial, tarjeta de
+        // "Mi año lector") reciben el tema de la app. Quitar cuando migren.
+        // ignore: deprecated_member_use
+        return MaterialUiCompatibilityBridge(
+          // Barras del sistema transparentes, con iconos según el modo
+          child: AnnotatedRegion<SystemUiOverlayStyle>(
+            value: _systemBars(Theme.of(context).brightness),
+            child: child!,
+          ),
+        );
+      },
     );
   }
 }
