@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
@@ -37,9 +38,35 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
   Object? _error;
   Set<int> _selected = {};
 
+  /// Selecciones anteriores, para "Deshacer".
+  final List<Set<int>> _history = [];
+
+  // Zoom y desplazamiento de la foto (s = pan + zoom · q)
+  static const _maxZoom = 6.0;
+  double _zoom = 1;
+  Offset _pan = Offset.zero;
+  Size _viewport = Size.zero;
+  Offset _contentOffset = Offset.zero;
+  double _fitScale = 1;
+
+  // Dedos sobre la foto: uno subraya, dos acercan y mueven
+  final Map<int, Offset> _pointers = {};
+  bool _gestureIsZoom = false;
+
   // Subrayado en curso
-  Set<int> _beforeDrag = {};
+  Set<int> _beforeStroke = {};
   int? _anchor;
+  Offset? _strokeStart;
+  bool _strokeMoved = false;
+
+  /// Dónde está el dedo que subraya (para la lupa).
+  Offset? _finger;
+
+  // Pellizco en curso
+  double _zoomAtStart = 1;
+  Offset _panAtStart = Offset.zero;
+  double _distanceAtStart = 1;
+  Offset _focalAtStart = Offset.zero;
 
   @override
   void initState() {
@@ -59,27 +86,164 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
 
   String get _quote => _result == null ? '' : quoteFrom(_result!.words, _selected);
 
-  void _dragStart(int? word) {
-    if (word == null) return;
-    HapticFeedback.selectionClick();
-    _anchor = word;
-    _beforeDrag = _selected;
-    setState(() => _selected = highlightRange(_beforeDrag, word, word));
+  // --- Coordenadas ---
+
+  /// Punto de la foto (en sus píxeles) bajo un punto de la pantalla.
+  Offset _toPhoto(Offset screen) => ((screen - _pan) / _zoom - _contentOffset) / _fitScale;
+
+  int? _wordUnder(Offset screen) {
+    final words = _result?.words;
+    if (words == null) return null;
+    // Margen del dedo: ~12 px de pantalla, en píxeles de la foto
+    return wordAt(words, _toPhoto(screen), slop: 12 / (_fitScale * _zoom));
   }
 
-  void _dragUpdate(int? word) {
+  Offset _clampPan(Offset pan, double zoom) => Offset(
+        pan.dx.clamp(_viewport.width * (1 - zoom), 0.0),
+        pan.dy.clamp(_viewport.height * (1 - zoom), 0.0),
+      );
+
+  /// Acerca o aleja manteniendo fijo el punto [focal] de la pantalla.
+  void _zoomAround(Offset focal, double zoom) {
+    final next = zoom.clamp(1.0, _maxZoom);
+    final content = (focal - _pan) / _zoom;
+    setState(() {
+      _zoom = next;
+      _pan = _clampPan(focal - content * next, next);
+    });
+  }
+
+  void _zoomBy(double factor) {
+    HapticFeedback.selectionClick();
+    _zoomAround(_viewport.center(Offset.zero), _zoom * factor);
+  }
+
+  void _resetZoom() {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _zoom = 1;
+      _pan = Offset.zero;
+    });
+  }
+
+  // --- Dedos ---
+
+  void _pointerDown(PointerDownEvent e) {
+    _pointers[e.pointer] = e.localPosition;
+    if (_pointers.length == 1) {
+      _gestureIsZoom = false;
+      _startStroke(e.localPosition);
+    } else if (_pointers.length == 2) {
+      // Segundo dedo: era un pellizco. Si el primero apenas se movió, su
+      // subrayado no era intencionado y se deshace.
+      if (_anchor != null && !_strokeMoved) _cancelStroke();
+      _endStroke();
+      _gestureIsZoom = true;
+      _startPinch();
+    }
+  }
+
+  void _pointerMove(PointerMoveEvent e) {
+    if (!_pointers.containsKey(e.pointer)) return;
+    _pointers[e.pointer] = e.localPosition;
+    if (_gestureIsZoom) {
+      if (_pointers.length >= 2) _updatePinch();
+    } else {
+      _updateStroke(e.localPosition);
+    }
+  }
+
+  void _pointerUp(PointerEvent e) {
+    _pointers.remove(e.pointer);
+    if (_gestureIsZoom) {
+      // Con un dedo menos se sigue con el que queda, desde donde está
+      if (_pointers.length >= 2) _startPinch();
+      if (_pointers.isEmpty) _gestureIsZoom = false;
+      return;
+    }
+    if (_pointers.isEmpty) _endStroke();
+  }
+
+  (Offset, double) _pinchGeometry() {
+    final points = _pointers.values.take(2).toList();
+    return ((points[0] + points[1]) / 2, (points[0] - points[1]).distance);
+  }
+
+  void _startPinch() {
+    final (focal, distance) = _pinchGeometry();
+    _zoomAtStart = _zoom;
+    _panAtStart = _pan;
+    _focalAtStart = focal;
+    _distanceAtStart = distance <= 0 ? 1 : distance;
+  }
+
+  void _updatePinch() {
+    final (focal, distance) = _pinchGeometry();
+    final zoom = (_zoomAtStart * distance / _distanceAtStart).clamp(1.0, _maxZoom);
+    final content = (_focalAtStart - _panAtStart) / _zoomAtStart;
+    setState(() {
+      _zoom = zoom;
+      _pan = _clampPan(focal - content * zoom, zoom);
+    });
+  }
+
+  void _startStroke(Offset screen) {
+    final word = _wordUnder(screen);
+    setState(() => _finger = screen);
+    if (word == null) return;
+    HapticFeedback.selectionClick();
+    _history.add(_selected);
+    _anchor = word;
+    _strokeStart = screen;
+    _strokeMoved = false;
+    _beforeStroke = _selected;
+    setState(() => _selected = highlightRange(_beforeStroke, word, word));
+  }
+
+  void _updateStroke(Offset screen) {
+    setState(() => _finger = screen);
     final anchor = _anchor;
-    if (anchor == null || word == null) return;
-    final next = highlightRange(_beforeDrag, anchor, word);
+    if (anchor == null) {
+      // Empezó fuera del texto: subraya desde la primera palabra que toque
+      if (_wordUnder(screen) != null) _startStroke(screen);
+      return;
+    }
+    if (!_strokeMoved && (screen - (_strokeStart ?? screen)).distance > 8) _strokeMoved = true;
+    final word = _wordUnder(screen);
+    if (word == null) return;
+    final next = highlightRange(_beforeStroke, anchor, word);
     if (next.length != _selected.length) HapticFeedback.selectionClick();
     setState(() => _selected = next);
   }
 
-  void _dragEnd() => _anchor = null;
+  void _cancelStroke() {
+    if (_anchor == null) return;
+    setState(() => _selected = _beforeStroke);
+    if (_history.isNotEmpty) _history.removeLast();
+  }
+
+  void _endStroke() {
+    _anchor = null;
+    _strokeStart = null;
+    if (_finger != null) setState(() => _finger = null);
+  }
+
+  // --- Acciones ---
+
+  void _setSelection(Set<int> next) {
+    _history.add(_selected);
+    setState(() => _selected = next);
+  }
 
   void _selectAll() {
     final words = _result?.words ?? const [];
-    setState(() => _selected = _selected.length == words.length ? {} : {for (var i = 0; i < words.length; i++) i});
+    _setSelection(_selected.length == words.length ? {} : {for (var i = 0; i < words.length; i++) i});
+  }
+
+  void _undo() {
+    if (_history.isEmpty) return;
+    HapticFeedback.selectionClick();
+    setState(() => _selected = _history.removeLast());
   }
 
   @override
@@ -141,54 +305,137 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
   }
 
   /// La foto con el texto detectado marcado y lo subrayado en amarillo.
+  /// Un dedo subraya; dos dedos acercan y mueven la foto.
   Widget _page(BuildContext context, ScanResult result) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final fitted = applyBoxFit(BoxFit.contain, result.imageSize, constraints.biggest).destination;
-        final scale = fitted.width / result.imageSize.width;
-        // Margen del dedo: ~12 px de pantalla, en píxeles de la foto
-        final slop = 12 / scale;
-        int? wordUnder(Offset local) => wordAt(result.words, local / scale, slop: slop);
+        final viewport = constraints.biggest;
+        final fitted = applyBoxFit(BoxFit.contain, result.imageSize, viewport).destination;
+        _viewport = viewport;
+        _fitScale = fitted.width / result.imageSize.width;
+        _contentOffset = Offset((viewport.width - fitted.width) / 2, (viewport.height - fitted.height) / 2);
+        if (_pan != _clampPan(_pan, _zoom)) _pan = _clampPan(_pan, _zoom);
 
-        return Center(
-          child: SizedBox(
-            width: fitted.width,
-            height: fitted.height,
-            child: GestureDetector(
-              key: const ValueKey('scan_page'),
-              behavior: HitTestBehavior.opaque,
-              onPanStart: (d) => _dragStart(wordUnder(d.localPosition)),
-              onPanUpdate: (d) => _dragUpdate(wordUnder(d.localPosition)),
-              onPanEnd: (_) => _dragEnd(),
-              onTapUp: (d) {
-                _dragStart(wordUnder(d.localPosition));
-                _dragEnd();
-              },
-              child: ClipRRect(
-                borderRadius: AppRadius.mdAll,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.file(
-                      File(result.imagePath),
-                      fit: BoxFit.fill,
-                      errorBuilder: (_, _, _) => ColoredBox(color: context.cs.surfaceContainerHigh),
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: Listener(
+                key: const ValueKey('scan_page'),
+                behavior: HitTestBehavior.opaque,
+                onPointerDown: _pointerDown,
+                onPointerMove: _pointerMove,
+                onPointerUp: _pointerUp,
+                onPointerCancel: _pointerUp,
+                child: ClipRRect(
+                  borderRadius: AppRadius.mdAll,
+                  child: Transform(
+                    transform: Matrix4.diagonal3Values(_zoom, _zoom, 1)..setTranslationRaw(_pan.dx, _pan.dy, 0),
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          left: _contentOffset.dx,
+                          top: _contentOffset.dy,
+                          width: fitted.width,
+                          height: fitted.height,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.file(
+                                File(result.imagePath),
+                                fit: BoxFit.fill,
+                                filterQuality: FilterQuality.medium,
+                                errorBuilder: (_, _, _) => ColoredBox(color: context.cs.surfaceContainerHigh),
+                              ),
+                              CustomPaint(
+                                painter: _HighlightPainter(
+                                  words: result.words,
+                                  selected: _selected,
+                                  scale: _fitScale,
+                                  hint: context.app.accent,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    CustomPaint(
-                      painter: _HighlightPainter(
-                        words: result.words,
-                        selected: _selected,
-                        scale: scale,
-                        hint: context.app.accent,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
+            if (_finger != null) _magnifier(context, _finger!, viewport),
+            Positioned(right: AppSpace.xs, bottom: AppSpace.xs, child: _zoomControls(context)),
+          ],
         );
       },
+    );
+  }
+
+  /// Lupa sobre el dedo: muestra ampliado lo que se está subrayando (el dedo
+  /// lo tapa). Va encima del dedo, o debajo si no cabe.
+  Widget _magnifier(BuildContext context, Offset finger, Size viewport) {
+    const size = Size(168, 72);
+    const gap = 96.0;
+    final above = finger.dy - gap - size.height / 2 >= 0;
+    final center = Offset(
+      finger.dx.clamp(size.width / 2 + 4, math.max(size.width / 2 + 4, viewport.width - size.width / 2 - 4)),
+      above ? finger.dy - gap : finger.dy + gap,
+    );
+    return Positioned(
+      left: center.dx - size.width / 2,
+      top: center.dy - size.height / 2,
+      width: size.width,
+      height: size.height,
+      child: IgnorePointer(
+        child: RawMagnifier(
+          size: size,
+          magnificationScale: 2,
+          focalPointOffset: finger - center,
+          decoration: MagnifierDecoration(
+            shape: RoundedRectangleBorder(
+              borderRadius: const BorderRadius.all(Radius.circular(16)),
+              side: BorderSide(color: context.app.accent, width: 2),
+            ),
+            shadows: const [BoxShadow(color: Color(0x40000000), blurRadius: 12, offset: Offset(0, 4))],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Acercar, alejar y ajustar (para quien no use el pellizco).
+  Widget _zoomControls(BuildContext context) {
+    ButtonStyle style() => IconButton.styleFrom(
+          fixedSize: const Size(44, 44),
+          backgroundColor: context.cs.surfaceContainerHigh.withValues(alpha: 0.92),
+          foregroundColor: context.cs.onSurface,
+        );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          tooltip: 'Acercar',
+          style: style(),
+          onPressed: _zoom < _maxZoom ? () => _zoomBy(1.6) : null,
+          icon: const Icon(Icons.zoom_in_rounded),
+        ),
+        const SizedBox(height: 6),
+        IconButton(
+          tooltip: 'Alejar',
+          style: style(),
+          onPressed: _zoom > 1 ? () => _zoomBy(1 / 1.6) : null,
+          icon: const Icon(Icons.zoom_out_rounded),
+        ),
+        if (_zoom > 1) ...[
+          const SizedBox(height: 6),
+          IconButton(
+            tooltip: 'Ver la página entera',
+            style: style(),
+            onPressed: _resetZoom,
+            icon: const Icon(Icons.fit_screen_rounded),
+          ),
+        ],
+      ],
     );
   }
 
@@ -215,7 +462,7 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
                         Icon(Icons.gesture_rounded, size: 20, color: context.cs.onSurfaceVariant),
                         const SizedBox(width: AppSpace.xs),
                         Expanded(
-                          child: Text('Desliza el dedo sobre el texto para subrayarlo.',
+                          child: Text('Desliza un dedo sobre el texto para subrayarlo. Con dos dedos, acerca la foto.',
                               style: theme.textTheme.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant)),
                         ),
                       ],
@@ -229,13 +476,17 @@ class _ScanQuoteScreenState extends State<ScanQuoteScreen> {
             ),
             Row(
               children: [
-                if (quote.isNotEmpty) ...[
+                IconButton(
+                  tooltip: 'Deshacer',
+                  onPressed: _history.isEmpty ? null : _undo,
+                  icon: const Icon(Icons.undo_rounded),
+                ),
+                if (quote.isNotEmpty)
                   TextButton(
-                    onPressed: () => setState(() => _selected = {}),
+                    onPressed: () => _setSelection({}),
                     child: const Text('Borrar'),
                   ),
-                  const SizedBox(width: AppSpace.xs),
-                ],
+                const SizedBox(width: AppSpace.xs),
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: quote.isEmpty ? null : () => Navigator.pop(context, quote),

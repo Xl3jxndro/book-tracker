@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:book_tracker/screens/scan_quote_screen.dart';
 import 'package:book_tracker/services/text_scan.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -62,6 +64,42 @@ void main() {
     });
   });
 
+  group('orientación de la foto (EXIF)', () {
+    /// JPEG mínimo con etiqueta de giro y tamaño guardado (ancho x alto).
+    Uint8List jpeg({required int orientation, required int width, required int height}) => Uint8List.fromList([
+          0xFF, 0xD8, // inicio
+          // APP1 "Exif\0\0" + TIFF big endian con una entrada (0x0112 = giro)
+          0xFF, 0xE1, 0x00, 0x22,
+          0x45, 0x78, 0x69, 0x66, 0x00, 0x00,
+          0x4D, 0x4D, 0x00, 0x2A, 0x00, 0x00, 0x00, 0x08,
+          0x00, 0x01,
+          0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, orientation, 0x00, 0x00,
+          0x00, 0x00, 0x00, 0x00,
+          // SOF0 con alto y ancho
+          0xFF, 0xC0, 0x00, 0x0B, 0x08, height >> 8, height & 0xFF, width >> 8, width & 0xFF, 0x01, 0x01, 0x11, 0x00,
+          0xFF, 0xD9, // fin
+        ]);
+
+    test('lee el giro y el tamaño guardados', () {
+      final info = readJpegInfo(jpeg(orientation: 6, width: 4000, height: 3000));
+      expect(info, isNotNull);
+      expect(info!.orientation, 6);
+      expect(info.width, 4000);
+      expect(info.height, 3000);
+      expect(readJpegInfo(Uint8List.fromList([0x89, 0x50, 0x4E, 0x47])), isNull, reason: 'un PNG no es JPEG');
+    });
+
+    test('foto en vertical guardada "acostada": hay que girarla', () {
+      final bytes = jpeg(orientation: 6, width: 4000, height: 3000);
+      expect(jpegOrientationToApply(bytes, 4000, 3000), 6, reason: 'el decodificador no la giró');
+      expect(jpegOrientationToApply(bytes, 3000, 4000), 1, reason: 'ya venía girada: no se gira dos veces');
+    });
+
+    test('sin etiqueta de giro no se toca', () {
+      expect(jpegOrientationToApply(jpeg(orientation: 1, width: 4000, height: 3000), 4000, 3000), 1);
+    });
+  });
+
   group('pantalla del subrayador', () {
     Future<String? Function()> open(WidgetTester tester, List<ScanWord> words) async {
       String? result;
@@ -93,16 +131,19 @@ void main() {
     }
 
     /// Punto de pantalla de una posición de la foto.
+    /// (Sin zoom: la foto cuadrada va centrada en la vista.)
     Offset onPage(WidgetTester tester, Offset photoPoint) {
-      final page = find.byKey(const ValueKey('scan_page'));
-      final topLeft = tester.getTopLeft(page);
-      final scale = tester.getSize(page).width / 1000;
-      return topLeft + photoPoint * scale;
+      final rect = tester.getRect(find.byKey(const ValueKey('scan_page')));
+      final side = rect.width < rect.height ? rect.width : rect.height;
+      final origin = rect.topLeft + Offset((rect.width - side) / 2, (rect.height - side) / 2);
+      return origin + photoPoint * (side / 1000);
     }
+
+    const hint = 'Desliza un dedo sobre el texto para subrayarlo. Con dos dedos, acerca la foto.';
 
     testWidgets('deslizar sobre el texto lo subraya y "Usar cita" lo devuelve', (tester) async {
       final result = await open(tester, _words);
-      expect(find.text('Desliza el dedo sobre el texto para subrayarlo.'), findsOneWidget);
+      expect(find.text(hint), findsOneWidget);
 
       // De "recordar" a "tarde"
       final gesture = await tester.startGesture(onPage(tester, const Offset(450, 120)));
@@ -124,7 +165,54 @@ void main() {
       expect(find.text('“había de recordar aquella tarde remota”'), findsOneWidget);
       await tester.tap(find.text('Borrar'));
       await tester.pump();
-      expect(find.text('Desliza el dedo sobre el texto para subrayarlo.'), findsOneWidget);
+      expect(find.text(hint), findsOneWidget);
+
+      // Deshacer recupera lo borrado
+      await tester.tap(find.byTooltip('Deshacer'));
+      await tester.pump();
+      expect(find.text('“había de recordar aquella tarde remota”'), findsOneWidget);
+    });
+
+    testWidgets('dos dedos acercan la foto sin subrayar nada', (tester) async {
+      await open(tester, _words);
+      expect(find.byTooltip('Ver la página entera'), findsNothing);
+
+      // Pellizco que empieza sobre "recordar": no debe quedar subrayado
+      final a = await tester.startGesture(onPage(tester, const Offset(450, 120)), pointer: 1);
+      final b = await tester.startGesture(onPage(tester, const Offset(500, 130)), pointer: 2);
+      await a.moveTo(onPage(tester, const Offset(300, 60)));
+      await b.moveTo(onPage(tester, const Offset(700, 200)));
+      await tester.pump();
+      await a.up();
+      await b.up();
+      await tester.pump();
+
+      expect(find.text(hint), findsOneWidget, reason: 'nada subrayado');
+      expect(find.byTooltip('Ver la página entera'), findsOneWidget, reason: 'la foto quedó ampliada');
+
+      await tester.tap(find.byTooltip('Ver la página entera'));
+      await tester.pump();
+      expect(find.byTooltip('Ver la página entera'), findsNothing);
+    });
+
+    testWidgets('con zoom, el subrayado sigue cayendo sobre las palabras', (tester) async {
+      await open(tester, _words);
+      await tester.tap(find.byTooltip('Acercar'));
+      await tester.pump();
+
+      // Con la foto ampliada, un toque sobre una palabra visible la subraya
+      final page = find.byKey(const ValueKey('scan_page'));
+      final center = tester.getCenter(page);
+      await tester.tapAt(center);
+      await tester.pump();
+      // El centro de la vista cae en la foto (500, 500): no hay palabra ahí
+      expect(find.text(hint), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Ver la página entera'));
+      await tester.pump();
+      await tester.tapAt(onPage(tester, const Offset(300, 120)));
+      await tester.pump();
+      expect(find.text('“de”'), findsOneWidget);
     });
 
     test('reconoce el error de "modelo descargándose" de ML Kit', () {

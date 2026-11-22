@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/painting.dart';
@@ -32,14 +34,20 @@ class TextScan {
   TextScan._();
 
   static Future<ScanResult> scan(String photoPath) async {
-    // Copia "derecha" de la foto (aplicando la rotación de la cámara): así
-    // las posiciones del texto coinciden exactamente con la imagen en pantalla.
-    final codec = await ui.instantiateImageCodec(await File(photoPath).readAsBytes());
-    final image = (await codec.getNextFrame()).image;
+    // Copia "derecha" de la foto, como se tomó: la cámara guarda la imagen
+    // "acostada" con una etiqueta de giro (EXIF) que aquí se aplica. Así la
+    // foto se ve en su orientación y las posiciones del texto coinciden.
+    final bytes = await File(photoPath).readAsBytes();
+    final codec = await ui.instantiateImageCodec(bytes);
+    final decoded = (await codec.getNextFrame()).image;
+    codec.dispose();
+    final orientation = jpegOrientationToApply(bytes, decoded.width, decoded.height);
+    final image = orientation == 1 ? decoded : await _orient(decoded, orientation);
+    if (!identical(image, decoded)) decoded.dispose();
+
     final size = Size(image.width.toDouble(), image.height.toDouble());
     final png = await image.toByteData(format: ui.ImageByteFormat.png);
     image.dispose();
-    codec.dispose();
     final upright = File('${(await getTemporaryDirectory()).path}/cita_${DateTime.now().millisecondsSinceEpoch}.png');
     await upright.writeAsBytes(png!.buffer.asUint8List(), flush: true);
 
@@ -61,6 +69,120 @@ class TextScan {
       await recognizer.close();
     }
   }
+
+  /// Gira o voltea la imagen según la etiqueta EXIF (1–8).
+  static Future<ui.Image> _orient(ui.Image src, int orientation) async {
+    final w = src.width.toDouble();
+    final h = src.height.toDouble();
+    final swap = orientation >= 5;
+    final outW = swap ? h : w;
+    final outH = swap ? w : h;
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    switch (orientation) {
+      case 2: // espejo horizontal
+        canvas
+          ..translate(outW, 0)
+          ..scale(-1, 1);
+      case 3: // 180°
+        canvas
+          ..translate(outW, outH)
+          ..rotate(math.pi);
+      case 4: // espejo vertical
+        canvas
+          ..translate(0, outH)
+          ..scale(1, -1);
+      case 5: // transponer
+        canvas
+          ..rotate(math.pi / 2)
+          ..scale(1, -1);
+      case 6: // 90° a la derecha (teléfono en vertical, lo más común)
+        canvas
+          ..translate(outW, 0)
+          ..rotate(math.pi / 2);
+      case 7: // transversal
+        canvas
+          ..translate(outW, outH)
+          ..rotate(-math.pi / 2)
+          ..scale(1, -1);
+      case 8: // 90° a la izquierda
+        canvas
+          ..translate(0, outH)
+          ..rotate(-math.pi / 2);
+    }
+    canvas.drawImage(src, Offset.zero, Paint()..filterQuality = FilterQuality.high);
+    return recorder.endRecording().toImage(outW.round(), outH.round());
+  }
+}
+
+/// Giro EXIF que falta aplicar a una foto JPEG ya decodificada (1 = ninguno).
+///
+/// Si el decodificador ya la giró (el ancho y el alto quedaron
+/// intercambiados respecto a los del archivo), no se vuelve a girar.
+int jpegOrientationToApply(Uint8List bytes, int decodedWidth, int decodedHeight) {
+  final info = readJpegInfo(bytes);
+  if (info == null || info.orientation == 1) return 1;
+  final swaps = info.orientation >= 5;
+  if (swaps && info.width > 0 && info.width != info.height) {
+    final alreadyRotated = decodedWidth == info.height && decodedHeight == info.width;
+    return alreadyRotated ? 1 : info.orientation;
+  }
+  return info.orientation;
+}
+
+/// Tamaño guardado y etiqueta de giro EXIF de un JPEG (null si no es JPEG).
+({int width, int height, int orientation})? readJpegInfo(Uint8List b) {
+  if (b.length < 4 || b[0] != 0xFF || b[1] != 0xD8) return null;
+  var orientation = 1;
+  var width = 0;
+  var height = 0;
+  var i = 2;
+  while (i + 4 <= b.length) {
+    if (b[i] != 0xFF) break;
+    final marker = b[i + 1];
+    if (marker == 0xFF) {
+      i++; // relleno
+      continue;
+    }
+    if (marker == 0xD9 || marker == 0xDA) break; // fin o inicio de la imagen
+    final length = (b[i + 2] << 8) | b[i + 3];
+    final start = i + 4;
+    // EXIF (APP1 "Exif\0\0")
+    if (marker == 0xE1 &&
+        start + 6 <= b.length &&
+        b[start] == 0x45 && b[start + 1] == 0x78 && b[start + 2] == 0x69 && b[start + 3] == 0x66) {
+      orientation = _exifOrientation(b, start + 6) ?? orientation;
+    }
+    // Tamaño (SOF0–SOF15, salvo DHT/JPG/DAC)
+    final isSof = marker >= 0xC0 && marker <= 0xCF && marker != 0xC4 && marker != 0xC8 && marker != 0xCC;
+    if (isSof && start + 5 <= b.length) {
+      height = (b[start + 1] << 8) | b[start + 2];
+      width = (b[start + 3] << 8) | b[start + 4];
+    }
+    i += 2 + length;
+  }
+  return (width: width, height: height, orientation: orientation);
+}
+
+int? _exifOrientation(Uint8List b, int tiff) {
+  if (tiff + 8 > b.length) return null;
+  final little = b[tiff] == 0x49; // "II" = little endian, "MM" = big endian
+  int u16(int o) => little ? b[o] | (b[o + 1] << 8) : (b[o] << 8) | b[o + 1];
+  int u32(int o) => little
+      ? b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)
+      : (b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3];
+  final ifd = tiff + u32(tiff + 4);
+  if (ifd + 2 > b.length) return null;
+  final count = u16(ifd);
+  for (var e = 0; e < count; e++) {
+    final entry = ifd + 2 + e * 12;
+    if (entry + 12 > b.length) return null;
+    if (u16(entry) == 0x0112) {
+      final value = u16(entry + 8);
+      return value >= 1 && value <= 8 ? value : null;
+    }
+  }
+  return null;
 }
 
 /// Palabra bajo el dedo: la que contiene el punto (con margen) o, si no, la
