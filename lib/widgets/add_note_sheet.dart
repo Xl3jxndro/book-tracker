@@ -138,7 +138,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> with SingleTickerPr
 
     XFile? photo;
     try {
-      photo = await ImagePicker().pickImage(source: source, maxWidth: 2400, maxHeight: 2400, imageQuality: 92);
+      photo = await ImagePicker().pickImage(source: source, maxWidth: 2000, maxHeight: 2000, imageQuality: 92);
     } catch (e) {
       debugPrint('Foto para escanear: $e');
       if (mounted) {
